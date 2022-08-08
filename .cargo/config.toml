@@ -1,0 +1,8 @@
+[alias]
+bin = "build --target x86_64-uefi-cryptos.json --target x86_64-bios-cryptos.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release"
+kcheck = "check --target x86_64-uefi-cryptos.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release"
+boot = "run --package imager --"
+run-efi = "boot --uefi"
+run-bios = "boot --bios"
+debug-efi = "boot --uefi-debug"
+debug-bios = "boot --bios-debug"

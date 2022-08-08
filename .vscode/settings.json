@@ -1,0 +1,15 @@
+{
+    "rust-analyzer.cargo.target": "x86_64-uefi-cryptos.json",
+    "rust-analyzer.server.extraEnv": {
+        "CARGO": "/opt/rust/bin/cargo",
+        "RUSTC": "/opt/rust/bin/rustc"
+    },
+    "rust-analyzer.checkOnSave.overrideCommand": [
+        "cargo",
+        "kcheck"
+    ],
+    "rust-analyzer.restartServerOnConfigChange": true,
+    "rust-analyzer.runnableEnv": {
+        "PATH": "/opt/rust/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl"
+    }
+}
