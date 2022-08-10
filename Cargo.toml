@@ -7,6 +7,9 @@ edition = "2021"
 members = [
     "imager"
 ]
+exclude = [
+    "heterob"
+]
 
 [dependencies]
 bootloader = "^0.10"
@@ -23,6 +26,9 @@ pic8259 = "^0.10.2"
 btrfs-diskformat = "*"
 bitflags = "*"
 array-macro = "*"
+bit = "0.1.1"
+pcics = "0.2.0"
+aml = "0.16.1"
 
 [dependencies.byteorder]
 version = "*"
@@ -53,3 +59,6 @@ branch = "patch-1"
 
 [patch.crates-io.acpi]
 git = "https://github.com/kennystrawnmusic/acpi"
+
+[patch.crates-io.heterob]
+git = "https://github.com/kennystrawnmusic/heterob"

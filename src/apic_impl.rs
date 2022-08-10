@@ -99,10 +99,8 @@ pub fn init_all_available_apics() {
         for mut ioapic in ioapics.into_iter() {
             ioapic.init(32);
 
-            for id in get_lapic_ids() {
-                for i in 0..(255 - 32) {
-                    ioapic_irq!(ioapic, i, id);
-                }
+            for i in 0..(255 - 32) {
+                ioapic_irq!(ioapic, i, LOCAL_APIC.lock().as_ref().unwrap().id().clone());
             }
         }
 

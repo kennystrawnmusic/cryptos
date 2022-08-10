@@ -26,9 +26,11 @@ pub trait Disk {
     fn read(&mut self, block: u64, buffer: &mut [u8]) -> syscall::Result<Option<usize>>;
     fn write(&mut self, block: u64, buffer: &mut [u8]) -> syscall::Result<Option<usize>>;
     fn blklen(&mut self) -> syscall::Result<u32>;
+    fn read_interrupt_status(&mut self) -> u32;
+    fn write_interrupt_status(&mut self, status: u32);
 }
 
-pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk>>) {
+pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk + Send + Sync>>) {
     let mem = unsafe { &mut *(base as *mut HbaMem) };
     mem.init();
 
@@ -39,14 +41,14 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk>>) {
         .filter_map(|i| {
             let p = unsafe { &mut *(mem.ports.as_mut_ptr().add(i)) };
             let kind = p.probe();
-            info!("{:#?}: {:x?}", i, kind);
+            info!("Port {:#?}: {:#x?}", i, kind);
 
-            let disk: Option<Box<dyn Disk>> = match kind {
+            let disk: Option<Box<dyn Disk + Send + Sync>> = match kind {
                 HbaPortKind::SataDrive => match SataDisk::new(i, p) {
                     Ok(disk) => {
                         info!("Found disk with type {:#?}", kind);
                         Some(Box::new(disk))
-                    },
+                    }
                     Err(e) => {
                         error!("Failed to initialize the given SATA disk: {:#?}", e);
                         None
@@ -56,7 +58,7 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk>>) {
                     Ok(disk) => {
                         info!("Found disk with type {:#?}", kind);
                         Some(Box::new(disk))
-                    },
+                    }
                     Err(e) => {
                         error!("Failed to initialize the given ATAPI disk: {:#?}", e);
                         None

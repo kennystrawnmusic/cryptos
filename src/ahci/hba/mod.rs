@@ -1,15 +1,17 @@
 use core::ptr::write_volatile;
 
+use log::debug;
+
 pub mod consts;
 pub mod structs;
 
 #[allow(unused_imports)]
 use {
     super::fis::{self, FisKind},
-    crate::Mmio,
     crate::PCI_CONFIG,
     acpi::PciConfigRegions,
     alloc::{string::String, vec::Vec},
+    bit::BitIndex,
     conquer_once::spin::OnceCell,
     consts::*,
     core::{
@@ -21,6 +23,7 @@ use {
     log::{error, info, trace},
     spin::RwLock,
     structs::*,
+    syscall::io::Mmio,
     syscall::{Dma, Io},
     x86_64::{
         structures::paging::{
@@ -29,60 +32,6 @@ use {
         PhysAddr, VirtAddr,
     },
 };
-
-pub fn find_base_with_mcfg(regions: Option<PciConfigRegions>) -> Option<u64> {
-    match regions {
-        Some(mcfg) => mcfg.physical_address(0x0, 0x0, 0x1, 0x6),
-        None => None,
-    }
-}
-
-pub fn find_base_without_mcfg() -> Option<u64> {
-    // Brute force all known address spaces stored in the constants using a test page
-    // TODO: find a better way
-    let mut v = Vec::new();
-    for addr in KNOWN_PCI_CONFIG_BASE_ADDRS {
-        let test_frame = PhysFrame::<Size4KiB>::containing_address(PhysAddr::new(addr as u64));
-        let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(addr as u64));
-
-        let res = unsafe {
-            crate::MAPPER.get().unwrap().lock().map_to(
-                test_page,
-                test_frame,
-                PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
-                &mut *crate::FRAME_ALLOCATOR.get().unwrap().lock(),
-            )
-        };
-
-        let entry = match res {
-            Ok(_) => None,
-            Err(e) => match e {
-                MapToError::FrameAllocationFailed => None,
-                MapToError::PageAlreadyMapped(_) => Some(addr), // if it's already mapped, it's probably where it's at
-                MapToError::ParentEntryHugePage => None,        // too huge to tell in this case
-            },
-        };
-        v.push(entry);
-    }
-
-    match v.into_iter().find(|e| e.is_some()) {
-        Some(opt) => opt,
-        None => None,
-    }
-}
-
-pub fn brute_force() -> u64 {
-    match PCI_CONFIG.get() {
-        Some(regions) => match find_base_with_mcfg(regions.clone()) {
-            Some(addr) => addr,
-            None => panic!("No SATA entry found in the PCI configuration address space"),
-        },
-        None => match find_base_without_mcfg() {
-            Some(addr) => addr,
-            None => panic!("Couldn't find PCI configuration base address"),
-        },
-    }
-}
 
 // used by the `identify` method only
 macro_rules! identify_class {
@@ -109,6 +58,9 @@ pub static EIO_DEBUG: RwLock<Option<String>> = RwLock::new(None);
 
 // Same with the enum itself
 pub static EIO_STATUS: RwLock<Option<InterruptError>> = RwLock::new(None);
+
+// Also pass the global interrupt status to a static so the IRQ handler can easily access it
+pub static GLOBAL_IS: RwLock<Option<u32>> = RwLock::new(None);
 
 impl HbaPort {
     pub fn probe(&self) -> HbaPortKind {
@@ -512,28 +464,27 @@ impl HbaMem {
     pub fn init(&mut self) {
         self.global_host_control.write(1 << 31 | 1 << 1);
 
-        // Fix the BIOS/OS handoff bits
-        // self.handoff_ctrl.write(0 << 4); // BIOS Busy
-        // self.handoff_ctrl.write(1 << 3); // OS Ownership
-        // self.handoff_ctrl.write(1 << 2); // SMI
-        // self.handoff_ctrl.write(1 << 1); // Semaphore
-
-        info!("Initializing memory space for disk access");
-        info!("Base host capability pointer: {:#x}", self.host_cap.read());
-        info!(
+        debug!("Initializing memory space for disk access");
+        debug!("Base host capability pointer: {:#x}", self.host_cap.read());
+        debug!(
             "Global host control pointer: {:#x}",
             self.global_host_control.read()
         );
-        info!("Interrupt status: {:#x}", self.interrupt_status.read());
-        info!("Port implementation pointer: {:#x}", self.port_impl.read());
-        info!("Version: {:#x}", self.version.read());
-        info!(
+        debug!("Interrupt status: {:#x}", self.interrupt_status.read());
+        *GLOBAL_IS.write() = Some(self.interrupt_status.read().clone());
+
+        debug!("Port implementation pointer: {:#x}", self.port_impl.read());
+        debug!("Version: {:#x}", self.version.read());
+        debug!(
             "Extended host capability pointer: {:#x}",
             self.host_cap_ext.read()
         );
-        info!(
+        debug!(
             "BIOS/OS handoff controller pointer: {:#x}",
             self.handoff_ctrl.read()
         );
+
+        // Write back the value from the interrupt handler to satisfy the controller
+        self.interrupt_status.write(GLOBAL_IS.read().unwrap());
     }
 }

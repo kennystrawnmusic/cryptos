@@ -1,3 +1,10 @@
+use x86_64::structures::idt::SelectorErrorCode;
+
+use crate::{
+    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
+    AHCI_INTA_IRQ, ALL_DISKS, AHCI_INTB_IRQ, AHCI_INTC_IRQ, AHCI_INTD_IRQ,
+};
+
 #[allow(unused_imports)]
 use {
     crate::apic_impl::LOCAL_APIC,
@@ -29,7 +36,7 @@ lazy_static! {
         idt.page_fault.set_handler_fn(page_fault);
         idt.divide_error.set_handler_fn(sigfpe);
         idt.invalid_tss.set_handler_fn(invalid_tss);
-        idt.segment_not_present.set_handler_fn(seg_404);
+        idt.segment_not_present.set_handler_fn(sigbus);
         idt.stack_segment_fault.set_handler_fn(sigsegv);
         idt.general_protection_fault
             .set_handler_fn(general_protection);
@@ -37,6 +44,10 @@ lazy_static! {
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
         idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
         idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
+        idt[AHCI_INTA_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
+        idt[AHCI_INTB_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
+        idt[AHCI_INTC_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
+        idt[AHCI_INTD_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
         idt
     };
 }
@@ -53,7 +64,6 @@ pub enum IrqIndex {
     IpiTlb = 0x41,    // 65
     IpiSwitch = 0x42, // 66
     IpiPit = 0x43,    // 67
-    AHCI = 0x44,      // 68
     Spurious = 0xfe,  // 254
 }
 
@@ -76,6 +86,42 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
     PID.fetch_add(1, Ordering::SeqCst);
     todo!("use a loop here as the process scheduler");
+}
+
+#[allow(dead_code)]
+extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
+    // Spinloop until all statics are initialized
+    while !ALL_DISKS.is_initialized() && GLOBAL_IS.read().is_none() {
+        core::hint::spin_loop();
+    }
+
+    // Reference: https://wiki.osdev.org/AHCI#IRQ_handler
+
+    // Checklist item 1
+    // TODO: listen for changes to this static and write them to the global IS itself
+    let global_interrupt = *GLOBAL_IS.read();
+    *GLOBAL_IS.write() = global_interrupt;
+
+    // Checklist item 2
+    for disk in ALL_DISKS.get().unwrap().write().iter_mut() {
+        let status = disk.read_interrupt_status();
+
+        if EIO_STATUS.read().is_none() {
+            disk.write_interrupt_status(status)
+        } else {
+            // Checklist item 3
+            match EIO_STATUS.read().as_ref().unwrap() {
+                InterruptError::TaskFile => error!("{:#?}", crate::ahci::hba::EIO_DEBUG.read()),
+                InterruptError::HostBusFatal => error!("{:#?}", crate::ahci::hba::EIO_DEBUG.read()),
+                InterruptError::HostBusData => error!("{:#?}", crate::ahci::hba::EIO_DEBUG.read()),
+                InterruptError::InterfaceFatal => {
+                    error!("{:#?}", crate::ahci::hba::EIO_DEBUG.read())
+                }
+                InterruptError::InvalidSlot => error!("{:#?}", crate::ahci::hba::EIO_DEBUG.read()),
+            }
+        }
+    }
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
@@ -119,10 +165,17 @@ extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
     );
 }
 
-extern "x86-interrupt" fn seg_404(frame: InterruptStackFrame, code: u64) {
-    error!(
-        "Segment selector at index {:#?} is not present\nBacktrace: {:#?}",
-        code, frame
+extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
+    let selector = SelectorErrorCode::new(code).unwrap();
+    panic!(
+        "Segment selector at index {:#x?} is not present\n\
+        Descriptor table involved: {:#?}\n\
+        Selector index: {:#?}\n\
+        Backtrace: {:#?}",
+        code,
+        selector.descriptor_table(),
+        selector.index(),
+        frame
     );
 }
 

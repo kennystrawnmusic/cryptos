@@ -1,3 +1,5 @@
+use syscall::Io;
+
 use {
     super::{
         hba::structs::{HbaCmdHeader, HbaCmdTable, HbaPort},
@@ -190,4 +192,15 @@ impl Disk for SataDisk {
     fn blklen(&mut self) -> syscall::Result<u32> {
         Ok(512)
     }
+
+    fn write_interrupt_status(&mut self, status: u32) {
+        self.port.interrupt_status.write(status);
+    }
+
+    fn read_interrupt_status(&mut self) -> u32 {
+        self.port.interrupt_status.read()
+    }
 }
+
+unsafe impl Send for SataDisk {}
+unsafe impl Sync for SataDisk {}

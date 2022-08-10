@@ -114,7 +114,7 @@ pub fn main() {
                     .arg("-drive")
                     .arg("format=raw,file=target/x86_64-uefi-cryptos/release/boot-uefi-cryptos.img")
                     .arg("-bios")
-                    .arg("/usr/share/edk2-ovmf/x64/OVMF.fd")
+                    .arg("OVMF-pure-efi.fd")
                     .arg("-machine")
                     .arg("q35");
 
@@ -150,7 +150,7 @@ pub fn main() {
                     .arg("-drive")
                     .arg("format=raw,file=target/x86_64-uefi-cryptos/release/boot-uefi-cryptos.img")
                     .arg("-bios")
-                    .arg("/usr/share/edk2-ovmf/x64/OVMF.fd")
+                    .arg("OVMF-pure-efi.fd")
                     .arg("-gdb")
                     .arg("tcp::3333")
                     .arg("-S")

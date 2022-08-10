@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use syscall::Io;
+
 use {
     super::{
         hba::{
@@ -253,4 +255,15 @@ impl Disk for SataPacketInterface {
     fn blklen(&mut self) -> syscall::Result<u32> {
         Ok(self.read_cap()?[1])
     }
+
+    fn write_interrupt_status(&mut self, status: u32) {
+        self.port.interrupt_status.write(status);
+    }
+
+    fn read_interrupt_status(&mut self) -> u32 {
+        self.port.interrupt_status.read()
+    }
 }
+
+unsafe impl Send for SataPacketInterface {}
+unsafe impl Sync for SataPacketInterface {}

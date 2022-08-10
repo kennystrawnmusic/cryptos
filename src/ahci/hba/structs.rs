@@ -1,5 +1,5 @@
-use crate::Mmio;
 use bitflags::bitflags;
+use syscall::io::Mmio;
 
 #[repr(C, packed)]
 pub struct HbaPort {

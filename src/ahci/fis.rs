@@ -1,5 +1,5 @@
-use crate::Mmio;
 use alloc::vec::Vec;
+use syscall::io::Mmio;
 
 #[repr(u8)]
 pub enum FisKind {
