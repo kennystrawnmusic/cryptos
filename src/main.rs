@@ -336,7 +336,6 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
             );
             info!("Class Code: {:#x?}", header.class_code);
 
-            info!("Interrupt line: {:#x}", header.interrupt_line);
             info!("Interrupt pin: {:#?}", header.interrupt_pin);
 
             if let HeaderType::Normal(normal_header) = header.header_type {
