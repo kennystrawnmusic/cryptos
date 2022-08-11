@@ -42,6 +42,9 @@ lazy_static! {
         idt.general_protection_fault
             .set_handler_fn(general_protection);
         idt.breakpoint.set_handler_fn(breakpoint);
+        idt.bound_range_exceeded.set_handler_fn(bound_range_exceeded);
+        idt.invalid_opcode.set_handler_fn(invalid_op);
+        idt.device_not_available.set_handler_fn(navail);
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
         idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
         idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
@@ -119,6 +122,18 @@ pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
         }
     }
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
+    panic!("Bound range exceeded\nStack frame: {:#?}", frame);
+}
+
+extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
+    panic!("Invalid opcode\nStack frame: {:#?}", frame);
+}
+
+extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
+    panic!("Device not available\nStack frame: {:#?}", frame);
 }
 
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
