@@ -2,7 +2,7 @@ use x86_64::structures::idt::SelectorErrorCode;
 
 use crate::{
     ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
-    AHCI_INTA_IRQ, ALL_DISKS, AHCI_INTB_IRQ, AHCI_INTC_IRQ, AHCI_INTD_IRQ,
+    AHCI_INTA_IRQ, AHCI_INTB_IRQ, AHCI_INTC_IRQ, AHCI_INTD_IRQ, ALL_DISKS,
 };
 
 #[allow(unused_imports)]

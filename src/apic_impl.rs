@@ -10,7 +10,10 @@ use {
         ioapic::{IoApic, IrqFlags, IrqMode, RedirectionTableEntry},
         lapic::{LocalApic, LocalApicBuilder},
     },
-    x86_64::{structures::paging::{Mapper, Size4KiB}, instructions::port::Port}
+    x86_64::{
+        instructions::port::Port,
+        structures::paging::{Mapper, Size4KiB},
+    },
 };
 
 pub static LAPIC_IDS: OnceCell<Vec<u32>> = OnceCell::uninit();

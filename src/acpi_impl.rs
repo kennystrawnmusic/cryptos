@@ -68,9 +68,7 @@ impl aml::Handler for KernelAcpi {
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
-        unsafe {
-            core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u8)
-        }
+        unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u8) }
     }
 
     fn read_u16(&self, address: usize) -> u16 {
@@ -81,11 +79,7 @@ impl aml::Handler for KernelAcpi {
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
-        unsafe {
-            core::ptr::read_volatile(
-                (address + get_phys_offset() as usize) as *const u16,
-            )
-        }
+        unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u16) }
     }
 
     fn read_u32(&self, address: usize) -> u32 {
@@ -96,11 +90,7 @@ impl aml::Handler for KernelAcpi {
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
-        unsafe {
-            core::ptr::read_volatile(
-                (address + get_phys_offset() as usize) as *const u32,
-            )
-        }
+        unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u32) }
     }
 
     fn read_u64(&self, address: usize) -> u64 {
@@ -111,11 +101,7 @@ impl aml::Handler for KernelAcpi {
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
-        unsafe {
-            core::ptr::read_volatile(
-                (address + get_phys_offset() as usize) as *const u64,
-            )
-        }
+        unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u64) }
     }
 
     fn write_u8(&mut self, address: usize, value: u8) {
@@ -127,10 +113,7 @@ impl aml::Handler for KernelAcpi {
         );
 
         unsafe {
-            core::ptr::write_volatile(
-                (address + get_phys_offset() as usize) as *mut u8,
-                value,
-            )
+            core::ptr::write_volatile((address + get_phys_offset() as usize) as *mut u8, value)
         }
     }
 
@@ -143,10 +126,7 @@ impl aml::Handler for KernelAcpi {
         );
 
         unsafe {
-            core::ptr::write_volatile(
-                (address + get_phys_offset() as usize) as *mut u16,
-                value,
-            )
+            core::ptr::write_volatile((address + get_phys_offset() as usize) as *mut u16, value)
         }
     }
 
@@ -159,10 +139,7 @@ impl aml::Handler for KernelAcpi {
         );
 
         unsafe {
-            core::ptr::write_volatile(
-                (address + get_phys_offset() as usize) as *mut u32,
-                value,
-            )
+            core::ptr::write_volatile((address + get_phys_offset() as usize) as *mut u32, value)
         }
     }
 
@@ -175,10 +152,7 @@ impl aml::Handler for KernelAcpi {
         );
 
         unsafe {
-            core::ptr::write_volatile(
-                (address + get_phys_offset() as usize) as *mut u64,
-                value,
-            )
+            core::ptr::write_volatile((address + get_phys_offset() as usize) as *mut u64, value)
         }
     }
 

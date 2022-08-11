@@ -63,10 +63,7 @@ use {
 
 use core::slice;
 
-pub use crate::{
-    acpi_impl::*,
-    ahci::hba::EIO_DEBUG,
-};
+pub use crate::{acpi_impl::*, ahci::hba::EIO_DEBUG};
 use acpi::{fadt::Fadt, sdt::SdtHeader, AmlTable};
 pub use ahci::hba::{structs::InterruptError, EIO_STATUS};
 use alloc::string::String;
@@ -265,7 +262,6 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
         if let Ok(()) =
             aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
         {
-
             let _ = aml_ctx.invoke_method(
                 &AmlName::from_str("\\_PIC").unwrap(),
                 Args([
