@@ -115,7 +115,7 @@ macro_rules! ioapic_irq {
         let mut e = RedirectionTableEntry::default();
         e.set_mode(IrqMode::Fixed);
         e.set_flags(IrqFlags::LEVEL_TRIGGERED | IrqFlags::LOW_ACTIVE);
-        e.set_dest($dest as u8);
+        e.set_vector($dest as u8);
 
         $pic.set_table_entry($irq, e);
         $pic.enable_irq($irq);
