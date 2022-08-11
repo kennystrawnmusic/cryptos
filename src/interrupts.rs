@@ -48,7 +48,7 @@ lazy_static! {
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
         idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
         idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
-        idt[0x82].set_handler_fn(ahci);
+        idt[0x82].set_handler_fn(spurious);
         Mutex::new(idt)
     };
 }
