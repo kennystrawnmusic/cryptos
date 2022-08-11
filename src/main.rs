@@ -118,7 +118,7 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 
 pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
 
-// Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler above
+// Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
 pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
 
