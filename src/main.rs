@@ -169,8 +169,6 @@ pub static AHCI_INTB_IRQ: OnceCell<usize> = OnceCell::uninit();
 pub static AHCI_INTC_IRQ: OnceCell<usize> = OnceCell::uninit();
 pub static AHCI_INTD_IRQ: OnceCell<usize> = OnceCell::uninit();
 
-pub static AML_CONTEXT: OnceCell<RwLock<AmlContext>> = OnceCell::uninit();
-
 fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
     let offset = VirtAddr::new(
