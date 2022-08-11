@@ -61,4 +61,5 @@ git = "https://github.com/kennystrawnmusic/acpi"
 git = "https://github.com/kennystrawnmusic/heterob"
 
 [profile.release]
+debug = true
 debug-assertions = true

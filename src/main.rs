@@ -76,7 +76,7 @@ use pcics::header::HeaderType;
 use spin::RwLock;
 pub use syscall;
 use syscall::Mmio;
-use x86_64::structures::paging::{Size1GiB, Size2MiB};
+use x86_64::{structures::paging::{Size1GiB, Size2MiB}, instructions::port::Port};
 
 pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
@@ -128,7 +128,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     set_logger(p).expect("Logger has already been set!");
 
     // Don't flood users with excessive messages if compiled with "--release"
-    if cfg!(debug_assertions) {
+    if cfg!(opt_level = "0") {
         set_max_level(LevelFilter::Trace);
     } else {
         set_max_level(LevelFilter::Info);
@@ -140,7 +140,13 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     error!("Kernel panic -- not syncing: {info}");
-    loop {}
+    unsafe {
+        let mut debug_exit_port = Port::new(0xf4);
+        debug_exit_port.write(interrupts::QEMU_STATUS_FAIL);
+    }
+    loop {
+        unsafe { core::arch::asm!("hlt") };
+    }
 }
 
 /// Returns an Iterator of all possible `Option<u64>` in the PCIe extended address space

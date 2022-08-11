@@ -159,7 +159,9 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-device")
+                    .arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
 
                 uefi_cmd.current_dir(&kdir);
 
@@ -188,7 +190,9 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-device")
+                    .arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
 
                 bios_cmd.spawn().unwrap();
 
