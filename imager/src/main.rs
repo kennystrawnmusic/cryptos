@@ -159,15 +159,21 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35")
-                    .arg("-d")
-                    .arg("int");
+                    .arg("q35");
 
                 uefi_cmd.current_dir(&kdir);
 
-                let uefi_status = uefi_cmd.status().unwrap();
+                uefi_cmd.spawn().unwrap();
+
+                let mut debug_cmd = Command::new("gdb");
+                debug_cmd
+                    .arg("target/x86_64-uefi-cryptos/release/cryptos")
+                    .arg("-ex")
+                    .arg("target remote localhost:3333");
+
+                let uefi_status = debug_cmd.status().unwrap();
                 if !uefi_status.success() {
-                    panic!("Failed to run QEMU: {:#?}", uefi_status.code().unwrap());
+                    panic!("Failed to run GDB: {:#?}", uefi_status.code().unwrap());
                 }
             }
             "--bios-debug" => {
@@ -182,11 +188,17 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35")
-                    .arg("-d")
-                    .arg("int");
+                    .arg("q35");
 
-                let bios_status = bios_cmd.status().unwrap();
+                bios_cmd.spawn().unwrap();
+
+                let mut debug_cmd = Command::new("gdb");
+                debug_cmd
+                    .arg("target/x86_64-uefi-cryptos/release/cryptos")
+                    .arg("-ex")
+                    .arg("target remote localhost:3333");
+
+                let bios_status = debug_cmd.status().unwrap();
                 if !bios_status.success() {
                     panic!("Failed to run GDB: {:#?}", bios_status.code().unwrap());
                 }

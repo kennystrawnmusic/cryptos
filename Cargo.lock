@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "acpi"
 version = "4.1.1"
-source = "git+https://github.com/kennystrawnmusic/acpi#e7c00ea918c5db04622f31c5036a9f6be4f74c69"
+source = "git+https://github.com/kennystrawnmusic/acpi#0004f301f6a0796c6839eee934c84a6590e5207b"
 dependencies = [
  "bit_field",
  "log",
@@ -338,7 +338,7 @@ dependencies = [
 [[package]]
 name = "rsdp"
 version = "2.0.0"
-source = "git+https://github.com/kennystrawnmusic/acpi#e7c00ea918c5db04622f31c5036a9f6be4f74c69"
+source = "git+https://github.com/kennystrawnmusic/acpi#0004f301f6a0796c6839eee934c84a6590e5207b"
 dependencies = [
  "log",
 ]

@@ -1,7 +1,8 @@
 use x86_64::structures::idt::SelectorErrorCode;
 
 use crate::{
-    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS}, ALL_DISKS,
+    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
+    ALL_DISKS,
 };
 
 #[allow(unused_imports)]
@@ -10,11 +11,11 @@ use {
     core::sync::atomic::{AtomicU64, Ordering},
     lazy_static::lazy_static,
     log::{debug, error, info},
+    spin::Mutex,
     x86_64::{
         registers::control::Cr2,
         structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
     },
-    spin::Mutex,
 };
 
 pub fn init() {
@@ -42,7 +43,8 @@ lazy_static! {
         idt.general_protection_fault
             .set_handler_fn(general_protection);
         idt.breakpoint.set_handler_fn(breakpoint);
-        idt.bound_range_exceeded.set_handler_fn(bound_range_exceeded);
+        idt.bound_range_exceeded
+            .set_handler_fn(bound_range_exceeded);
         idt.invalid_opcode.set_handler_fn(invalid_op);
         idt.device_not_available.set_handler_fn(navail);
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
@@ -131,7 +133,11 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64() - 1) as *const u32) };
-    panic!("Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}", offender.to_be_bytes(), frame);
+    panic!(
+        "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
+        offender.to_be_bytes(),
+        frame
+    );
 }
 
 extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
