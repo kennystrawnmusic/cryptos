@@ -1,8 +1,7 @@
 use x86_64::structures::idt::SelectorErrorCode;
 
 use crate::{
-    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
-    AHCI_INTA_IRQ, AHCI_INTB_IRQ, AHCI_INTC_IRQ, AHCI_INTD_IRQ, ALL_DISKS,
+    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS}, ALL_DISKS,
 };
 
 #[allow(unused_imports)]
@@ -15,18 +14,20 @@ use {
         registers::control::Cr2,
         structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
     },
+    spin::Mutex,
 };
 
 pub fn init() {
     crate::exceptions::init();
-    IDT.load();
+    IDT_CLONE.load();
     crate::apic_impl::init_all_available_apics();
 }
 
 const INT3_OPCODE: u8 = 0xcc;
 
 lazy_static! {
-    pub static ref IDT: InterruptDescriptorTable = {
+    pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.lock().clone();
+    pub static ref IDT: Mutex<InterruptDescriptorTable> = {
         let mut idt = InterruptDescriptorTable::new();
         unsafe {
             idt.double_fault
@@ -44,11 +45,7 @@ lazy_static! {
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
         idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
         idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
-        idt[AHCI_INTA_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
-        idt[AHCI_INTB_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
-        idt[AHCI_INTC_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
-        idt[AHCI_INTD_IRQ.get().unwrap().clone()].set_handler_fn(ahci);
-        idt
+        Mutex::new(idt)
     };
 }
 
@@ -89,7 +86,7 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
 }
 
 #[allow(dead_code)]
-extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
+pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
     // Spinloop until all statics are initialized
     while !ALL_DISKS.is_initialized() && GLOBAL_IS.read().is_none() {
         core::hint::spin_loop();

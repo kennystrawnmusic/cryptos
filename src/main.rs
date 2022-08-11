@@ -48,6 +48,7 @@ use {
         frames::{map_memory, Falloc},
         heap_init,
     },
+    crate::interrupts::IDT,
     log::*,
     pcics::header::Header,
     printk::LockedPrintk,
@@ -164,11 +165,6 @@ entry_point!(maink);
 
 pub static ALL_DISKS: OnceCell<RwLock<Vec<Box<dyn Disk + Send + Sync>>>> = OnceCell::uninit();
 
-pub static AHCI_INTA_IRQ: OnceCell<usize> = OnceCell::uninit();
-pub static AHCI_INTB_IRQ: OnceCell<usize> = OnceCell::uninit();
-pub static AHCI_INTC_IRQ: OnceCell<usize> = OnceCell::uninit();
-pub static AHCI_INTD_IRQ: OnceCell<usize> = OnceCell::uninit();
-
 fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
     let offset = VirtAddr::new(
@@ -279,19 +275,19 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
             ) {
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntA, &mut aml_ctx) {
                     info!("IRQ descriptor A: {:#?}", desc);
-                    AHCI_INTA_IRQ.get_or_init(move || (desc.irq.clone() + 32) as usize);
+                    IDT.lock()[(desc.irq + 32) as usize].set_handler_fn(interrupts::ahci);
                 }
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntB, &mut aml_ctx) {
                     debug!("IRQ descriptor B: {:#?}", desc);
-                    AHCI_INTB_IRQ.get_or_init(move || (desc.irq.clone() + 32) as usize);
+                    IDT.lock()[(desc.irq + 32) as usize].set_handler_fn(interrupts::ahci);
                 }
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntC, &mut aml_ctx) {
                     debug!("IRQ descriptor C: {:#?}", desc);
-                    AHCI_INTC_IRQ.get_or_init(move || (desc.irq.clone() + 32) as usize);
+                    IDT.lock()[(desc.irq + 32) as usize].set_handler_fn(interrupts::ahci);
                 }
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntD, &mut aml_ctx) {
                     debug!("IRQ descriptor D: {:#?}", desc);
-                    AHCI_INTD_IRQ.get_or_init(move || (desc.irq.clone() + 32) as usize);
+                    IDT.lock()[(desc.irq + 32) as usize].set_handler_fn(interrupts::ahci);
                 }
             }
         }
@@ -322,7 +318,7 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
         let raw_header = unsafe { *(virt as *const [u8; 64]) };
         let header = Header::from(raw_header);
 
-        if header.class_code.base == 0x01 || header.class_code.sub == 0x06 {
+        if header.class_code.base == 0x01 && header.class_code.sub == 0x06 {
             info!(
                 "Found AHCI controller {:x}:{:x} at {:#x}",
                 header.vendor_id, header.device_id, dev
