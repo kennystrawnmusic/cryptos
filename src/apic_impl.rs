@@ -10,7 +10,7 @@ use {
         ioapic::{IoApic, IrqFlags, IrqMode, RedirectionTableEntry},
         lapic::{LocalApic, LocalApicBuilder},
     },
-    x86_64::structures::paging::{Mapper, Size4KiB},
+    x86_64::{structures::paging::{Mapper, Size4KiB}, instructions::port::Port}
 };
 
 pub static LAPIC_IDS: OnceCell<Vec<u32>> = OnceCell::uninit();
@@ -22,8 +22,38 @@ pub fn get_lapic_ids() -> impl Iterator<Item = u32> {
 pub static LOCAL_APIC: Mutex<Option<LocalApic>> = Mutex::new(None);
 
 pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
-    // Disable 8259 immediately
-    unsafe { pic8259::ChainedPics::new(32, 40).disable() };
+    unsafe {
+        // Disable 8259 immediately
+
+        let mut cmd_8259a = Port::<u8>::new(0x20);
+        let mut data_8259a = Port::<u8>::new(0x21);
+        let mut cmd_8259b = Port::<u8>::new(0xa0);
+        let mut data_8259b = Port::<u8>::new(0xa1);
+
+        let mut spin_port = Port::<u8>::new(0x80);
+        let mut spin = || spin_port.write(0);
+
+        cmd_8259a.write(0x11);
+        cmd_8259b.write(0x11);
+        spin();
+
+        data_8259a.write(0xf8);
+        data_8259b.write(0xff);
+        spin();
+
+        data_8259a.write(0b100);
+        spin();
+
+        data_8259b.write(0b10);
+        spin();
+
+        data_8259a.write(0x1);
+        data_8259b.write(0x1);
+        spin();
+
+        data_8259a.write(u8::MAX);
+        data_8259b.write(u8::MAX);
+    };
 
     if let InterruptModel::Apic(apic) = INTERRUPT_MODEL.get().unwrap() {
         let offset = unsafe { crate::get_phys_offset() };

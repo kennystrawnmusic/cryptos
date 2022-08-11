@@ -2,13 +2,11 @@
 name = "cryptos"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-or-later"
 
 [workspace]
 members = [
     "imager"
-]
-exclude = [
-    "heterob"
 ]
 
 [dependencies]
@@ -22,7 +20,6 @@ spin = "^0.9"
 x2apic = "^0.4.0"
 raw-cpuid = "^10.4.0"
 redox_syscall = "^0.3.0" # don't reinvent the wheel
-pic8259 = "^0.10.2"
 btrfs-diskformat = "*"
 bitflags = "*"
 array-macro = "*"

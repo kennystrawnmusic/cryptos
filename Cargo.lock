@@ -147,7 +147,6 @@ dependencies = [
  "lazy_static",
  "log",
  "pcics",
- "pic8259",
  "printk",
  "raw-cpuid",
  "redox_syscall",
@@ -280,15 +279,6 @@ checksum = "dd14b10a7dac61ce17d4702608a98a89b80c6e01fa5db3f6caac8f6272190844"
 dependencies = [
  "heterob",
  "snafu",
-]
-
-[[package]]
-name = "pic8259"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24ec21f514e2e16e94649f1d041ca4a7069b512c037ac156360652a775e6229d"
-dependencies = [
- "x86_64",
 ]
 
 [[package]]

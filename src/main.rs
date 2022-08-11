@@ -235,13 +235,12 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
     PCI_CONFIG.get_or_init(move || mcfg.clone());
 
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
-    // make sure it's mapped properly
 
     let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
 
     // Properly reintroduce the size/length of the header
     let dsdt_addr = fadt.dsdt_address().unwrap();
-    info!("FADT address: {:#x}", dsdt_addr.clone());
+    info!("DSDT address: {:#x}", dsdt_addr.clone());
     let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
 
     let aml_test_page =
@@ -285,7 +284,7 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
                 &mut aml_ctx,
             ) {
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntA, &mut aml_ctx) {
-                    debug!("IRQ descriptor A: {:#?}", desc);
+                    info!("IRQ descriptor A: {:#?}", desc);
                     AHCI_INTA_IRQ.get_or_init(move || (desc.irq.clone() + 32) as usize);
                 }
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntB, &mut aml_ctx) {

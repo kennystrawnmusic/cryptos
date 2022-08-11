@@ -58,13 +58,13 @@ pub static PID: AtomicU64 = AtomicU64::new(0);
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum IrqIndex {
-    Timer = 0x20,     // 32
+    Timer = 0xfe,     // 32
     LapicErr = 0x31,  // 49
     IpiWake = 0x40,   // 64
     IpiTlb = 0x41,    // 65
     IpiSwitch = 0x42, // 66
     IpiPit = 0x43,    // 67
-    Spurious = 0xfe,  // 254
+    Spurious = 0xff,  // 254
 }
 
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
