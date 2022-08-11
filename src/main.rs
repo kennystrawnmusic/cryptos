@@ -184,7 +184,7 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
         &mut *MAPPER.get().unwrap().lock(),
         &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
     )
-    .unwrap_or_else(|e| error!("Failed to map{:#?}", e));
+    .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 
     // clone the physical memory offset into a static ASAP
     // so it doesn't need to be hardcoded everywhere it's needed
