@@ -129,7 +129,8 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
-    panic!("Invalid opcode\nStack frame: {:#?}", frame);
+    let offender = unsafe { *((frame.instruction_pointer.as_u64() - 1) as *const u32) };
+    panic!("Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}", offender.to_be_bytes(), frame);
 }
 
 extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
