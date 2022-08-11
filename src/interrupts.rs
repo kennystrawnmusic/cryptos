@@ -24,15 +24,7 @@ pub fn init() {
     crate::apic_impl::init_all_available_apics();
 }
 
-const QEMU_STATUS_SUCCESS: u32 = 0x10 << 1 | 1;
 pub const QEMU_STATUS_FAIL: u32 = 0x11 << 1 | 1;
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[repr(u32)]
-pub enum QemuExitStatus {
-    Success = QEMU_STATUS_SUCCESS,
-    Failure = QEMU_STATUS_FAIL,
-}
 
 const INT3_OPCODE: u8 = 0xcc;
 
