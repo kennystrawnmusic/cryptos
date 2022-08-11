@@ -338,7 +338,8 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
                 let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(
                     abar as u64 + unsafe { get_phys_offset() },
                 ));
-                let abar_virt = abar_test_page.start_address().as_u64();
+                let abar_virt =
+                    abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
                 map_page!(
                     abar,
