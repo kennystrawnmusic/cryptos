@@ -159,9 +159,7 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35")
-                    .arg("-device")
-                    .arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
+                    .arg("q35");
 
                 uefi_cmd.current_dir(&kdir);
 
@@ -171,7 +169,7 @@ pub fn main() {
                 debug_cmd
                     .arg("target/x86_64-uefi-cryptos/release/cryptos")
                     .arg("-ex")
-                    .arg("target remote localhost:3333");
+                    .arg("target remote :3333");
 
                 let uefi_status = debug_cmd.status().unwrap();
                 if !uefi_status.success() {
@@ -190,9 +188,7 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35")
-                    .arg("-device")
-                    .arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
+                    .arg("q35");
 
                 bios_cmd.spawn().unwrap();
 
@@ -200,7 +196,7 @@ pub fn main() {
                 debug_cmd
                     .arg("target/x86_64-uefi-cryptos/release/cryptos")
                     .arg("-ex")
-                    .arg("target remote localhost:3333");
+                    .arg("target remote :3333");
 
                 let bios_status = debug_cmd.status().unwrap();
                 if !bios_status.success() {

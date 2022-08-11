@@ -24,7 +24,7 @@ pub fn init() {
     crate::apic_impl::init_all_available_apics();
 }
 
-pub const QEMU_STATUS_FAIL: u32 = 0x11 << 1 | 1;
+pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
 const INT3_OPCODE: u8 = 0xcc;
 

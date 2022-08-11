@@ -140,10 +140,6 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     error!("Kernel panic -- not syncing: {info}");
-    unsafe {
-        let mut debug_exit_port = Port::new(0xf4);
-        debug_exit_port.write(interrupts::QEMU_STATUS_FAIL);
-    }
     loop {
         unsafe { core::arch::asm!("hlt") };
     }
