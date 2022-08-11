@@ -20,6 +20,8 @@ use {
 };
 
 /// Refactor/rewrite of Redox's Disk trait
+/// 
+/// Has added methods for getting and setting the IS bits for easy IRQ handling
 pub trait Disk {
     fn id(&self) -> usize;
     fn size(&mut self) -> u64;
