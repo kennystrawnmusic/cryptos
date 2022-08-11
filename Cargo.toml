@@ -63,3 +63,6 @@ git = "https://github.com/kennystrawnmusic/heterob"
 [profile.release]
 debug = true
 debug-assertions = true
+overflow-checks = true
+incremental = true
+codegen-units = 256
