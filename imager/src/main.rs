@@ -116,7 +116,9 @@ pub fn main() {
                     .arg("-bios")
                     .arg("OVMF-pure-efi.fd")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-d")
+                    .arg("int");
 
                 uefi_cmd.current_dir(&kdir);
 
@@ -134,7 +136,9 @@ pub fn main() {
                     .arg("-drive")
                     .arg("format=raw,file=target/x86_64-bios-cryptos/release/boot-bios-cryptos.img")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-d")
+                    .arg("int");
 
                 let bios_status = bios_cmd.status().unwrap();
                 if !bios_status.success() {
@@ -155,7 +159,9 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-d")
+                    .arg("int");
 
                 uefi_cmd.current_dir(&kdir);
 
@@ -176,7 +182,9 @@ pub fn main() {
                     .arg("tcp::3333")
                     .arg("-S")
                     .arg("-machine")
-                    .arg("q35");
+                    .arg("q35")
+                    .arg("-d")
+                    .arg("int");
 
                 let bios_status = bios_cmd.status().unwrap();
                 if !bios_status.success() {
