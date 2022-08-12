@@ -27,5 +27,6 @@ pub fn kphysalloc(size: usize) -> usize {
         virt += test_page.size();
     }
 
-    crate::page_align(size as u64, virt_clone)
+    // return the start address
+    virt_clone as usize
 }
