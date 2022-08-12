@@ -1,4 +1,5 @@
 pub mod frames;
+pub mod physalloc;
 
 #[allow(unused_imports)] //future-proof
 use {
