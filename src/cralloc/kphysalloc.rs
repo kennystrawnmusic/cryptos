@@ -24,7 +24,7 @@ pub fn kphysalloc(size: usize) -> usize {
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
-        virt += test_page.size() + 1;
+        virt += test_page.size();
     }
 
     crate::page_align(size as u64, virt_clone)
