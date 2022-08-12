@@ -12,7 +12,7 @@ use {
 pub fn kphysalloc(size: usize) -> usize {
     let test_addr = VirtAddr::new(size as u64);
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
-    let virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+    let mut virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
     
     // capture the original address before incrementing
     let virt_clone = virt.clone();
@@ -27,5 +27,5 @@ pub fn kphysalloc(size: usize) -> usize {
         virt += test_page.size() + 1;
     }
 
-    crate::page_align(size as u64, virt)
+    crate::page_align(size as u64, virt_clone)
 }
