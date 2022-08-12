@@ -13,13 +13,19 @@ pub fn kphysalloc(size: usize) -> usize {
     let test_addr = VirtAddr::new(size as u64);
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
     let virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+    
+    // capture the original address before incrementing
+    let virt_clone = virt.clone();
 
-    map_page!(
-        size,
-        virt,
-        Size4KiB,
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
-    );
+    for _ in 0..(crate::page_align(size as u64, virt) / test_page.size() as usize) {
+        map_page!(
+            size,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+        );
+        virt += test_page.size() + 1;
+    }
 
     crate::page_align(size as u64, virt)
 }
