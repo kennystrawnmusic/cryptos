@@ -465,22 +465,22 @@ impl HbaMem {
     pub fn init(&mut self) {
         self.global_host_control.write(1 << 31 | 1 << 1);
 
-        debug!("Initializing memory space for disk access");
-        debug!("Base host capability pointer: {:#x}", self.host_cap.read());
-        debug!(
+        info!("Initializing memory space for disk access");
+        info!("Base host capability pointer: {:#x}", self.host_cap.read());
+        info!(
             "Global host control pointer: {:#x}",
             self.global_host_control.read()
         );
-        debug!("Interrupt status: {:#x}", self.interrupt_status.read());
+        info!("Interrupt status: {:#x}", self.interrupt_status.read());
         *GLOBAL_IS.write() = Some(self.interrupt_status.read().clone());
 
-        debug!("Port implementation pointer: {:#x}", self.port_impl.read());
-        debug!("Version: {:#x}", self.version.read());
-        debug!(
+        info!("Port implementation pointer: {:#x}", self.port_impl.read());
+        info!("Version: {:#x}", self.version.read());
+        info!(
             "Extended host capability pointer: {:#x}",
             self.host_cap_ext.read()
         );
-        debug!(
+        info!(
             "BIOS/OS handoff controller pointer: {:#x}",
             self.handoff_ctrl.read()
         );

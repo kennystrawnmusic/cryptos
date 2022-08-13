@@ -16,26 +16,22 @@ use {
 // then use read_volatile and write_volatile to actually perform operations
 
 pub fn kphysmap(address: usize, size: usize) -> usize {
-    let phys_test_addr = VirtAddr::new(address as u64);
-    let phys_test_page = Page::<Size4KiB>::containing_address(phys_test_addr);
-    let mut phys = phys_test_page.start_address().as_u64();
 
-    let virt_test_addr = VirtAddr::new(phys as u64 + unsafe { get_phys_offset() });
-    let virt_test_page = Page::<Size4KiB>::containing_address(virt_test_addr);
-    let mut virt = virt_test_page.start_address().as_u64();
+    let test_addr = VirtAddr::new(address as u64 + unsafe { get_phys_offset() });
+    let test_page = Page::<Size4KiB>::containing_address(test_addr);
+    let mut virt = test_page.start_address().as_u64();
 
     // capture before incrementing
     let virt_clone = virt.clone() as usize;
 
-    for _ in 0..(crate::page_align(size.clone() as u64, virt) / virt_test_page.size() as usize) {
+    for _ in 0..(crate::page_align(size.clone() as u64, virt) / test_page.size() as usize) {
         map_page!(
-            phys,
+            address,
             virt,
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
-        phys += virt_test_page.size();
-        virt += virt_test_page.size();
+        virt += test_page.size();
     }
 
     // return start of the virtual mapping
