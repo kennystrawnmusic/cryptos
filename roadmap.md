@@ -17,3 +17,4 @@
 * USB HID — TODO (can't have a GUI without a mouse and keyboard)
 * Userland — TODO (idea is to port the Redox init, Redox coreutils, and most of the non-mission-critical Redox user-mode drivers — like network drivers, for example — over, as well as use my own terminal emulator for running Ion in emulated mode only)
 * Use of `cfg` as a means of supporting additional CPU architectures — TODO
+* Port to bootloader v. 0.11 — TODO (Phil still has a lot more work to do on that)
