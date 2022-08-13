@@ -1,5 +1,8 @@
 use super::kphysalloc::{kphysalloc, kphysmap, PageBox};
-use core::{mem::MaybeUninit, ops::{Deref, DerefMut}};
+use core::{
+    mem::MaybeUninit,
+    ops::{Deref, DerefMut},
+};
 
 pub struct Dma<T: ?Sized> {
     phys: usize,
@@ -122,13 +125,13 @@ impl<T> Dma<[MaybeUninit<T>]> {
 impl<T: ?Sized> Deref for Dma<T> {
     type Target = T;
     fn deref(&self) -> &T {
-        unsafe {&*self.virt}
+        unsafe { &*self.virt }
     }
 }
 
 impl<T: ?Sized> DerefMut for Dma<T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe {&mut *self.virt}
+        unsafe { &mut *self.virt }
     }
 }
 
