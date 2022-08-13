@@ -70,7 +70,7 @@ pub fn kphysfree(addr: usize, size: usize) {
 pub struct PageBox<T: ?Sized> {
     address: usize,
     size: usize,
-    marker: PhantomData<T>,
+    raw: *mut T,
 }
 
 impl<T> PageBox<T> {
@@ -86,7 +86,7 @@ impl<T> PageBox<T> {
         Self {
             address: virt,
             size: aligned_size,
-            marker: PhantomData,
+            raw: virt as *mut T,
         }
     }
 
