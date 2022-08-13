@@ -7,6 +7,7 @@
 
 ## Progress:
 * Basic booting — done
+* Heap allocation — done (set up immediately at the very top of the main loop)
 * Configuring of APICs — done
 * ACPI/AML table handling — done
 * AHCI driver — almost done (see [Issue #1](https://github.com/kennystrawnmusic/cryptos/issues/1) — should be done when that showstopper is fixed)
