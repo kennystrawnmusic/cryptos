@@ -8,6 +8,7 @@ pub mod structs;
 #[allow(unused_imports)]
 use {
     super::fis::{self, FisKind},
+    crate::cralloc::dma::Dma,
     crate::PCI_CONFIG,
     acpi::PciConfigRegions,
     alloc::{string::String, vec::Vec},
@@ -24,7 +25,7 @@ use {
     spin::RwLock,
     structs::*,
     syscall::io::Mmio,
-    syscall::{Dma, Io},
+    syscall::Io,
     x86_64::{
         structures::paging::{
             mapper::MapToError, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB,

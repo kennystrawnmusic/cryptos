@@ -10,13 +10,11 @@ use {
         },
         Disk,
     },
+    crate::cralloc::dma::Dma,
     crate::refactor_hba_int_err,
     byteorder::{BigEndian, ByteOrder},
     core::ptr::copy,
-    syscall::{
-        error::{Error, Result, EROFS},
-        io::Dma,
-    },
+    syscall::error::{Error, Result, EROFS},
 };
 
 pub struct SataPacketInterface {

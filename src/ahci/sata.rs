@@ -5,9 +5,9 @@ use {
         hba::structs::{HbaCmdHeader, HbaCmdTable, HbaPort},
         Disk,
     },
+    crate::cralloc::dma::Dma,
     crate::refactor_hba_int_err,
     core::ptr::copy,
-    syscall::io::Dma,
 };
 
 pub enum BufferKind<'a> {

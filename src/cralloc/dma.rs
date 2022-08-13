@@ -48,7 +48,7 @@ impl<T> Dma<T> {
         Self::from_pagebox_zeroed(pb)
     }
 
-    pub fn physical_address(&self) -> usize {
+    pub fn physical(&self) -> usize {
         self.phys
     }
 
