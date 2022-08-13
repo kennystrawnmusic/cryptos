@@ -58,6 +58,6 @@ pub fn kphysfree(addr: usize, size: usize) {
             free_flush.flush();
         }
 
-        virt -= test_page.size() as usize; // reverse order
+        virt -= to_free.size() as usize; // reverse order
     }
 }
