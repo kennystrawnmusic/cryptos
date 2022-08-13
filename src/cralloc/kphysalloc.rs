@@ -47,7 +47,8 @@ pub fn kphysfree(addr: usize, size: usize) {
         let free_addr = VirtAddr::new(virt as u64);
         let to_free = Page::<Size4KiB>::containing_address(free_addr);
 
-        let flush = if let Ok((_, free_flush)) = crate::MAPPER.get().unwrap().lock().unmap(to_free) {
+        let flush = if let Ok((_, free_flush)) = crate::MAPPER.get().unwrap().lock().unmap(to_free)
+        {
             Some(free_flush)
         } else {
             None
