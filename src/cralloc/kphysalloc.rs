@@ -36,7 +36,7 @@ pub fn kphysalloc(size: usize) -> usize {
 
 pub fn kphysfree(size: usize) {
     // same as before: use a test page to determine proper alignment
-    let test_addr = VirtAddr::new(size as u64);
+    let test_addr = VirtAddr::new(size as u64 + unsafe { get_phys_offset() });
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
     let mut virt = (test_page.start_address().as_u64() as usize)
         + crate::page_align(size as u64, test_addr.as_u64());
