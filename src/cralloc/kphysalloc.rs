@@ -79,11 +79,15 @@ impl<T> PageBox<T> {
         let test_addr = VirtAddr::new(address as u64);
         let test_page = Page::<Size4KiB>::containing_address(test_addr);
         let phys = test_page.start_address().as_u64();
-        
+
         let virt = (phys + get_phys_offset()) as usize;
         let aligned_size = crate::page_align(size as u64, virt as u64);
 
-        Self { address: virt, size: aligned_size, marker: PhantomData }
+        Self {
+            address: virt,
+            size: aligned_size,
+            marker: PhantomData,
+        }
     }
 
     pub fn address(&self) -> usize {
@@ -96,7 +100,7 @@ impl<T> PageBox<T> {
 
     pub fn new(size: usize) -> syscall::Result<Self> {
         let addr = kphysalloc(size);
-        Ok(unsafe {Self::from_raw_parts(addr, size)})
+        Ok(unsafe { Self::from_raw_parts(addr, size) })
     }
 }
 
