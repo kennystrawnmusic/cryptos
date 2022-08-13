@@ -43,7 +43,7 @@ pub fn kphysfree(size: usize) {
     let mut _virt = (test_page.start_address().as_u64() as usize)
         + crate::page_align(size as u64, test_addr.as_u64());
 
-    for p in (size / (test_page.size() as usize))..0 {
+    for p in (size / (test_page.size() as usize))..1 {
         let free_addr = VirtAddr::new((size as u64 + ((test_page.size() as u64) * (p as u64))) as u64);
         let to_free = Page::<Size4KiB>::containing_address(free_addr);
 
