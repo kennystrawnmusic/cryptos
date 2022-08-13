@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use x86_64::structures::paging::mapper::UnmapError;
 
 use {
@@ -65,21 +67,23 @@ pub fn kphysfree(addr: usize, size: usize) {
 /// RAII guard of a page mapping.
 /// Does a lot of automatic page aligning behind the scenes to ensure better memory safety than `redox_syscall`'s PhysBox does
 #[derive(Debug)]
-pub struct PageBox {
+pub struct PageBox<T: ?Sized> {
     address: usize,
     size: usize,
+    marker: PhantomData<T>,
 }
 
-impl PageBox {
+impl<T> PageBox<T> {
     pub unsafe fn from_raw_parts(address: usize, size: usize) -> Self {
         // again: use a test page to get page alignment out of the way
         let test_addr = VirtAddr::new(address as u64);
         let test_page = Page::<Size4KiB>::containing_address(test_addr);
+        let phys = test_page.start_address().as_u64();
         
-        let virt = (test_page.start_address().as_u64() + get_phys_offset()) as usize;
+        let virt = (phys + get_phys_offset()) as usize;
         let aligned_size = crate::page_align(size as u64, virt as u64);
 
-        Self { address: virt, size: aligned_size }
+        Self { address: virt, size: aligned_size, marker: PhantomData }
     }
 
     pub fn address(&self) -> usize {
@@ -96,7 +100,7 @@ impl PageBox {
     }
 }
 
-impl Drop for PageBox {
+impl<T: ?Sized> Drop for PageBox<T> {
     fn drop(&mut self) {
         kphysfree(self.address, self.size);
     }
