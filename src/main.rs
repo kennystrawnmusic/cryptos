@@ -126,6 +126,19 @@ pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
 pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
 
+pub fn get_next_usable_frame() -> PhysFrame {
+    FRAME_ALLOCATOR
+        .get()
+        .as_ref()
+        .unwrap()
+        .lock()
+        .usable()
+        .next()
+        .clone()
+        .expect("Out of memory")
+        .clone()
+}
+
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
     set_logger(p).expect("Logger has already been set!");
