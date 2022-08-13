@@ -9,7 +9,7 @@
 * Basic booting — done
 * Configuring of APICs — done
 * ACPI/AML table handling — done
-* AHCI driver — almost done (see Issue #1 — should be done when that showstopper is fixed)
+* AHCI driver — almost done (see [Issue #1] — should be done when that showstopper is fixed)
 * Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
 * Graphics — TODO (going to define my own wrapper around the framebuffer structure provided by the `bootloader` crate that implements `Clone` as a means of allowing compositing)
 * Userland — TODO (idea is to port the Redox init, Redox coreutils, and most of the non-mission-critical Redox user-mode drivers — like network drivers, for example — over, as well as use my own terminal emulator for running Ion in emulated mode only)
