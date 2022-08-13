@@ -1,8 +1,11 @@
 use {
-    crate::{map_page, get_phys_offset},
-    x86_64::{structures::paging::{Mapper, Page, PageTableFlags, Size4KiB},VirtAddr},
+    crate::{get_phys_offset, map_page},
     core::ptr::{read_volatile, write_volatile},
     // TODO
+    x86_64::{
+        structures::paging::{Mapper, Page, PageTableFlags, Size4KiB},
+        VirtAddr,
+    },
 };
 
 // Implementation objective: use map_page! macro along with more test pages to create physical mappings,
@@ -13,7 +16,7 @@ pub fn kphysalloc(size: usize) -> usize {
     let test_addr = VirtAddr::new(size as u64);
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
     let mut virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
-    
+
     // capture the original address before incrementing
     let virt_clone = virt.clone();
 
@@ -35,7 +38,8 @@ pub fn kphysfree(size: usize) {
     // same as before: use a test page to determine proper alignment
     let test_addr = VirtAddr::new(size as u64);
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
-    let mut virt = (test_page.start_address().as_u64() as usize) + crate::page_align(size as u64, test_addr.as_u64());
+    let mut virt = (test_page.start_address().as_u64() as usize)
+        + crate::page_align(size as u64, test_addr.as_u64());
 
     for _ in (size / crate::page_align(size as u64, test_addr.as_u64()))..0 {
         map_page!(

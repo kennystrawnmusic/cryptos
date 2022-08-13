@@ -18,6 +18,7 @@ pub mod exceptions;
 pub mod interrupts;
 
 use {
+    crate::interrupts::IDT,
     acpi::{
         sdt::Signature, AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel,
         PciConfigRegions, PhysicalMapping, PlatformInfo, RsdpError,
@@ -48,7 +49,6 @@ use {
         frames::{map_memory, Falloc},
         heap_init,
     },
-    crate::interrupts::IDT,
     log::*,
     pcics::header::Header,
     printk::LockedPrintk,
@@ -76,7 +76,10 @@ use pcics::header::{HeaderType, InterruptPin};
 use spin::RwLock;
 pub use syscall;
 use syscall::Mmio;
-use x86_64::{structures::paging::{Size1GiB, Size2MiB}, instructions::port::Port};
+use x86_64::{
+    instructions::port::Port,
+    structures::paging::{Size1GiB, Size2MiB},
+};
 
 pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
@@ -216,7 +219,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) -> Option<[(u32, InterruptP
                     (0, InterruptPin::IntA),
                     (0, InterruptPin::IntB),
                     (0, InterruptPin::IntC),
-                    (0, InterruptPin::IntD)
+                    (0, InterruptPin::IntD),
                 ];
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntA, &mut aml_ctx) {
                     info!("IRQ descriptor A: {:#?}", desc);
@@ -343,10 +346,18 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
 
             if arr.is_some() {
                 match header.interrupt_pin {
-                    InterruptPin::IntA => IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci),
-                    InterruptPin::IntB => IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci),
-                    InterruptPin::IntC => IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci),
-                    InterruptPin::IntD => IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci),
+                    InterruptPin::IntA => {
+                        IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntB => {
+                        IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntC => {
+                        IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntD => {
+                        IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
                     _ => panic!("Invalid interrupt pin"),
                 };
             }
