@@ -43,9 +43,9 @@ pub fn kphysfree(size: usize) {
     let mut _virt = (test_page.start_address().as_u64() as usize)
         + crate::page_align(size as u64, test_addr.as_u64());
 
-    for p in (size / crate::page_align(size as u64, test_addr.as_u64()))..0 {
-        let test_addr_inner = VirtAddr::new((size as u64 + ((test_page.size() as u64) * (p as u64))) as u64);
-        let to_free = Page::<Size4KiB>::containing_address(test_addr_inner);
+    for p in (size / (test_page.size() as usize))..0 {
+        let free_addr = VirtAddr::new((size as u64 + ((test_page.size() as u64) * (p as u64))) as u64);
+        let to_free = Page::<Size4KiB>::containing_address(free_addr);
 
         let flush = if let Ok((_, free_flush)) = crate::MAPPER.get().unwrap().lock().unmap(to_free) {
             Some(free_flush)
