@@ -13,5 +13,5 @@
 * AHCI driver — almost done (see [Issue #1](https://github.com/kennystrawnmusic/cryptos/issues/1) — should be done when that showstopper is fixed)
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
-* Graphics — TODO (going to define my own wrapper around the framebuffer structure provided by the `bootloader` crate that implements `Clone` as a means of allowing compositing)
+* Graphics — TODO (going to define my own wrapper around the framebuffer structure provided by the `bootloader` crate that implements `Clone` as a compositor backend)
 * Userland — TODO (idea is to port the Redox init, Redox coreutils, and most of the non-mission-critical Redox user-mode drivers — like network drivers, for example — over, as well as use my own terminal emulator for running Ion in emulated mode only)
