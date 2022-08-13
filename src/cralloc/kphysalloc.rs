@@ -95,3 +95,9 @@ impl PageBox {
         Ok(unsafe {Self::from_raw_parts(addr, size)})
     }
 }
+
+impl Drop for PageBox {
+    fn drop(&mut self) {
+        kphysfree(self.address, self.size);
+    }
+}
