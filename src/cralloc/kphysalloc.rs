@@ -42,7 +42,7 @@ pub fn kphysfree(size: usize) {
             size,
             virt,
             Size4KiB,
-            PageTableFlags::empty() // mapping with empty flags = freeing, does it not?
+            PageTableFlags::empty() // clear all flags, including the ones indicating that the page exists
         );
         virt -= test_page.size() as usize; // reverse order
     }
