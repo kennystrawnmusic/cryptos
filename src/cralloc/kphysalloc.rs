@@ -36,15 +36,15 @@ pub fn kphysalloc(size: usize) -> usize {
     virt_clone as usize
 }
 
-pub fn kphysfree(size: usize) {
+pub fn kphysfree(addr: usize, size: usize) {
     // same as before: use a test page to determine proper alignment
-    let test_addr = VirtAddr::new(size as u64 + unsafe { get_phys_offset() });
+    let test_addr = VirtAddr::new(addr as u64 + size as u64 + unsafe { get_phys_offset() });
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
-    let mut _virt = (test_page.start_address().as_u64() as usize)
+    let mut virt = (test_page.start_address().as_u64() as usize)
         + crate::page_align(size as u64, test_addr.as_u64());
 
-    for p in (size / (test_page.size() as usize))..1 {
-        let free_addr = VirtAddr::new((size as u64 + ((test_page.size() as u64) * (p as u64))) as u64);
+    for _ in (size / (test_page.size() as usize))..0 {
+        let free_addr = VirtAddr::new(virt as u64);
         let to_free = Page::<Size4KiB>::containing_address(free_addr);
 
         let flush = if let Ok((_, free_flush)) = crate::MAPPER.get().unwrap().lock().unmap(to_free) {
@@ -57,6 +57,6 @@ pub fn kphysfree(size: usize) {
             free_flush.flush();
         }
 
-        _virt -= test_page.size() as usize; // reverse order
+        virt -= test_page.size() as usize; // reverse order
     }
 }
