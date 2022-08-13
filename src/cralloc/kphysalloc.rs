@@ -15,9 +15,9 @@ use {
 // Completion ETA: 8/13/2022 4PM PDT (UTC-7)
 
 pub fn kphysalloc(size: usize) -> usize {
-    let test_addr = VirtAddr::new(size as u64);
+    let test_addr = VirtAddr::new(size as u64 + unsafe { get_phys_offset() });
     let test_page = Page::<Size4KiB>::containing_address(test_addr);
-    let mut virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+    let mut virt = test_page.start_address().as_u64();
 
     // capture the original address before incrementing
     let virt_clone = virt.clone();
@@ -59,5 +59,39 @@ pub fn kphysfree(addr: usize, size: usize) {
         }
 
         virt -= to_free.size() as usize; // reverse order
+    }
+}
+
+/// RAII guard of a page mapping.
+/// Does a lot of automatic page aligning behind the scenes to ensure better memory safety than `redox_syscall`'s PhysBox does
+#[derive(Debug)]
+pub struct PageBox {
+    address: usize,
+    size: usize,
+}
+
+impl PageBox {
+    pub unsafe fn from_raw_parts(address: usize, size: usize) -> Self {
+        // again: use a test page to get page alignment out of the way
+        let test_addr = VirtAddr::new(address as u64);
+        let test_page = Page::<Size4KiB>::containing_address(test_addr);
+        
+        let virt = (test_page.start_address().as_u64() + get_phys_offset()) as usize;
+        let aligned_size = crate::page_align(size as u64, virt as u64);
+
+        Self { address: virt, size: aligned_size }
+    }
+
+    pub fn address(&self) -> usize {
+        self.address
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    pub fn new(size: usize) -> syscall::Result<Self> {
+        let addr = kphysalloc(size);
+        Ok(unsafe {Self::from_raw_parts(addr, size)})
     }
 }
