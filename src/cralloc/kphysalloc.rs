@@ -30,3 +30,20 @@ pub fn kphysalloc(size: usize) -> usize {
     // return the start address
     virt_clone as usize
 }
+
+pub fn kphysfree(size: usize) {
+    // same as before: use a test page to determine proper alignment
+    let test_addr = VirtAddr::new(size as u64);
+    let test_page = Page::<Size4KiB>::containing_address(test_addr);
+    let mut virt = (test_page.start_address().as_u64() as usize) + crate::page_align(size as u64, test_addr.as_u64());
+
+    for _ in (size / crate::page_align(size as u64, test_addr.as_u64()))..0 {
+        map_page!(
+            size,
+            virt,
+            Size4KiB,
+            PageTableFlags::empty() // mapping with empty flags = freeing, does it not?
+        );
+        virt -= test_page.size() as usize; // reverse order
+    }
+}
