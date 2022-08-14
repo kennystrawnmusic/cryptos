@@ -235,7 +235,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) -> Option<[(u32, InterruptP
                     (0, InterruptPin::IntD),
                 ];
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntA, &mut aml_ctx) {
-                    info!("IRQ descriptor A: {:#?}", desc);
+                    debug!("IRQ descriptor A: {:#?}", desc);
                     a[0] = (desc.irq, InterruptPin::IntA);
                 }
                 if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntB, &mut aml_ctx) {
@@ -323,8 +323,6 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
     INTERRUPT_MODEL.get_or_init(move || interrupts);
     PCI_CONFIG.get_or_init(move || mcfg.clone());
 
-    crate::interrupts::init();
-
     debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
     debug!("TLS template: {:#?}", boot_info.tls_template);
@@ -374,6 +372,8 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
                     _ => panic!("Invalid interrupt pin"),
                 };
             }
+
+            crate::interrupts::init();
 
             info!("Interrupt pin: {:#?}", header.interrupt_pin);
 
