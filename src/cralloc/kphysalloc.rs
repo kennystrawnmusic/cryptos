@@ -39,12 +39,9 @@ pub fn kphysmap(address: usize, size: usize) -> usize {
 }
 
 pub fn kphysalloc(size: usize) -> (usize, usize) {
-    // get physical address from next available usable page frame
-    let phys_raw = crate::get_next_usable_frame().start_address().as_u64();
-
-    let phys_test_addr = VirtAddr::new(phys_raw);
-    let phys_test_page = Page::<Size4KiB>::containing_address(phys_test_addr);
-    let mut phys = phys_test_page.start_address().as_u64();
+    // use a raw pointer to "size" to get the physical address to map
+    let size_ptr = size as *mut u8;
+    let phys = size_ptr as usize as u64;
 
     let virt_test_addr = VirtAddr::new(phys as u64 + unsafe { get_phys_offset() });
     let virt_test_page = Page::<Size4KiB>::containing_address(virt_test_addr);
@@ -61,7 +58,6 @@ pub fn kphysalloc(size: usize) -> (usize, usize) {
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
-        phys += virt_test_page.size();
         virt += virt_test_page.size();
     }
 
