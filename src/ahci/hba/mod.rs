@@ -8,7 +8,6 @@ pub mod structs;
 #[allow(unused_imports)]
 use {
     super::fis::{self, FisKind},
-    crate::cralloc::dma::Dma,
     crate::PCI_CONFIG,
     acpi::PciConfigRegions,
     alloc::{string::String, vec::Vec},
@@ -101,26 +100,26 @@ impl HbaPort {
 
     pub fn init(
         &mut self,
-        cmd_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
-        fis_base: &mut Dma<[u8; 256]>,
+        cmd_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
+        fis_base: &mut [u8; 256],
     ) {
         self.stop();
 
         // Populate command table
         for i in 0..32 {
             let header = &mut cmd_list[i];
-            header.cmd_table_base.write(tables[i].physical() as u64);
+            header.cmd_table_base.write(&mut tables[i] as *mut _ as usize as u64);
             header.prdt_len.write(0);
         }
 
         // Populate command list
-        self.cli_base[0].write(cmd_list.physical() as u32);
-        self.cli_base[1].write(((cmd_list.physical() as u64) >> 32) as u32);
+        self.cli_base[0].write(cmd_list as *mut _ as usize as u32);
+        self.cli_base[1].write(((cmd_list as *mut _ as usize as u64) >> 32) as u32);
 
         // Populate FIS registers
-        self.fis_base[0].write(fis_base.physical() as u32);
-        self.fis_base[1].write(((fis_base.physical() as u64) >> 32) as u32);
+        self.fis_base[0].write(fis_base as *mut _ as usize as u32);
+        self.fis_base[1].write(((fis_base as *mut _ as usize as u64) >> 32) as u32);
 
         // Retrieve and write back the interrupt status
         let interrupt_status = self.interrupt_status.read();
@@ -148,8 +147,8 @@ impl HbaPort {
 
     pub fn sata_start<F>(
         &mut self,
-        cmd_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
+        cmd_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
         callback: F,
     ) -> Option<u32>
     where
@@ -168,7 +167,7 @@ impl HbaPort {
                     .fis_len
                     .write(((size_of::<fis::RegHost2Dev>)() / size_of::<u32>()) as u8);
 
-                let table = &mut tables[s as usize];
+                let mut table = &mut tables[s as usize];
                 unsafe {
                     write_bytes(
                         table.deref_mut() as *mut HbaCmdTable as *mut u8,
@@ -243,10 +242,10 @@ impl HbaPort {
     unsafe fn id(
         &mut self,
         command: u8,
-        command_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
+        command_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
     ) -> Option<u64> {
-        let dest = Dma::<[u16; 256]>::new([0; 256]).unwrap();
+        let mut dest: [u16; 256] = [0; 256];
 
         let slot = self.sata_start(
             command_list,
@@ -255,7 +254,7 @@ impl HbaPort {
                 header.prdt_len.write(1);
 
                 let entry = &mut entries[0];
-                entry.data_base.write(dest.physical() as u64);
+                entry.data_base.write(&mut dest as *mut _ as usize as u64);
                 entry.byte_count.write(512 | 1);
 
                 fis_command.pmux.write(1 << 7);
@@ -333,16 +332,16 @@ impl HbaPort {
 
     pub fn identify(
         &mut self,
-        command_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
+        command_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
     ) -> Option<u64> {
         unsafe { self.id(ID_ATA_CMD, command_list, tables) }
     }
 
     pub fn identify_packet(
         &mut self,
-        command_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
+        command_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
     ) -> Option<u64> {
         unsafe { self.id(ID_ATA_PACKET, command_list, tables) }
     }
@@ -352,9 +351,9 @@ impl HbaPort {
         block: u64,
         sectors: usize,
         write: bool,
-        cmd_list: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
-        buffer: &mut Dma<[u8; 256 * 512]>,
+        cmd_list: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
+        buffer: &mut [u8; 256 * 512],
     ) -> Option<u32> {
         log::trace!(
             "AHCI control address: {:#x}",
@@ -385,7 +384,7 @@ impl HbaPort {
                 header.prdt_len.write(1);
 
                 let prdt_entry = &mut prdt_entries[0];
-                prdt_entry.data_base.write(buffer.physical() as u64);
+                prdt_entry.data_base.write(buffer as *mut _ as usize as u64);
                 prdt_entry.byte_count.write(((sectors * 512) as u32) | 1);
 
                 fis_cmd.pmux.write(1 << 7);
@@ -415,9 +414,9 @@ impl HbaPort {
         &mut self,
         command: &[u8; 16],
         len: u32,
-        list_base: &mut Dma<[HbaCmdHeader; 32]>,
-        tables: &mut [Dma<HbaCmdTable>; 32],
-        buffer: &mut Dma<[u8; 256 * 512]>,
+        list_base: &mut [HbaCmdHeader; 32],
+        tables: &mut [HbaCmdTable; 32],
+        buffer: &mut [u8; 256 * 512],
     ) -> Result<(), InterruptError> {
         let slot = self
             .sata_start(
@@ -430,7 +429,7 @@ impl HbaPort {
                     header.prdt_len.write(1);
 
                     let prdt_entry = &mut prdt_entries[0];
-                    prdt_entry.data_base.write(buffer.physical() as u64);
+                    prdt_entry.data_base.write(buffer as *mut _ as usize as u64);
                     prdt_entry.byte_count.write(len - 1);
 
                     fis_cmd.pmux.write(1 << 7);

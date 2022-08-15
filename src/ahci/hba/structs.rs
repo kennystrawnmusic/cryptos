@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use bitflags::bitflags;
 use syscall::io::Mmio;
 
@@ -47,12 +48,57 @@ pub struct HbaPrdtEntry {
     pub byte_count: Mmio<u32>,
 }
 
+impl HbaPrdtEntry {
+    pub fn zeroed() -> Self {
+        Self {
+            data_base: unsafe { Mmio::zeroed() },
+            _rsvd0: unsafe { Mmio::zeroed() },
+            byte_count: unsafe { Mmio::zeroed() },
+        }
+    }
+}
+
 #[repr(C, packed)]
 pub struct HbaCmdTable {
     pub fis_command: [Mmio<u8>; 64],
     pub atapi_command: [Mmio<u8>; 16],
     pub _rsvd0: [Mmio<u8>; 48],
     pub prdt_entry: [HbaPrdtEntry; 65536],
+}
+
+impl HbaCmdTable {
+    pub fn zeroed() -> Self {
+        let mut fis_command: [_; 64] = (0..64)
+            .map(|mmio| unsafe { Mmio::zeroed() })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
+
+        let mut atapi_command: [_; 16] = (0..16)
+            .map(|mmio| unsafe { Mmio::zeroed() })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
+
+        let mut _rsvd0: [_; 48] = (0..48)
+            .map(|mmio| unsafe { Mmio::zeroed() })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
+
+        let prdt_entry: [_; 65536] = (0..65536)
+            .map(|_| HbaPrdtEntry::zeroed())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
+
+        Self {
+            fis_command,
+            atapi_command,
+            _rsvd0,
+            prdt_entry,
+        }
+    }
 }
 
 #[repr(C, packed)]
@@ -63,6 +109,24 @@ pub struct HbaCmdHeader {
     pub _prdbc: Mmio<u32>,
     pub cmd_table_base: Mmio<u64>,
     pub _rsvd0: [Mmio<u32>; 4],
+}
+
+impl HbaCmdHeader {
+    pub fn zeroed() -> Self {
+        Self {
+            fis_len: unsafe { Mmio::zeroed() },
+            _pmux: unsafe { Mmio::zeroed() },
+            prdt_len: unsafe { Mmio::zeroed() },
+            _prdbc: unsafe { Mmio::zeroed() },
+            cmd_table_base: unsafe { Mmio::zeroed() },
+            _rsvd0: [
+                unsafe { Mmio::zeroed() },
+                unsafe { Mmio::zeroed() },
+                unsafe { Mmio::zeroed() },
+                unsafe { Mmio::zeroed() },
+            ],
+        }
+    }
 }
 
 #[derive(Debug)]

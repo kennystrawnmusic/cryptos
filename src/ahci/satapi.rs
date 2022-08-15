@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+use core::mem::MaybeUninit;
+
+use alloc::vec::Vec;
 use syscall::Io;
 
 use {
@@ -10,7 +13,6 @@ use {
         },
         Disk,
     },
-    crate::cralloc::dma::Dma,
     crate::refactor_hba_int_err,
     byteorder::{BigEndian, ByteOrder},
     core::ptr::copy,
@@ -21,66 +23,49 @@ pub struct SataPacketInterface {
     id: usize,
     port: &'static mut HbaPort,
     len: u64,
-    cmd_list: Dma<[HbaCmdHeader; 32]>,
-    tables: [Dma<HbaCmdTable>; 32],
-    _fis_base: Dma<[u8; 256]>,
-    buffer: Dma<[u8; 256 * 512]>,
+    cmd_list: [HbaCmdHeader; 32],
+    tables: [HbaCmdTable; 32],
+    _fis_base: [u8; 256],
+    buffer: [u8; 256 * 512],
 }
 
 impl SataPacketInterface {
     pub fn new(id: usize, port: &'static mut HbaPort) -> Result<Self> {
-        let mut cmd_list = unsafe { Dma::zeroed()?.assume_init() };
+        let mut cmd_list_new: [_; 32] = (0..32)
+            .map(|_| HbaCmdHeader::zeroed())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
 
-        let mut tables = [
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-            unsafe { Dma::zeroed()?.assume_init() },
-        ];
+        let mut tables_new: [_; 32] = (0..32)
+            .map(|_| HbaCmdTable::zeroed())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
 
-        let mut fis_base = unsafe { Dma::zeroed()?.assume_init() };
-        let buffer = unsafe { Dma::zeroed()?.assume_init() };
+        let mut fis_base_new: [u8; 256] = (0..256)
+            .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
+        let mut buffer_new: [u8; 256 * 512] = (0..256 * 512)
+            .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_else(|_| unreachable!());
 
-        port.init(&mut cmd_list, &mut tables, &mut fis_base);
+        port.init(&mut cmd_list_new, &mut tables_new, &mut fis_base_new);
 
-        let len = port.identify(&mut cmd_list, &mut tables).unwrap_or(0);
+        let len = port.identify(&mut cmd_list_new, &mut tables_new).unwrap_or(0);
 
         Ok(SataPacketInterface {
             id,
             port,
             len,
-            cmd_list,
-            tables,
-            _fis_base: fis_base,
-            buffer,
+            cmd_list: cmd_list_new,
+            tables: tables_new,
+            _fis_base: fis_base_new,
+            buffer: buffer_new,
         })
     }
     pub fn read_cap(&mut self) -> Result<[u32; 2]> {

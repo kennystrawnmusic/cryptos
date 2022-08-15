@@ -1,6 +1,4 @@
-pub mod dma;
 pub mod frames;
-pub mod kphysalloc;
 
 #[allow(unused_imports)] //future-proof
 use {
