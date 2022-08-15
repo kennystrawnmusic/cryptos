@@ -31,41 +31,41 @@ pub struct SataPacketInterface {
 
 impl SataPacketInterface {
     pub fn new(id: usize, port: &'static mut HbaPort) -> Result<Self> {
-        let mut cmd_list_new: [_; 32] = (0..32)
+        let mut cmd_list: [_; 32] = (0..32)
             .map(|_| HbaCmdHeader::zeroed())
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
 
-        let mut tables_new: [_; 32] = (0..32)
+        let mut tables: [_; 32] = (0..32)
             .map(|_| HbaCmdTable::zeroed())
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
 
-        let mut fis_base_new: [u8; 256] = (0..256)
+        let mut fis_base: [u8; 256] = (0..256)
             .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
-        let buffer_new: [u8; 256 * 512] = (0..256 * 512)
+        let buffer: [u8; 256 * 512] = (0..256 * 512)
             .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
 
-        port.init(&mut cmd_list_new, &mut tables_new, &mut fis_base_new);
+        port.init(&mut cmd_list, &mut tables, &mut fis_base);
 
-        let len = port.identify(&mut cmd_list_new, &mut tables_new).unwrap_or(0);
+        let len = port.identify(&mut cmd_list, &mut tables).unwrap_or(0);
 
         Ok(SataPacketInterface {
             id,
             port,
             len,
-            cmd_list: cmd_list_new,
-            tables: tables_new,
-            _fis_base: fis_base_new,
-            buffer: buffer_new,
+            cmd_list,
+            tables,
+            _fis_base: fis_base,
+            buffer,
         })
     }
     pub fn read_cap(&mut self) -> Result<[u32; 2]> {
