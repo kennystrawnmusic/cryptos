@@ -143,7 +143,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "rm Cargo.lock && cargo clean && cargo bin && cargo run-efi"
+                "sudo chmod -R a+rw /opt/rust && rm Cargo.lock && cargo clean && cargo bin && cargo run-efi"
             ],
             "group": {
                 "kind": "build",
