@@ -37,7 +37,7 @@ lazy_static! {
                 .set_handler_fn(double_fault)
                 .set_stack_index(crate::exceptions::DOUBLE_FAULT_STACK_INDEX)
         };
-        idt.page_fault.set_handler_fn(page_fault);
+        unsafe { idt.page_fault.set_handler_fn(page_fault).set_stack_index(crate::exceptions::PAGE_FAULT_STACK_INDEX); }
         idt.divide_error.set_handler_fn(sigfpe);
         idt.invalid_tss.set_handler_fn(invalid_tss);
         idt.segment_not_present.set_handler_fn(sigbus);

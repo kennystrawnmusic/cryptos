@@ -23,6 +23,7 @@ pub struct Selectors {
 }
 
 pub const DOUBLE_FAULT_STACK_INDEX: u16 = 0;
+pub const PAGE_FAULT_STACK_INDEX: u16 = 1;
 
 lazy_static! {
     pub static ref TSS: TaskStateSegment = {
