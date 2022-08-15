@@ -1,6 +1,40 @@
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use syscall::io::Mmio;
+use syscall::io::Io;
+use core::{mem::MaybeUninit, ptr::{addr_of, addr_of_mut}, ops::{BitAnd, BitOr, Not}};
+
+#[repr(packed)]
+pub struct Mmio<T>(MaybeUninit<T>);
+
+impl<T> Mmio<T> {
+    pub unsafe fn uninit() -> Self {
+        Self(MaybeUninit::uninit())
+    }
+
+    pub unsafe fn zeroed() -> Self {
+        Self(MaybeUninit::zeroed().assume_init())
+    }
+
+    pub const fn from(value: T) -> Self {
+        Self(MaybeUninit::new(value))
+    }
+
+    pub fn new() -> Self {
+        unsafe { Self::zeroed() }
+    }
+}
+
+impl<T> Io for Mmio<T> where T: Copy + PartialEq + BitAnd<Output = T> + BitOr<Output = T> + Not<Output = T> {
+    type Value = T;
+
+    fn read(&self) -> Self::Value {
+        unsafe { core::ptr::read_volatile(addr_of!(self.0).cast::<T>()) }
+    }
+
+    fn write(&mut self, value: Self::Value) {
+        unsafe { core::ptr::write_volatile(addr_of_mut!(self.0).cast::<T>(), value) }
+    }
+}
 
 #[repr(C, packed)]
 pub struct HbaPort {

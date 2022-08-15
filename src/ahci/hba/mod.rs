@@ -23,8 +23,7 @@ use {
     log::{error, info, trace},
     spin::RwLock,
     structs::*,
-    syscall::io::Mmio,
-    syscall::Io,
+    syscall::io::Io,
     x86_64::{
         structures::paging::{
             mapper::MapToError, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB,
