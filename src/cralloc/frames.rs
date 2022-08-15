@@ -95,5 +95,44 @@ macro_rules! map_page {
     };
 }
 
+#[macro_export]
+macro_rules! map_page_from {
+    ($phys:expr, $virt:expr, $size:ty, $flags:expr) => {
+        // macros expect everything to be imported each time they're used in a new file, so best to hardcode paths
+        let frame = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys as u64));
+        let page = x86_64::structures::paging::Page::<$size>::from_start_address(x86_64::VirtAddr::new($virt as u64)).unwrap();
+
+        // suppress warnings if this macro is called from an unsafe fn
+        #[allow(unused_unsafe)]
+        let res = unsafe {
+            crate::MAPPER.get().unwrap().lock().map_to(
+                page,
+                frame,
+                $flags,
+                &mut *crate::FRAME_ALLOCATOR.get().unwrap().lock(),
+            )
+        };
+
+        let flush = match res{
+            Ok(flush) => Some(flush),
+            Err(e) => match e {
+                x86_64::structures::paging::mapper::MapToError::FrameAllocationFailed => panic!("Out of memory"),
+                x86_64::structures::paging::mapper::MapToError::PageAlreadyMapped(_) => {
+                    log::debug!("Already have a page here; skipping mapping");
+                    None
+                }
+                x86_64::structures::paging::mapper::MapToError::ParentEntryHugePage => {
+                    log::debug!("Already have a huge page here; skipping mapping");
+                    None
+                }
+            },
+        };
+
+        if let Some(flush) = flush {
+            flush.flush();
+        }
+    };
+}
+
 unsafe impl Send for Falloc {}
 unsafe impl Sync for Falloc {}
