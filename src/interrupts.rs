@@ -221,12 +221,12 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
     };
 
     if let Some(seg) = is_caused_by_np {
-        error!(
+        panic!(
             "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
             seg, frame
         );
     } else {
-        error!(
+        panic!(
             "Stack segment fault of unknown cause\nBacktrace: {:#?}",
             frame
         );
@@ -239,12 +239,12 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
         sel => Some(sel),
     };
     if let Some(code) = is_seg_related {
-        error!(
+        panic!(
             "Segment selector at index {:#?} caused a general protection fault\nBacktrace: {:#?}",
             code, frame
         );
     } else {
-        error!(
+        panic!(
             "General protection fault of unknown cause\nBacktrace: {:#?}",
             frame
         )
