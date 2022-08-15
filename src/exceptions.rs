@@ -24,6 +24,11 @@ pub struct Selectors {
 
 pub const DOUBLE_FAULT_STACK_INDEX: u16 = 0;
 pub const PAGE_FAULT_STACK_INDEX: u16 = 1;
+pub const INVALID_TSS_STACK_INDEX: u16 = 2;
+pub const DIV_ERR_STACK_INDEX: u16 = 3;
+pub const SIGBUS_STACK_INDEX: u16 = 4;
+pub const SIGSEGV_STACK_INDEX: u16 = 5;
+pub const GPF_STACK_INDEX: u16 = 6;
 
 lazy_static! {
     pub static ref TSS: TaskStateSegment = {

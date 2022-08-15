@@ -108,7 +108,9 @@ impl HbaPort {
         // Populate command table
         for i in 0..32 {
             let header = &mut cmd_list[i];
-            header.cmd_table_base.write(&mut tables[i] as *mut _ as usize as u64);
+            header
+                .cmd_table_base
+                .write(&mut tables[i] as *mut _ as usize as u64);
             header.prdt_len.write(0);
         }
 

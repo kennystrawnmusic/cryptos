@@ -1,7 +1,11 @@
 use alloc::vec::Vec;
 use bitflags::bitflags;
+use core::{
+    mem::MaybeUninit,
+    ops::{BitAnd, BitOr, Not},
+    ptr::{addr_of, addr_of_mut},
+};
 use syscall::io::Io;
-use core::{mem::MaybeUninit, ptr::{addr_of, addr_of_mut}, ops::{BitAnd, BitOr, Not}};
 
 #[repr(packed)]
 pub struct Mmio<T>(MaybeUninit<T>);
@@ -24,7 +28,10 @@ impl<T> Mmio<T> {
     }
 }
 
-impl<T> Io for Mmio<T> where T: Copy + PartialEq + BitAnd<Output = T> + BitOr<Output = T> + Not<Output = T> {
+impl<T> Io for Mmio<T>
+where
+    T: Copy + PartialEq + BitAnd<Output = T> + BitOr<Output = T> + Not<Output = T>,
+{
     type Value = T;
 
     fn read(&self) -> Self::Value {

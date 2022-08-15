@@ -6,9 +6,9 @@ use {
         Disk,
     },
     crate::refactor_hba_int_err,
-    core::ptr::copy,
     alloc::vec::Vec,
     core::mem::MaybeUninit,
+    core::ptr::copy,
 };
 
 pub enum BufferKind<'a> {

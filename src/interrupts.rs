@@ -35,15 +35,28 @@ lazy_static! {
         unsafe {
             idt.double_fault
                 .set_handler_fn(double_fault)
-                .set_stack_index(crate::exceptions::DOUBLE_FAULT_STACK_INDEX)
-        };
-        unsafe { idt.page_fault.set_handler_fn(page_fault).set_stack_index(crate::exceptions::PAGE_FAULT_STACK_INDEX); }
-        idt.divide_error.set_handler_fn(sigfpe);
-        idt.invalid_tss.set_handler_fn(invalid_tss);
-        idt.segment_not_present.set_handler_fn(sigbus);
-        idt.stack_segment_fault.set_handler_fn(sigsegv);
-        idt.general_protection_fault
-            .set_handler_fn(general_protection);
+                .set_stack_index(crate::exceptions::DOUBLE_FAULT_STACK_INDEX);
+
+            idt.page_fault
+                .set_handler_fn(page_fault)
+                .set_stack_index(crate::exceptions::PAGE_FAULT_STACK_INDEX);
+            idt.divide_error
+                .set_handler_fn(sigfpe)
+                .set_stack_index(crate::exceptions::DIV_ERR_STACK_INDEX);
+            idt.invalid_tss
+                .set_handler_fn(invalid_tss)
+                .set_stack_index(crate::exceptions::INVALID_TSS_STACK_INDEX);
+            idt.segment_not_present
+                .set_handler_fn(sigbus)
+                .set_stack_index(crate::exceptions::SIGBUS_STACK_INDEX);
+            idt.stack_segment_fault
+                .set_handler_fn(sigsegv)
+                .set_stack_index(crate::exceptions::SIGSEGV_STACK_INDEX);
+            idt.general_protection_fault
+                .set_handler_fn(general_protection)
+                .set_stack_index(crate::exceptions::GPF_STACK_INDEX);
+        }
+
         idt.breakpoint.set_handler_fn(breakpoint);
         idt.bound_range_exceeded
             .set_handler_fn(bound_range_exceeded);
