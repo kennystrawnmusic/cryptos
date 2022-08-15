@@ -41,6 +41,54 @@ lazy_static! {
             let end = begin + LEN;
             end
         };
+        tss.interrupt_stack_table[PAGE_FAULT_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
+        tss.interrupt_stack_table[INVALID_TSS_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
+        tss.interrupt_stack_table[DIV_ERR_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
+        tss.interrupt_stack_table[SIGBUS_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
+        tss.interrupt_stack_table[SIGSEGV_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
+        tss.interrupt_stack_table[GPF_STACK_INDEX as usize] = {
+            const LEN: usize = 4096 * 5;
+            static mut STACK: [u8; LEN] = [0; LEN];
+
+            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let end = begin + LEN;
+            end
+        };
         tss
     };
     pub static ref GDT: (GlobalDescriptorTable, Selectors) = {
