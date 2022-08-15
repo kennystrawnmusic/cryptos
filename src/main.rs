@@ -379,16 +379,16 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
 
             if let HeaderType::Normal(normal_header) = header.header_type {
                 let abar = normal_header.base_addresses.0[5];
-                let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                    abar as u64 + unsafe { get_phys_offset() },
+                let abar_test_page = Page::<Size2MiB>::containing_address(VirtAddr::new(
+                    abar as u64,
                 ));
                 let abar_virt =
-                    abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+                    abar_test_page.start_address().as_u64();
 
                 map_page!(
                     abar,
                     abar_virt,
-                    Size4KiB,
+                    Size2MiB,
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
                 );
 
