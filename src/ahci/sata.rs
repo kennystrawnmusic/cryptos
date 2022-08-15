@@ -51,12 +51,12 @@ impl SataDisk {
             .unwrap_or_else(|_| unreachable!());
 
         let mut fis_base: [u8; 256] = (0..256)
-            .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
+            .map(|_| unsafe { MaybeUninit::<u8>::zeroed().assume_init() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
         let buffer: [u8; 256 * 512] = (0..256 * 512)
-            .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
+            .map(|_| unsafe { MaybeUninit::<u8>::zeroed().assume_init() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());

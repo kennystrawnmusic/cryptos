@@ -12,7 +12,7 @@ impl<T> Mmio<T> {
     }
 
     pub unsafe fn zeroed() -> Self {
-        Self(MaybeUninit::zeroed().assume_init())
+        Self(MaybeUninit::<_>::zeroed().assume_init())
     }
 
     pub const fn from(value: T) -> Self {
@@ -121,7 +121,7 @@ impl HbaCmdTable {
             .unwrap_or_else(|_| unreachable!());
 
         let prdt_entry: [_; 65536] = (0..65536)
-            .map(|_| HbaPrdtEntry::zeroed())
+            .map(|entry| HbaPrdtEntry::zeroed())
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());

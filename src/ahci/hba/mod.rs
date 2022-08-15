@@ -158,7 +158,7 @@ impl HbaPort {
             &mut [Mmio<u8>; 16],
         ),
     {
-        // self.interrupt_status.write(u32::MAX);
+        self.interrupt_status.write(u32::MAX);
         if let Some(s) = self.slot() {
             {
                 let header = &mut cmd_list[s as usize];
