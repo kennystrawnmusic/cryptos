@@ -1,8 +1,8 @@
-use x86_64::{structures::{idt::{SelectorErrorCode, PageFaultHandlerFunc}, paging::{Page, Mapper, Size4KiB, PageTableFlags}}, VirtAddr};
+use x86_64::structures::idt::SelectorErrorCode;
 
 use crate::{
     ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
-    ALL_DISKS, map_page,
+    ALL_DISKS,
 };
 
 #[allow(unused_imports)]
@@ -31,19 +31,6 @@ const INT3_OPCODE: u8 = 0xcc;
 lazy_static! {
     pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.lock().clone();
     pub static ref IDT: Mutex<InterruptDescriptorTable> = {
-
-        // make sure the page fault handler is properly mapped
-        let page_fault_handler_addr = page_fault as *const PageFaultHandlerFunc as usize as u64;
-        let page_fault_handler_page = Page::<Size4KiB>::containing_address(VirtAddr::new(page_fault_handler_addr));
-        let page_fault_handler_virt = page_fault_handler_page.start_address().as_u64();
-
-        map_page!(
-            page_fault_handler_addr,
-            page_fault_handler_virt,
-            Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
-        );
-
         let mut idt = InterruptDescriptorTable::new();
         unsafe {
             idt.double_fault
