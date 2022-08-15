@@ -55,7 +55,7 @@ impl SataDisk {
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
-        let mut buffer_new: [u8; 256 * 512] = (0..256 * 512)
+        let buffer_new: [u8; 256 * 512] = (0..256 * 512)
             .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
             .collect::<Vec<_>>()
             .try_into()

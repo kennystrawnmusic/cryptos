@@ -68,19 +68,19 @@ pub struct HbaCmdTable {
 
 impl HbaCmdTable {
     pub fn zeroed() -> Self {
-        let mut fis_command: [_; 64] = (0..64)
+        let fis_command: [_; 64] = (0..64)
             .map(|mmio| unsafe { Mmio::zeroed() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
 
-        let mut atapi_command: [_; 16] = (0..16)
+        let atapi_command: [_; 16] = (0..16)
             .map(|mmio| unsafe { Mmio::zeroed() })
             .collect::<Vec<_>>()
             .try_into()
             .unwrap_or_else(|_| unreachable!());
 
-        let mut _rsvd0: [_; 48] = (0..48)
+        let _rsvd0: [_; 48] = (0..48)
             .map(|mmio| unsafe { Mmio::zeroed() })
             .collect::<Vec<_>>()
             .try_into()
