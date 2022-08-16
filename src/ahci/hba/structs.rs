@@ -16,7 +16,7 @@ impl<T> Mmio<T> {
     }
 
     pub unsafe fn zeroed() -> Self {
-        Self(MaybeUninit::<_>::zeroed().assume_init())
+        Self(MaybeUninit::zeroed().assume_init())
     }
 
     pub const fn from(value: T) -> Self {
