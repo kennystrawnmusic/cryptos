@@ -334,7 +334,7 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
     {
         let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 
-        let virt = test_page.start_address().as_u64();
+        let virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
         map_page!(
             dev,
@@ -381,7 +381,8 @@ fn maink(boot_info: &'static mut BootInfo) -> ! {
                 let abar = normal_header.base_addresses.0[5];
                 let abar_test_page =
                     Page::<Size2MiB>::containing_address(VirtAddr::new(abar as u64));
-                let abar_virt = abar_test_page.start_address().as_u64();
+                let abar_virt =
+                    abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
                 map_page!(
                     abar,
