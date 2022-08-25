@@ -2,64 +2,33 @@
 name = "cryptos"
 version = "0.1.0"
 edition = "2021"
-license = "GPL-3.0-or-later"
-
-[workspace]
-members = [
-    "imager"
-]
 
 [dependencies]
-bootloader = "^0.10"
-printk = "^0.2"
-log = "^0.4"
-acpi = "^4.1"
-x86_64 = "^0.14"
-slab_allocator_rs = "^1.0"
-spin = "^0.9"
-x2apic = "^0.4.0"
-raw-cpuid = "^10.4.0"
-redox_syscall = "^0.3.0" # don't reinvent the wheel
-btrfs-diskformat = "*"
-bitflags = "*"
-array-macro = "*"
-bit = "0.1.1"
-pcics = "0.2.0"
+acpi = "4.1.1"
 aml = "0.16.1"
-
-[dependencies.byteorder]
-version = "*"
-default-features = false
-
-[dependencies.conquer-once]
-version = "^0.3"
-default-features = false
-
-[dependencies.lazy_static]
-version = "^1.4"
-features = ["spin_no_std"]
-
-[package.metadata.bootloader]
-map-physical-memory = true
-physical-memory-offset = "0x1000_0000_0000"
-kernel-stack-address = "0xf000_0000_0000"
-kernel-stack-size = "87031808" # 81MiB ― the largest stack size I could create without causing problems
-
-[patch.crates-io.x2apic]
-git = "https://github.com/kwzhao/x2apic-rs"
-
-[patch.crates-io.redox_syscall]
-git = "https://gitlab.redox-os.org/redox-os/syscall"
-
-[patch.crates-io.btrfs-diskformat]
-git = "https://github.com/kennystrawnmusic/btrfs-no-std"
-branch = "patch-1"
-
-[patch.crates-io.acpi]
-git = "https://github.com/kennystrawnmusic/acpi"
-
-[patch.crates-io.heterob]
-git = "https://github.com/kennystrawnmusic/heterob"
+bit = "0.1.1"
+bitflags = "1.3.2"
+btrfs-diskformat = "0.3.0"
+byteorder = { version = "1.4.3", default-features = false }
+conquer-once = { version = "0.3.2", default-features = false }
+hashbrown = { version = "0.12.3", default-features = false, features = ["inline-more"] }
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+log = { version = "0.4.17", default-features = false }
+noto-sans-mono-bitmap = "0.1.5"
+pcics = "0.2.0"
+raw-cpuid = "10.5.0"
+rcu_cell = "0.1.10"
+redox_syscall = "0.3.1"
+sha3 = { version = "0.10.2", default-features = false }
+slab_allocator_rs = "1.0.1"
+spin = "0.9.4"
+spinning_top = "0.2.4"
+strum = { version = "0.24.1", default-features = false }
+uefi = "0.16.0"
+unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
+x2apic = "0.4.1"
+x86_64 = "0.14.10"
+xmas-elf = "0.8.0"
 
 [profile.release]
 debug = true
@@ -67,3 +36,11 @@ debug-assertions = true
 overflow-checks = true
 incremental = true
 codegen-units = 256
+
+[patch.crates-io.btrfs-diskformat]
+git = "https://github.com/GodTamIt/btrfs-diskformat"
+branch = "master"
+
+[dependencies.radix-tree]
+git = "https://github.com/kennystrawnmusic/radix-tree"
+branch = "master"

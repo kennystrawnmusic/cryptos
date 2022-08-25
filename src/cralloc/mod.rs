@@ -1,4 +1,5 @@
 pub mod frames;
+pub mod uefi_map;
 
 #[allow(unused_imports)] //future-proof
 use {

@@ -69,48 +69,12 @@
             }
         },
         {
-            "label": "Run In BIOS Mode",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "cargo bin && cargo run-bios"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "shell": {
-                    "args": ["-c", "-i", "-l"]
-                }
-            }
-        },
-        {
             "label": "Debug In UEFI Mode",
             "type": "shell",
             "command": "bash",
             "args": [
                 "-c",
                 "cargo bin && cargo debug-efi"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "shell": {
-                    "args": ["-c", "-i", "-l"]
-                }
-            }
-        },
-        {
-            "label": "Debug In BIOS Mode",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "cargo bin && cargo debug-bios"
             ],
             "group": {
                 "kind": "build",
