@@ -1,0 +1,160 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["clean"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Clean Cache",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "cache",
+                "-r",
+                "all"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Build Kernel Binary",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["bin"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Run In UEFI Mode",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cargo bin && cargo run-efi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Debug In UEFI Mode",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cargo bin && cargo debug-efi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Format Code",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["fmt"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Rebuild",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "sudo chmod -R a+rw /opt/rust && rm Cargo.lock && cargo clean && cargo bin && cargo run-efi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Reboot Host",
+            "type": "shell",
+            "command": "sudo",
+            "args": [
+                "systemctl",
+                "reboot"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        },
+        {
+            "label": "Reboot Into Host Firmware",
+            "type": "shell",
+            "command": "sudo",
+            "args": [
+                "systemctl",
+                "reboot",
+                "--firmware-setup"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "shell": {
+                    "args": ["-c", "-i", "-l"]
+                }
+            }
+        }
+    ]
+}
