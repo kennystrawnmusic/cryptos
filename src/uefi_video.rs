@@ -218,7 +218,7 @@ impl log::Log for LockedPrintk {
     fn flush(&self) {}
 }
 
-pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, Framebuffer) {
+pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
     let inner = table
         .boot_services()
         .locate_protocol::<GraphicsOutput>()
@@ -252,16 +252,10 @@ pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, Framebuffer) {
         stride: mi.stride(),
     };
 
-    let buffer_init = Framebuffer {
-        begin: slice.as_ptr() as usize as u64,
-        byte_count: fb.size(),
-        info,
-    };
-
     crate::printk_init(slice, info);
 
     (
         PhysAddr::new(fb.as_mut_ptr() as u64),
-        buffer_init
+        info
     )
 }

@@ -102,6 +102,8 @@ pub fn printk_init(buffer: &'static mut [u8], info: FramebufferInfo) {
 
 #[entry]
 fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
+    let (_addr, _info) = uefi_video::printk_init(&table);
+    
     let mem_map = {
         let max_len = table.boot_services().memory_map_size().map_size
             + 8 * core::mem::size_of::<MemoryDescriptor>();
@@ -110,8 +112,6 @@ fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
             .allocate_pool(MemoryType::LOADER_DATA, max_len)?;
         unsafe { core::slice::from_raw_parts_mut(ptr, max_len) }
     };
-
-    let (_addr, _info) = uefi_video::printk_init(&table);
 
     // make sure the Block I/O protocol is available before exiting boot services
     let bio = table.boot_services().locate_protocol::<BlockIO>()?;
