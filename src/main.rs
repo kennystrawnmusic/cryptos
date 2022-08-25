@@ -39,7 +39,7 @@ use x86_64::{
 };
 use xmas_elf::ElfFile;
 
-// defining this constant because we don't hav&e a bootloader to depend on for this anymore
+// defining this constant because we don't have a bootloader to depend on for this anymore
 pub const PHYS_OFFSET: u64 = 0x1000_0000_0000;
 
 pub unsafe fn get_phys_offset() -> u64 {
@@ -64,7 +64,7 @@ pub static STUB_TABLES: OnceCell<Mutex<StubTables>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
 
-// override compiler's pickiness about global raw pointers
+// override compiler's pickiness about global raw pointers not implementing Send
 pub struct SendRawPointer<T>(*mut T);
 
 impl<T> SendRawPointer<T> {
