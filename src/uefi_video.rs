@@ -218,9 +218,6 @@ impl log::Log for LockedPrintk {
     fn flush(&self) {}
 }
 
-pub static ROOT_FRAMEBUFFER: OnceCell<Mutex<Framebuffer>> = OnceCell::uninit();
-pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
-
 pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, Framebuffer) {
     let inner = table
         .boot_services()
@@ -261,22 +258,10 @@ pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, Framebuffer) {
         info,
     };
 
-    ROOT_FRAMEBUFFER.get_or_init(move || Mutex::new(buffer_init));
-
-    let printk = PRINTK.get_or_init(move || LockedPrintk::new(slice, info.clone()));
-    log::set_logger(printk).expect("Logger has already been set");
-
-    // As before: prevent excessive logging in --release mode
-    if cfg!(opt_level = "0") {
-        log::set_max_level(log::LevelFilter::Trace);
-    } else {
-        log::set_max_level(log::LevelFilter::Info)
-    }
-
-    log::info!("CryptOS v. 0.1.0");
+    crate::printk_init(slice, info);
 
     (
         PhysAddr::new(fb.as_mut_ptr() as u64),
-        ROOT_FRAMEBUFFER.get().unwrap().lock().clone(),
+        buffer_init
     )
 }

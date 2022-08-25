@@ -459,9 +459,9 @@ checksum = "b99dd42242db6d3aaeacf7baa4e959d08f3b836698dab25d85c596381febf13c"
 
 [[package]]
 name = "redox_syscall"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78340485586b4f341ac019ab057e275c8b54d5025c73289bb521d83f17c54cbb"
+checksum = "da878fa5823593d85e75e0f702fdf2ae5de760b9b4e3ee4ef1b133b7d989360f"
 dependencies = [
  "bitflags",
 ]
@@ -809,8 +809,3 @@ name = "zero"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f1bc8a6b2005884962297587045002d8cfb8dcec9db332f4ca216ddc5de82c5"
-
-[[patch.unused]]
-name = "btrfs-diskformat"
-version = "0.3.0"
-source = "git+https://github.com/GodTamIt/btrfs-diskformat?branch=master#f310e44a86767c9bc4fe37a577ec1762d6e7df21"

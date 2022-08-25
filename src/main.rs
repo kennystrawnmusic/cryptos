@@ -14,7 +14,7 @@ pub mod cralloc;
 pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
-pub mod vga;
+pub mod uefi_video;
 
 use acpi::{AcpiTables, InterruptModel};
 use alloc::vec::Vec;
@@ -33,6 +33,7 @@ use uefi::{
     table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable},
     Handle, Status,
 };
+use uefi_video::{LockedPrintk, FramebufferInfo, Framebuffer};
 use x86_64::{
     structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, Size4KiB},
     PhysAddr, VirtAddr,
@@ -57,6 +58,9 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 // This is a Plan B in case the Block I/O protocol needs Boot Services active to be accessed
 pub static INIT: OnceCell<ElfFile<'static>> = OnceCell::uninit();
 
+// as before
+pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
+
 // store the mapper's parent struct in a static OnceCell to satisfy the borrow checker
 pub static STUB_TABLES: OnceCell<Mutex<StubTables>> = OnceCell::uninit();
 
@@ -64,7 +68,7 @@ pub static STUB_TABLES: OnceCell<Mutex<StubTables>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
 
-// override compiler's pickiness about global raw pointers not implementing Send
+// override compiler's pickiness about raw pointers not implementing Send
 pub struct SendRawPointer<T>(*mut T);
 
 impl<T> SendRawPointer<T> {
@@ -82,6 +86,20 @@ unsafe impl<T> Send for SendRawPointer<T> {}
 // back up detected Block I/O media to a global locked raw pointer for easy access after boot services are exited
 pub static BLOCK_IO_MEDIA: OnceCell<Mutex<SendRawPointer<BlockIOMedia>>> = OnceCell::uninit();
 
+pub fn printk_init(buffer: &'static mut [u8], info: FramebufferInfo) {
+    let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
+    log::set_logger(p).expect("Logger has already been set!");
+
+    // Don't flood users with excessive messages if compiled with "--release"
+    if cfg!(opt_level = "0") {
+        log::set_max_level(log::LevelFilter::Trace);
+    } else {
+        log::set_max_level(log::LevelFilter::Info);
+    }
+
+    info!("CryptOS v. 0.1.0");
+}
+
 #[entry]
 fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
     let mem_map = {
@@ -92,6 +110,8 @@ fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
             .allocate_pool(MemoryType::LOADER_DATA, max_len)?;
         unsafe { core::slice::from_raw_parts_mut(ptr, max_len) }
     };
+
+    let (_addr, _info) = uefi_video::printk_init(&table);
 
     // make sure the Block I/O protocol is available before exiting boot services
     let bio = table.boot_services().locate_protocol::<BlockIO>()?;

@@ -1,10 +1,9 @@
-use std::{path::{Path, PathBuf}, fs::{self, OpenOptions, File, metadata}, io::{copy, Seek, SeekFrom}, env::args, process::{exit, Command}};
+use std::{path::Path, fs::{OpenOptions, File, metadata}, io::{copy, Seek, SeekFrom}, env::args, process::{exit, Command}};
 
 use fatfs::{FormatVolumeOptions, format_volume, FileSystem, FsOptions};
 use gpt::{mbr::ProtectiveMBR, disk::LogicalBlockSize, GptConfig, partition_types};
 
 fn mkfs_vfat(fat: &Path, efi: &Path) {
-    let efilen = fs::metadata(&efi).unwrap().len();
     let megabyte = 1024*1024;
 
     // because the whole kernel needs to fit inside the ESP
@@ -83,8 +82,8 @@ fn main() {
                     .arg("OVMF-pure-efi.fd")
                     .arg("-machine")
                     .arg("q35")
-                    .arg("-d")
-                    .arg("int");
+                    /* .arg("-d")
+                    .arg("int") */;
                 
                 uefi_cmd.current_dir(&kdir);
 

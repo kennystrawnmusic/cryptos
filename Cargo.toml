@@ -38,10 +38,6 @@ overflow-checks = true
 incremental = true
 codegen-units = 256
 
-[patch.crates-io.btrfs-diskformat]
-git = "https://github.com/GodTamIt/btrfs-diskformat"
-branch = "master"
-
 [dependencies.radix-tree]
 git = "https://github.com/kennystrawnmusic/radix-tree"
 branch = "master"
