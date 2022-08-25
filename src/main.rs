@@ -33,7 +33,7 @@ use uefi::{
     table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable},
     Handle, Status,
 };
-use uefi_video::{LockedPrintk, FramebufferInfo, Framebuffer};
+use uefi_video::{Framebuffer, FramebufferInfo, LockedPrintk};
 use x86_64::{
     structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, Size4KiB},
     PhysAddr, VirtAddr,
@@ -103,7 +103,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FramebufferInfo) {
 #[entry]
 fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
     let (_addr, _info) = uefi_video::printk_init(&table);
-    
+
     let mem_map = {
         let max_len = table.boot_services().memory_map_size().map_size
             + 8 * core::mem::size_of::<MemoryDescriptor>();

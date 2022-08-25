@@ -254,8 +254,5 @@ pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
 
     crate::printk_init(slice, info);
 
-    (
-        PhysAddr::new(fb.as_mut_ptr() as u64),
-        info
-    )
+    (PhysAddr::new(fb.as_mut_ptr() as u64), info)
 }

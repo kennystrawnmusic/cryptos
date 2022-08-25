@@ -1,15 +1,27 @@
-use std::{path::Path, fs::{OpenOptions, File, metadata}, io::{copy, Seek, SeekFrom}, env::args, process::{exit, Command}};
+use std::{
+    env::args,
+    fs::{metadata, File, OpenOptions},
+    io::{copy, Seek, SeekFrom},
+    path::Path,
+    process::{exit, Command},
+};
 
-use fatfs::{FormatVolumeOptions, format_volume, FileSystem, FsOptions};
-use gpt::{mbr::ProtectiveMBR, disk::LogicalBlockSize, GptConfig, partition_types};
+use fatfs::{format_volume, FileSystem, FormatVolumeOptions, FsOptions};
+use gpt::{disk::LogicalBlockSize, mbr::ProtectiveMBR, partition_types, GptConfig};
 
 fn mkfs_vfat(fat: &Path, efi: &Path) {
-    let megabyte = 1024*1024;
+    let megabyte = 1024 * 1024;
 
     // because the whole kernel needs to fit inside the ESP
     let rounded = 512 * megabyte;
 
-    let fat_file = OpenOptions::new().read(true).write(true).create(true).truncate(true).open(&fat).unwrap();
+    let fat_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(&fat)
+        .unwrap();
     fat_file.set_len(rounded).unwrap();
 
     let mkfs_opts = FormatVolumeOptions::new();
@@ -28,8 +40,14 @@ fn mkfs_vfat(fat: &Path, efi: &Path) {
 
 fn mklabel_gpt(disk: &Path, img: &Path) {
     // as before
-    let megabyte = 1024*1024;
-    let mut gptlabel = OpenOptions::new().read(true).write(true).create(true).truncate(true).open(&disk).unwrap();
+    let megabyte = 1024 * 1024;
+    let mut gptlabel = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(&disk)
+        .unwrap();
 
     let partlen = metadata(&img).unwrap().len();
 
@@ -37,15 +55,24 @@ fn mklabel_gpt(disk: &Path, img: &Path) {
     let disklen = 1024 * megabyte;
     gptlabel.set_len(disklen).unwrap();
 
-    let gpt_pmbr = ProtectiveMBR::with_lb_size(u32::try_from((disklen / 512) - 1).unwrap_or(0xffffffff));
+    let gpt_pmbr =
+        ProtectiveMBR::with_lb_size(u32::try_from((disklen / 512) - 1).unwrap_or(0xffffffff));
     gpt_pmbr.overwrite_lba0(&mut gptlabel).unwrap();
 
     let blklen = LogicalBlockSize::Lb512;
 
-    let mut partition_table = GptConfig::new().writable(true).initialized(false).create_from_device(Box::new(&mut gptlabel), None).unwrap();
-    partition_table.update_partitions(Default::default()).unwrap();
+    let mut partition_table = GptConfig::new()
+        .writable(true)
+        .initialized(false)
+        .create_from_device(Box::new(&mut gptlabel), None)
+        .unwrap();
+    partition_table
+        .update_partitions(Default::default())
+        .unwrap();
 
-    let partid = partition_table.add_partition("boot", partlen, partition_types::EFI, 0, None).unwrap();
+    let partid = partition_table
+        .add_partition("boot", partlen, partition_types::EFI, 0, None)
+        .unwrap();
     let part = partition_table.partitions().get(&partid).unwrap();
     let begin = part.bytes_start(blklen).unwrap();
 
@@ -59,7 +86,9 @@ fn main() {
     // skip the "imager" executable name
     let mut args = args().skip(1);
 
-    let kbin = Path::new("target/x86_64-unknown-uefi/release/cryptos.efi").canonicalize().unwrap();
+    let kbin = Path::new("target/x86_64-unknown-uefi/release/cryptos.efi")
+        .canonicalize()
+        .unwrap();
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
 
     let fat_img = kbin.with_extension("fat");
@@ -84,16 +113,19 @@ fn main() {
                     .arg("q35")
                     /* .arg("-d")
                     .arg("int") */;
-                
+
                 uefi_cmd.current_dir(&kdir);
 
                 let uefi_status = uefi_cmd.status().unwrap();
 
                 if !uefi_status.success() {
-                    println!("Failed to run QEMU: {:#?}", &uefi_status.code().clone().unwrap());
+                    println!(
+                        "Failed to run QEMU: {:#?}",
+                        &uefi_status.code().clone().unwrap()
+                    );
                     exit(uefi_status.code().clone().unwrap());
                 }
-            },
+            }
             "--uefi-debug" => {
                 let mut uefi_cmd = Command::new("qemu-system-x86_64");
 
@@ -122,10 +154,13 @@ fn main() {
 
                 let uefi_status = debug_cmd.status().unwrap();
                 if !uefi_status.success() {
-                    println!("Failed to run GDB: {:#?}", uefi_status.code().clone().unwrap());
+                    println!(
+                        "Failed to run GDB: {:#?}",
+                        uefi_status.code().clone().unwrap()
+                    );
                     exit(uefi_status.code().clone().unwrap());
                 }
-            },
+            }
             _ => {
                 println!("Unknown command line argument specified. Acceptable options are \"--uefi\" and \"--uefi-debug\"");
                 exit(1)
