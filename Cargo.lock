@@ -611,7 +611,7 @@ dependencies = [
 [[package]]
 name = "uefi"
 version = "0.16.0"
-source = "git+https://github.com/kennystrawnmusic/uefi-rs?branch=main#aebdf537203c19d7a5478d00a2f05560fdcbf79c"
+source = "git+https://github.com/kennystrawnmusic/uefi-rs?branch=main#b8c07c46365a2e2aa065f6b16cae7b6b88f2d402"
 dependencies = [
  "bitflags",
  "log",
@@ -621,9 +621,9 @@ dependencies = [
 
 [[package]]
 name = "uefi-macros"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b9917831bc5abb78c2e6a0f4fba2be165105ed53d288718c999e0efbd433bb7"
+checksum = "f618e22256b6ecc841fe2f24b5978fa47221b5006712da01236b5407c8474866"
 dependencies = [
  "proc-macro2",
  "quote",

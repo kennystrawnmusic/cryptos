@@ -230,20 +230,23 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     };
     let gop = unsafe { &mut *inner.get() };
 
+    let horiz_iter = gop.modes().map(|mode| mode.info().resolution().0);
+    let vert_iter = gop.modes().map(|mode| mode.info().resolution().1);
+
     // default to using the highest-resolution mode available
-    let x = gop.modes().map(|x| x.info().resolution().0).max().unwrap_or_else(|| {
+    let x = horiz_iter.max().unwrap_or_else(|| {
         writeln!(stdout, "Failed to get highest available horizontal resolution");
         loop {}
     });
 
-    let y = gop.modes().map(|y| y.info().resolution().1).max().unwrap_or_else(|| {
+    let y = vert_iter.max().unwrap_or_else(|| {
         writeln!(stdout, "Failed to get highest available horizontal resolution");
         loop {}
     });
 
     let mode = gop
         .modes()
-        .find(|m| m.info().resolution().0 == x && m.info().resolution().1 == y)
+        .find(|m| m.info().resolution().0 == x || m.info().resolution().1 == y)
         .unwrap_or_else(|| {
             writeln!(stdout, "Failed to find display mode");
             loop {}
