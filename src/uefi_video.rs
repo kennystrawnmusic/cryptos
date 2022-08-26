@@ -4,7 +4,7 @@ use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeig
 use spin::Mutex;
 use spinning_top::{lock_api::RawMutex, Spinlock};
 use uefi::{
-    proto::console::gop::{GraphicsOutput, PixelFormat, ModeInfo},
+    proto::console::gop::{GraphicsOutput, ModeInfo, PixelFormat},
     table::{Boot, SystemTable},
 };
 use x86_64::PhysAddr;
@@ -93,7 +93,7 @@ impl Printk {
 
             PixelFormat::Bgr => [intensity / 2, intensity, intensity, 0],
 
-            PixelFormat::Bitmask | PixelFormat::BltOnly => panic!("Unknown pixel format")
+            PixelFormat::Bitmask | PixelFormat::BltOnly => panic!("Unknown pixel format"),
         };
 
         // Bytes per pixel is always 4 in UEFI
@@ -221,10 +221,12 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     // Clear stdout immediately
     let _ = &table.stdout().clear().unwrap();
 
-    let inner = unsafe { table
-        .boot_services()
-        .locate_protocol::<GraphicsOutput>()
-        .expect("No Graphics Output Protocol found")};
+    let inner = unsafe {
+        table
+            .boot_services()
+            .locate_protocol::<GraphicsOutput>()
+            .expect("No Graphics Output Protocol found")
+    };
     let gop = unsafe { &mut *inner.get() };
 
     // default to using the highest-resolution mode available

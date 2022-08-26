@@ -19,7 +19,9 @@ pub mod uefi_video;
 use acpi::{AcpiTables, InterruptModel};
 use alloc::vec::Vec;
 use conquer_once::spin::OnceCell;
-use core::{alloc::Layout, any::TypeId, fmt::Write, iter::Copied, mem::MaybeUninit, panic::PanicInfo};
+use core::{
+    alloc::Layout, any::TypeId, fmt::Write, iter::Copied, mem::MaybeUninit, panic::PanicInfo,
+};
 use cralloc::{
     frames::{Falloc, MemoryRegion, MemoryRegions, StubTables},
     heap_init,
@@ -29,8 +31,14 @@ use log::{error, info};
 use spin::Mutex;
 use uefi::{
     prelude::entry,
-    proto::{media::block::{BlockIO, BlockIOMedia}, console::gop::ModeInfo},
-    table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable, SystemTableView},
+    proto::{
+        console::gop::ModeInfo,
+        media::block::{BlockIO, BlockIOMedia},
+    },
+    table::{
+        boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable, SystemTableView,
+        SystemTableViewStatus,
+    },
     Handle, Status,
 };
 use uefi_video::{Framebuffer, FramebufferInfo, LockedPrintk};
@@ -193,10 +201,13 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    if TypeId::from(get_current_system_table()) == TypeId::of::<SystemTable<Boot>>() {
-        writeln!(get_current_system_table().stdout(), "Kernel panic -- not syncing: {info}").unwrap();
-    } else {
-        error!("Kernel panic -- not syncing: {info}");
+    match get_current_system_table().state() {
+        SystemTableViewStatus::Boot => writeln!(
+            get_current_system_table().stdout(),
+            "Kernel panic -- not syncing: {info}"
+        )
+        .unwrap(),
+        SystemTableViewStatus::Runtime => error!("Kernel panic -- not syncing: {info}"),
     }
     loop {
         unsafe { core::arch::asm!("hlt") };

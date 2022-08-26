@@ -611,7 +611,7 @@ dependencies = [
 [[package]]
 name = "uefi"
 version = "0.16.0"
-source = "git+https://github.com/kennystrawnmusic/uefi-rs#40847aef559c0f58b079b054d40a4684e5750a6f"
+source = "git+https://github.com/kennystrawnmusic/uefi-rs?branch=main#aebdf537203c19d7a5478d00a2f05560fdcbf79c"
 dependencies = [
  "bitflags",
  "log",
