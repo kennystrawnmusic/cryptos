@@ -29,7 +29,7 @@ use log::{error, info};
 use spin::Mutex;
 use uefi::{
     prelude::entry,
-    proto::media::block::{BlockIO, BlockIOMedia},
+    proto::{media::block::{BlockIO, BlockIOMedia}, console::gop::ModeInfo},
     table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable},
     Handle, Status,
 };
@@ -86,7 +86,7 @@ unsafe impl<T> Send for SendRawPointer<T> {}
 // back up detected Block I/O media to a global locked raw pointer for easy access after boot services are exited
 pub static BLOCK_IO_MEDIA: OnceCell<Mutex<SendRawPointer<BlockIOMedia>>> = OnceCell::uninit();
 
-pub fn printk_init(buffer: &'static mut [u8], info: FramebufferInfo) {
+pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
     log::set_logger(p).expect("Logger has already been set!");
 
@@ -101,8 +101,9 @@ pub fn printk_init(buffer: &'static mut [u8], info: FramebufferInfo) {
 }
 
 #[entry]
-fn maink(image: Handle, table: SystemTable<Boot>) -> Status {
-    let (_addr, _info) = uefi_video::printk_init(&table);
+fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
+    // FIXME: figure out why this isn't working
+    let (_addr, _info) = uefi_video::printk_init(&mut table);
 
     let mem_map = {
         let max_len = table.boot_services().memory_map_size().map_size

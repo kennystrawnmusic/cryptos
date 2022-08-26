@@ -4,7 +4,7 @@ use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeig
 use spin::Mutex;
 use spinning_top::{lock_api::RawMutex, Spinlock};
 use uefi::{
-    proto::console::gop::{GraphicsOutput, PixelFormat},
+    proto::console::gop::{GraphicsOutput, PixelFormat, ModeInfo},
     table::{Boot, SystemTable},
 };
 use x86_64::PhysAddr;
@@ -27,15 +27,16 @@ pub struct FramebufferInfo {
 }
 
 #[derive(Debug, Clone)] // compositing
+#[non_exhaustive]
 pub struct Framebuffer {
-    pub begin: u64,
+    pub first_byte: u64,
     pub byte_count: usize,
     pub info: FramebufferInfo,
 }
 
 impl Framebuffer {
     unsafe fn as_slice<'a>(&self) -> &'static mut [u8] {
-        core::slice::from_raw_parts_mut(self.begin as *mut u8, self.byte_count)
+        core::slice::from_raw_parts_mut(self.first_byte as *mut u8, self.byte_count)
     }
 
     pub fn buffer(&self) -> &[u8] {
@@ -57,14 +58,14 @@ impl Framebuffer {
 
 pub struct Printk {
     buffer: &'static mut [u8],
-    info: FramebufferInfo,
+    info: ModeInfo,
     x: usize,
     y: usize,
 }
 
 impl Printk {
     #[allow(dead_code)]
-    pub fn new(buffer: &'static mut [u8], info: FramebufferInfo) -> Self {
+    pub fn new(buffer: &'static mut [u8], info: ModeInfo) -> Self {
         let mut printk = Self {
             buffer,
             info,
@@ -77,7 +78,7 @@ impl Printk {
 
     pub fn draw_grayscale(&mut self, x: usize, y: usize, intensity: u8) {
         // Pixel offset
-        let poff = y * self.info.stride + x;
+        let poff = y * self.info.stride() + x;
 
         let u8_intensity = {
             if intensity > 200 {
@@ -87,18 +88,16 @@ impl Printk {
             }
         };
 
-        let color = match self.info.color {
-            ColorFormat::Rgb => [intensity, intensity, intensity / 2, 0],
+        let color = match self.info.pixel_format() {
+            PixelFormat::Rgb => [intensity, intensity, intensity / 2, 0],
 
-            ColorFormat::Bgr => [intensity / 2, intensity, intensity, 0],
+            PixelFormat::Bgr => [intensity / 2, intensity, intensity, 0],
 
-            ColorFormat::U8 => [u8_intensity, 0, 0, 0],
-            //TODO: use embedded-graphics to solve this problem
-            // _ => panic!("Unknown pixel format"),
+            PixelFormat::Bitmask | PixelFormat::BltOnly => panic!("Unknown pixel format")
         };
 
-        // Number of bytes in a pixel (4 on my machine)
-        let bpp = self.info.bpp;
+        // Bytes per pixel is always 4 in UEFI
+        let bpp = 4;
 
         // Byte offset: multiply bytes-per-pixel by pixel offset to obtain
         let boff = poff * bpp;
@@ -106,7 +105,7 @@ impl Printk {
         // Copy bytes
         self.buffer[boff..(boff + bpp)].copy_from_slice(&color[..bpp]);
 
-        // Raw pointer to buffer start ― that's why this is unsafe
+        // Raw pointer to buffer index ― that's why this is unsafe
         let _ = unsafe { core::ptr::read_volatile(&self.buffer[boff]) };
     }
 
@@ -148,11 +147,11 @@ impl Printk {
     }
 
     pub fn width(&self) -> usize {
-        self.info.x
+        self.info.resolution().0
     }
 
     pub fn height(&self) -> usize {
-        self.info.y
+        self.info.resolution().1
     }
 
     pub fn putch(&mut self, c: char) {
@@ -194,7 +193,7 @@ pub struct LockedPrintk(Spinlock<Printk>);
 impl LockedPrintk {
     // Constructor
     #[allow(dead_code)]
-    pub fn new(buf: &'static mut [u8], i: FramebufferInfo) -> Self {
+    pub fn new(buf: &'static mut [u8], i: ModeInfo) -> Self {
         LockedPrintk(Spinlock::new(Printk::new(buf, i)))
     }
 
@@ -218,7 +217,10 @@ impl log::Log for LockedPrintk {
     fn flush(&self) {}
 }
 
-pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
+pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
+    // Clear stdout immediately
+    let _ = &table.stdout().clear().unwrap();
+
     let inner = table
         .boot_services()
         .locate_protocol::<GraphicsOutput>()
@@ -252,7 +254,7 @@ pub fn printk_init(table: &SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
         stride: mi.stride(),
     };
 
-    crate::printk_init(slice, info);
+    crate::printk_init(slice, mi);
 
     (PhysAddr::new(fb.as_mut_ptr() as u64), info)
 }

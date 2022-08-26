@@ -111,8 +111,8 @@ fn main() {
                     .arg("OVMF-pure-efi.fd")
                     .arg("-machine")
                     .arg("q35")
-                    /* .arg("-d")
-                    .arg("int") */;
+                    .arg("-d")
+                    .arg("int");
 
                 uefi_cmd.current_dir(&kdir);
 
