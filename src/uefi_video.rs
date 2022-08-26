@@ -240,7 +240,7 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     });
 
     let y = vert_iter.max().unwrap_or_else(|| {
-        writeln!(stdout, "Failed to get highest available horizontal resolution");
+        writeln!(stdout, "Failed to get highest available vertical resolution");
         loop {}
     });
 
