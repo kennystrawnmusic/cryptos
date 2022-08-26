@@ -201,14 +201,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    match get_current_system_table().state() {
-        SystemTableViewStatus::Boot => writeln!(
-            get_current_system_table().stdout(),
-            "Kernel panic -- not syncing: {info}"
-        )
-        .unwrap(),
-        SystemTableViewStatus::Runtime => error!("Kernel panic -- not syncing: {info}"),
-    }
+    error!("Kernel panic -- not syncing: {info}");
     loop {
         unsafe { core::arch::asm!("hlt") };
     }

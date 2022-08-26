@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 use conquer_once::spin::OnceCell;
 use core::fmt::Write;
 use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeight, FontWeight};
@@ -79,14 +81,6 @@ impl Printk {
     pub fn draw_grayscale(&mut self, x: usize, y: usize, intensity: u8) {
         // Pixel offset
         let poff = y * self.info.stride() + x;
-
-        let u8_intensity = {
-            if intensity > 200 {
-                0xf
-            } else {
-                0
-            }
-        };
 
         let color = match self.info.pixel_format() {
             PixelFormat::Rgb => [intensity, intensity, intensity / 2, 0],
@@ -218,11 +212,18 @@ impl log::Log for LockedPrintk {
 }
 
 pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo) {
+    // borrow checker throws a fit here if I don't do this
+    let clone = unsafe { table.unsafe_clone() };
+
+    let stdout = table.stdout();
     // Clear stdout immediately
-    let _ = &table.stdout().clear().unwrap();
+    let _ = stdout.clear().unwrap_or_else(|e| {
+        writeln!(stdout, "Error attempting to clear the UEFI standard output: {:#?}", e);
+        loop {}
+    });
 
     let inner = unsafe {
-        table
+        clone
             .boot_services()
             .locate_protocol::<GraphicsOutput>()
             .expect("No Graphics Output Protocol found")
@@ -230,14 +231,29 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     let gop = unsafe { &mut *inner.get() };
 
     // default to using the highest-resolution mode available
-    let x = gop.modes().map(|x| x.info().resolution().0).max().unwrap();
-    let y = gop.modes().map(|y| y.info().resolution().1).max().unwrap();
+    let x = gop.modes().map(|x| x.info().resolution().0).max().unwrap_or_else(|| {
+        writeln!(stdout, "Failed to get highest available horizontal resolution");
+        loop {}
+    });
+
+    let y = gop.modes().map(|y| y.info().resolution().1).max().unwrap_or_else(|| {
+        writeln!(stdout, "Failed to get highest available horizontal resolution");
+        loop {}
+    });
 
     let mode = gop
         .modes()
         .find(|m| m.info().resolution().0 == x && m.info().resolution().1 == y)
-        .unwrap();
-    gop.set_mode(&mode).unwrap();
+        .unwrap_or_else(|| {
+            writeln!(stdout, "Failed to find display mode");
+            loop {}
+        });
+
+    
+    gop.set_mode(&mode).unwrap_or_else(|e| {
+        writeln!(stdout, "Error attempting to set display mode: {:#?}", e);
+        loop {}
+    });
 
     let mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
@@ -250,7 +266,10 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
         color: match mi.pixel_format() {
             PixelFormat::Rgb => ColorFormat::Rgb,
             PixelFormat::Bgr => ColorFormat::Bgr,
-            PixelFormat::Bitmask | PixelFormat::BltOnly => panic!("Unsupported pixel format"),
+            PixelFormat::Bitmask | PixelFormat::BltOnly => {
+                writeln!(stdout, "Unsupported pixel format");
+                loop {}
+            },
         },
         bpp: 4,
         stride: mi.stride(),
