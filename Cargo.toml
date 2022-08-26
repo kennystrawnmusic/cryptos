@@ -41,3 +41,6 @@ codegen-units = 256
 [dependencies.radix-tree]
 git = "https://github.com/kennystrawnmusic/radix-tree"
 branch = "master"
+
+[patch.crates-io.uefi]
+git = "https://github.com/kennystrawnmusic/uefi-rs"

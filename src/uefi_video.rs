@@ -221,10 +221,10 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     // Clear stdout immediately
     let _ = &table.stdout().clear().unwrap();
 
-    let inner = table
+    let inner = unsafe { table
         .boot_services()
         .locate_protocol::<GraphicsOutput>()
-        .expect("No Graphics Output Protocol found");
+        .expect("No Graphics Output Protocol found")};
     let gop = unsafe { &mut *inner.get() };
 
     // default to using the highest-resolution mode available

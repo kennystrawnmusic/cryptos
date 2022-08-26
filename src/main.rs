@@ -19,7 +19,7 @@ pub mod uefi_video;
 use acpi::{AcpiTables, InterruptModel};
 use alloc::vec::Vec;
 use conquer_once::spin::OnceCell;
-use core::{alloc::Layout, iter::Copied, mem::MaybeUninit, panic::PanicInfo};
+use core::{alloc::Layout, any::TypeId, fmt::Write, iter::Copied, mem::MaybeUninit, panic::PanicInfo};
 use cralloc::{
     frames::{Falloc, MemoryRegion, MemoryRegions, StubTables},
     heap_init,
@@ -30,7 +30,7 @@ use spin::Mutex;
 use uefi::{
     prelude::entry,
     proto::{media::block::{BlockIO, BlockIOMedia}, console::gop::ModeInfo},
-    table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable},
+    table::{boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable, SystemTableView},
     Handle, Status,
 };
 use uefi_video::{Framebuffer, FramebufferInfo, LockedPrintk};
@@ -96,14 +96,23 @@ pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     } else {
         log::set_max_level(log::LevelFilter::Info);
     }
-
     info!("CryptOS v. 0.1.0");
+}
+
+pub static SYSTEM_TABLE_ADDR: Mutex<Option<u64>> = Mutex::new(None);
+
+pub fn get_current_system_table<View: SystemTableView>() -> &'static SystemTable<View> {
+    unsafe { &*(SYSTEM_TABLE_ADDR.lock().unwrap() as *mut SystemTable<View>) }
 }
 
 #[entry]
 fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     // FIXME: figure out why this isn't working
     let (_addr, _info) = uefi_video::printk_init(&mut table);
+
+    // need to use a raw pointer to get the address here because the function returning the current address isn't available in boot services mode
+    let table_addr = &table as *const _ as usize as u64;
+    *SYSTEM_TABLE_ADDR.lock() = Some(table_addr);
 
     let mem_map = {
         let max_len = table.boot_services().memory_map_size().map_size
@@ -115,7 +124,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     };
 
     // make sure the Block I/O protocol is available before exiting boot services
-    let bio = table.boot_services().locate_protocol::<BlockIO>()?;
+    let bio = unsafe { table.boot_services().locate_protocol::<BlockIO>()? };
     let bio = unsafe { &mut *bio.get() };
 
     let bio_media_addr = bio.media() as *const _ as usize;
@@ -127,6 +136,9 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     let (table, memory_map) = table
         .exit_boot_services(image, mem_map)
         .expect("Couldn't exit UEFI boot services");
+
+    // Overwrite the global system table address immediately
+    *SYSTEM_TABLE_ADDR.lock() = Some(table.get_current_system_table_addr());
 
     // Interrupt init function only loads the IDT this time; we can wait to init the APICs until later
     // Needed here to ensure that exceptions are handled properly in case any are thrown trying to set up the heap, etc
@@ -181,7 +193,11 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    error!("Kernel panic -- not syncing: {info}");
+    if TypeId::from(get_current_system_table()) == TypeId::of::<SystemTable<Boot>>() {
+        writeln!(get_current_system_table().stdout(), "Kernel panic -- not syncing: {info}").unwrap();
+    } else {
+        error!("Kernel panic -- not syncing: {info}");
+    }
     loop {
         unsafe { core::arch::asm!("hlt") };
     }
