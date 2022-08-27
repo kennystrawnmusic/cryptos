@@ -124,7 +124,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
 
     let mem_map = {
         let max_len = table.boot_services().memory_map_size().map_size
-            + 8 * core::mem::size_of::<MemoryDescriptor>();
+            * table.boot_services().memory_map_size().entry_size;
         let ptr = table
             .boot_services()
             .allocate_pool(MemoryType::LOADER_DATA, max_len)?;
@@ -140,6 +140,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     BLOCK_IO_MEDIA
         .get_or_init(move || Mutex::new(SendRawPointer::new(bio_media_addr as *mut BlockIOMedia)));
 
+    // TODO: try freeing pool manually and remapping it as CONVENTIONAL before exiting boot services to see if that makes a difference
     // shadow the boot table with the runtime table so access can't be attempted after boot services are exited
     let (table, memory_map) = table
         .exit_boot_services(image, mem_map)

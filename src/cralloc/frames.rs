@@ -141,9 +141,8 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
             unsafe { &*ptptr }
         };
 
-        let nf = fa
-            .allocate_frame()
-            .expect("Failed to allocate frame for new PML4 table");
+        // use hardcoded offset
+        let nf = PhysFrame::<Size4KiB>::containing_address(PhysAddr::new(unsafe { crate::get_phys_offset() }));
 
         let new = {
             let ptr = (offset + nf.start_address().as_u64()).as_mut_ptr::<PageTable>();
