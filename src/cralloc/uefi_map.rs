@@ -156,7 +156,7 @@ where
         }
 
         while let Some(d) = self.map.next() {
-            if d.kind() != MemoryRegionKind::Usable || MemoryRegionKind::Kernel {
+            if d.kind() != MemoryRegionKind::Usable || d.kind() != MemoryRegionKind::Kernel {
                 continue;
             }
             if let Some(f) = self.alloc_from_region(d) {

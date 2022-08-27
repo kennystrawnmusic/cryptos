@@ -48,7 +48,7 @@ pub fn time_t_from_uefi(table: &SystemTable<Runtime>) -> time_t {
     };
 
     let offset_time = Time::new(offset_params).unwrap();
-    let current_time = table.runtime_services().get_time().unwrap();
+    let current_time = unsafe { table.runtime_services() }.get_time().unwrap();
 
     let mut converted: time_t = 0;
 

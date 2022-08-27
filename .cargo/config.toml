@@ -1,7 +1,7 @@
 [alias]
-bin = "build --target x86_64-unknown-uefi -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release"
-kcheck = "check --target x86_64-unknown-uefi -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release --message-format=json"
-kernel-asm = "rustc --target x86_64-unknown-uefi -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release -- --emit=asm -o target/x86_64-unknown-uefi/release/cryptos.S"
+bin = "build --target x86_64-unknown-uefi-101071-workaround.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release"
+kcheck = "check --target x86_64-unknown-uefi-101071-workaround.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release --message-format=json"
+kernel-asm = "rustc --target x86_64-unknown-uefi-101071-workaround.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem --release -- --emit=asm -o target/x86_64-unknown-uefi/release/cryptos.S"
 boot = "run --package imager --"
 run-efi = "boot --uefi"
 debug-efi = "boot --uefi-debug"
