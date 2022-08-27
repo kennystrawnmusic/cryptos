@@ -199,17 +199,15 @@ where
 
     let first_free = uefi_map
         .map
-        .find(
-            |desc| { 
-                desc.ty == MemoryType::CONVENTIONAL
+        .find(|desc| {
+            desc.ty == MemoryType::CONVENTIONAL
                 || desc.ty == MemoryType::LOADER_CODE
                 || desc.ty == MemoryType::LOADER_DATA
                 || desc.ty == MemoryType::BOOT_SERVICES_CODE
                 || desc.ty == MemoryType::BOOT_SERVICES_DATA
                 || desc.ty == MemoryType::RUNTIME_SERVICES_CODE
                 || desc.ty == MemoryType::RUNTIME_SERVICES_DATA
-            }
-        )
+        })
         .unwrap();
 
     let region_slice_start_addr = VirtAddr::new(first_free.start().as_u64());

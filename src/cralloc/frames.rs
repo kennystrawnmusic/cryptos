@@ -137,7 +137,8 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
     let (stub_kernel, pml4) = {
         let old = {
             let f = Cr3::read().0;
-            unsafe { &*((offset + f.start_address().as_u64()).as_ptr::<PageTable>()) }
+            let ptptr = (offset + f.start_address().as_u64()).as_ptr::<PageTable>();
+            unsafe { &*ptptr }
         };
 
         let nf = fa

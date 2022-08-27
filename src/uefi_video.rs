@@ -218,7 +218,11 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
     let stdout = table.stdout();
     // Clear stdout immediately
     let _ = stdout.clear().unwrap_or_else(|e| {
-        writeln!(stdout, "Error attempting to clear the UEFI standard output: {:#?}", e);
+        writeln!(
+            stdout,
+            "Error attempting to clear the UEFI standard output: {:#?}",
+            e
+        );
         loop {}
     });
 
@@ -235,12 +239,18 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
 
     // default to using the highest-resolution mode available
     let x = horiz_iter.max().unwrap_or_else(|| {
-        writeln!(stdout, "Failed to get highest available horizontal resolution");
+        writeln!(
+            stdout,
+            "Failed to get highest available horizontal resolution"
+        );
         loop {}
     });
 
     let y = vert_iter.max().unwrap_or_else(|| {
-        writeln!(stdout, "Failed to get highest available vertical resolution");
+        writeln!(
+            stdout,
+            "Failed to get highest available vertical resolution"
+        );
         loop {}
     });
 
@@ -252,7 +262,6 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
             loop {}
         });
 
-    
     gop.set_mode(&mode).unwrap_or_else(|e| {
         writeln!(stdout, "Error attempting to set display mode: {:#?}", e);
         loop {}
@@ -272,7 +281,7 @@ pub fn printk_init(table: &mut SystemTable<Boot>) -> (PhysAddr, FramebufferInfo)
             PixelFormat::Bitmask | PixelFormat::BltOnly => {
                 writeln!(stdout, "Unsupported pixel format");
                 loop {}
-            },
+            }
         },
         bpp: 4,
         stride: mi.stride(),

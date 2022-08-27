@@ -109,5 +109,7 @@ pub struct Properties {
 // Needed to allow writing HashMaps directly to the disk
 pub fn hashmap_bytes<K, V>(map: HashMap<K, V>) -> &'static mut [u8] {
     let map_addr = &map as *const _ as usize as u64;
-    unsafe { core::slice::from_raw_parts_mut(map_addr as *mut u8, core::mem::size_of::<HashMap<K, V>>()) }
+    unsafe {
+        core::slice::from_raw_parts_mut(map_addr as *mut u8, core::mem::size_of::<HashMap<K, V>>())
+    }
 }
