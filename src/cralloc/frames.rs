@@ -192,7 +192,7 @@ impl Falloc {
 
     pub fn usable(&self) -> impl Iterator<Item = PhysFrame> + '_ {
         let all = self.map.iter();
-        let usable = all.filter(|r| r.kind == MemoryRegionKind::Usable);
+        let usable = all.filter(|r| r.kind == MemoryRegionKind::Usable || MemoryRegionKind::Kernel);
 
         let ranges = usable.map(|r| r.begin..r.end);
         let faddrs = ranges.flat_map(|r| r.step_by(4096));
