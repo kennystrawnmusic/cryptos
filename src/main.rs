@@ -91,9 +91,6 @@ impl<T> SendRawPointer<T> {
 
 unsafe impl<T> Send for SendRawPointer<T> {}
 
-// back up detected Block I/O media to a global locked raw pointer for easy access after boot services are exited
-pub static BLOCK_IO_MEDIA: OnceCell<Mutex<SendRawPointer<BlockIOMedia>>> = OnceCell::uninit();
-
 pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
     log::set_logger(p).expect("Logger has already been set!");
@@ -136,10 +133,8 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     let bio = unsafe { &mut *bio.get() };
 
     let bio_media_addr = bio.media() as *const _ as usize;
-
-    BLOCK_IO_MEDIA
-        .get_or_init(move || Mutex::new(SendRawPointer::new(bio_media_addr as *mut BlockIOMedia)));
-
+    let init_proc = todo!();
+    
     // TODO: try freeing pool manually and remapping it as CONVENTIONAL before exiting boot services to see if that makes a difference
     // shadow the boot table with the runtime table so access can't be attempted after boot services are exited
     let (table, memory_map) = table
