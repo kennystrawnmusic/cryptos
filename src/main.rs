@@ -104,6 +104,10 @@ pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     info!("CryptOS v. 0.1.0");
 }
 
+pub fn read_init_from_disk(blkdev: &mut BlockIOMedia) -> ElfFile<'static> {
+    todo!()
+}
+
 pub static SYSTEM_TABLE_ADDR: Mutex<Option<u64>> = Mutex::new(None);
 
 pub fn get_current_system_table<View: SystemTableView>() -> &'static SystemTable<View> {
@@ -132,8 +136,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     let bio = unsafe { table.boot_services().locate_protocol::<BlockIO>()? };
     let bio = unsafe { &mut *bio.get() };
 
-    let bio_media_addr = bio.media() as *const _ as usize;
-    let init_proc = todo!();
+    let _bio_media_addr = bio.media() as *const _ as usize;
     
     // TODO: try freeing pool manually and remapping it as CONVENTIONAL before exiting boot services to see if that makes a difference
     // shadow the boot table with the runtime table so access can't be attempted after boot services are exited
