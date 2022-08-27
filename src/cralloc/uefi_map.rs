@@ -102,14 +102,14 @@ where
             let kind = match region.kind() {
                 MemoryRegionKind::Usable => {
                     if end <= next_available {
-                        MemoryRegionKind::Kernel
+                        MemoryRegionKind::Usable // everything except Unknown is usable now
                     } else if region.start() >= next_available {
                         MemoryRegionKind::Usable
                     } else {
                         let used = MemoryRegion {
                             begin: region.start().as_u64(),
                             end: next_available.as_u64(),
-                            kind: MemoryRegionKind::Kernel,
+                            kind: MemoryRegionKind::Usable,
                         };
                         Self::new_region(used, slice, &mut next)
                             .expect("Failed to add memory region");
@@ -117,6 +117,8 @@ where
                         MemoryRegionKind::Usable
                     }
                 }
+
+                // freed after boot services are exited
                 MemoryRegionKind::Unknown(other) => match MemoryType(other) {
                     MemoryType::LOADER_CODE
                     | MemoryType::LOADER_DATA
@@ -156,7 +158,7 @@ where
         }
 
         while let Some(d) = self.map.next() {
-            if d.kind() != MemoryRegionKind::Usable || d.kind() != MemoryRegionKind::Kernel {
+            if d.kind() != MemoryRegionKind::Usable {
                 continue;
             }
             if let Some(f) = self.alloc_from_region(d) {
@@ -197,7 +199,17 @@ where
 
     let first_free = uefi_map
         .map
-        .find(|desc| desc.ty == MemoryType::CONVENTIONAL)
+        .find(
+            |desc| { 
+                desc.ty == MemoryType::CONVENTIONAL
+                || desc.ty == MemoryType::LOADER_CODE
+                || desc.ty == MemoryType::LOADER_DATA
+                || desc.ty == MemoryType::BOOT_SERVICES_CODE
+                || desc.ty == MemoryType::BOOT_SERVICES_DATA
+                || desc.ty == MemoryType::RUNTIME_SERVICES_CODE
+                || desc.ty == MemoryType::RUNTIME_SERVICES_DATA
+            }
+        )
         .unwrap();
 
     let region_slice_start_addr = VirtAddr::new(first_free.start().as_u64());

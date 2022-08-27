@@ -16,7 +16,6 @@ use x86_64::{
 pub enum MemoryRegionKind {
     Usable,
     // as a UEFI stub, we *are* the bootloader now ― so no need to add that as a variant
-    Kernel,
     Unknown(u32),
     // don't need two unknowns because no plan to support BIOS here
 }
@@ -192,7 +191,7 @@ impl Falloc {
 
     pub fn usable(&self) -> impl Iterator<Item = PhysFrame> + '_ {
         let all = self.map.iter();
-        let usable = all.filter(|r| r.kind == MemoryRegionKind::Usable || r.kind == MemoryRegionKind::Kernel);
+        let usable = all.filter(|r| r.kind == MemoryRegionKind::Usable);
 
         let ranges = usable.map(|r| r.begin..r.end);
         let faddrs = ranges.flat_map(|r| r.step_by(4096));
