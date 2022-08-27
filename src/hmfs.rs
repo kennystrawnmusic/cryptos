@@ -4,7 +4,7 @@ use core::convert::TryInto;
 use core::hash::{BuildHasherDefault, Hasher};
 use sha3::{Digest, Sha3_512};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
-use uefi::table::Boot;
+use uefi::table::Runtime;
 use uefi::table::SystemTable;
 use unix_path::PathBuf;
 
@@ -33,7 +33,7 @@ pub type HashMap<K, V> = hashbrown::HashMap<K, V, HMFSHashBuilder>;
 #[allow(non_camel_case_types)]
 pub type time_t = u128;
 
-pub fn time_t_from_uefi(table: &SystemTable<Boot>) -> time_t {
+pub fn time_t_from_uefi(table: &SystemTable<Runtime>) -> time_t {
     // use the Unix-conventional starting point
     let offset_params = TimeParams {
         year: 1970,
