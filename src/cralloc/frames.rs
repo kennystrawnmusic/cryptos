@@ -135,33 +135,18 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
     let offset = VirtAddr::new(0);
 
     let (stub_kernel, pml4) = {
-        let (old, old_flags) = {
+        let (table, old_flags) = {
             let f = Cr3::read().0;
             let flags = Cr3::read().1;
-            let ptptr = (offset + f.start_address().as_u64()).as_ptr::<PageTable>();
-            (unsafe { &*ptptr }, flags)
+            let ptptr = (offset + f.start_address().as_u64()).as_mut_ptr::<PageTable>();
+            (unsafe { &mut *ptptr }, flags)
         };
 
         // overwrite old address
-        let nf = PhysFrame::<Size4KiB>::containing_address(old[0].addr());
-
-        // back up Cr3 flags
-        let new_flags = old_flags.clone();
-
-        let new = {
-            let ptr = (offset + nf.start_address().as_u64()).as_mut_ptr::<PageTable>();
-
-            unsafe {
-                ptr.write(PageTable::new());
-                &mut *ptr
-            }
-        };
-
-        new[0] = old[0].clone();
+        let frame = PhysFrame::<Size4KiB>::containing_address(table[0].addr());
 
         unsafe {
-            Cr3::write(nf, new_flags);
-            (OffsetPageTable::new(&mut *new, offset), nf)
+            (OffsetPageTable::new(&mut *table, offset), frame)
         }
     };
 
