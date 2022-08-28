@@ -2,6 +2,7 @@ use core::ops::DerefMut;
 
 use super::uefi_map::UefiMemoryRegion;
 use uefi::table::boot::MemoryDescriptor;
+use x86_64::structures::paging::PageTableFlags;
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},
@@ -142,8 +143,13 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
             (unsafe { &mut *ptptr }, flags)
         };
 
-        // overwrite old address
-        let frame = PhysFrame::<Size4KiB>::containing_address(table[0].addr());
+        // set flags as PRESENT | WRITABLE if not already
+        if table[0].flags() != PageTableFlags::PRESENT | PageTableFlags::WRITABLE {
+            table[0].set_flags(PageTableFlags::PRESENT | PageTableFlags::WRITABLE);
+        }
+
+        // reuse frame already provided by UEFI
+        let frame = table[0].frame().unwrap();
 
         unsafe {
             (OffsetPageTable::new(&mut *table, offset), frame)
