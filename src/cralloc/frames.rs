@@ -143,7 +143,7 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
         };
 
         // overwrite old address
-        let nf = PhysFrame::<Size4KiB>::containing_address(old.start_address());
+        let nf = PhysFrame::<Size4KiB>::containing_address(old[0].addr());
 
         // back up Cr3 flags
         let new_flags = old_flags.clone();
