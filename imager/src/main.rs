@@ -86,7 +86,7 @@ fn main() {
     // skip the "imager" executable name
     let mut args = args().skip(1);
 
-    let kbin = Path::new("target/x86_64-unknown-uefi-101071-workaround/release/cryptos.efi")
+    let kbin = Path::new("target/x86_64-unknown-uefi-stub/release/cryptos.efi")
         .canonicalize()
         .unwrap();
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
@@ -106,7 +106,7 @@ fn main() {
                     .arg("-accel")
                     .arg("tcg")
                     .arg("-drive")
-                    .arg("format=raw,file=target/x86_64-unknown-uefi-101071-workaround/release/cryptos.img")
+                    .arg("format=raw,file=target/x86_64-unknown-uefi-stub/release/cryptos.img")
                     .arg("-bios")
                     .arg("/usr/share/edk2-ovmf/x64/OVMF.fd")
                     .arg("-machine")
@@ -133,7 +133,7 @@ fn main() {
                     .arg("-accel")
                     .arg("tcg")
                     .arg("-drive")
-                    .arg("format=raw,file=target/x86_64-unknown-uefi-101071-workaround/release/cryptos.img")
+                    .arg("format=raw,file=target/x86_64-unknown-uefi-stub/release/cryptos.img")
                     .arg("-bios")
                     .arg("/usr/share/edk2-ovmf/x64/OVMF.fd")
                     .arg("-gdb")
@@ -148,7 +148,7 @@ fn main() {
 
                 let mut debug_cmd = Command::new("gdb");
                 debug_cmd
-                    .arg("target/x86_64-unknown-uefi-101071-workaround/release/cryptos.efi")
+                    .arg("target/x86_64-unknown-uefi-stub/release/cryptos.efi")
                     .arg("-ex")
                     .arg("target remote :3333");
 
