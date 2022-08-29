@@ -143,6 +143,9 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
             (unsafe { &mut *ptptr }, flags)
         };
 
+        // Debug
+        log::info!("Next available page frame: {:#?}", fa.allocate_frame());
+
         // shut up the borrow checker
         let cloned_table = table.clone();
 

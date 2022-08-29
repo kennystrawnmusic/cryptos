@@ -86,8 +86,8 @@ where
         r: MemoryRegion,
         slice: &mut [MaybeUninit<MemoryRegion>],
         next: &mut usize,
-    ) -> Result<(), ()> {
-        unsafe { slice.get_mut(*next).ok_or(())?.as_mut_ptr().write(r) };
+    ) -> Result<(), &'static str> {
+        unsafe { slice.get_mut(*next).ok_or("Memory access out of bounds")?.as_mut_ptr().write(r) };
         *next += 1;
         Ok(())
     }
