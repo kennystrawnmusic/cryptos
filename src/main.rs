@@ -137,7 +137,7 @@ fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
     let bio = unsafe { &mut *bio.get() };
 
     let _bio_media_addr = bio.media() as *const _ as usize;
-    
+
     // TODO: try freeing pool manually and remapping it as CONVENTIONAL before exiting boot services to see if that makes a difference
     // shadow the boot table with the runtime table so access can't be attempted after boot services are exited
     let (table, memory_map) = table
