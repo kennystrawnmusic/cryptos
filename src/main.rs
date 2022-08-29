@@ -15,6 +15,7 @@ pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 pub mod uefi_video;
+pub mod ahci;
 
 use acpi::{AcpiTables, InterruptModel};
 use alloc::vec::Vec;
