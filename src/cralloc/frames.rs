@@ -143,20 +143,22 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
             (unsafe { &mut *ptptr }, flags)
         };
 
-        // search for first writable entry in page table
-        let first_writable_entry = table
-            .iter_mut()
-            .find(|e| {
-                e.flags().contains(PageTableFlags::PRESENT | PageTableFlags::WRITABLE)
-            })
-            .expect("Couldn't find any writable page table entries");
+        // shut up the borrow checker
+        let mut cloned_table = table.clone();
 
-        log::info!("First available page table entry flags: {:#?}", first_writable_entry.flags());
+        let next_available = if let Some(_) = table.iter().find(|e| e.flags().contains(PageTableFlags::PRESENT | PageTableFlags::WRITABLE)) {
+            cloned_table.iter_mut().next()
+        } else {
+            panic!("Page table only contains one entry")
+        };
 
-        // reuse frame already provided by UEFI
-        let frame = first_writable_entry.frame().unwrap();
-
-        unsafe { (OffsetPageTable::new(&mut *table, offset), frame) }
+        if let Some(entry) = next_available {
+            entry.set_flags(PageTableFlags::PRESENT | PageTableFlags::WRITABLE);
+            let frame = entry.frame().unwrap();
+            unsafe { (OffsetPageTable::new(&mut *table, offset), frame) }
+        } else {
+            panic!("Couldn't find any available page table entries")
+        }
     };
 
     StubTables { stub_kernel, pml4 }
