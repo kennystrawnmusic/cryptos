@@ -17,7 +17,7 @@ pub mod interrupts;
 pub mod uefi_video;
 pub mod ahci;
 
-use acpi::{AcpiTables, InterruptModel};
+use acpi::{AcpiTables, InterruptModel, PciConfigRegions};
 use alloc::vec::Vec;
 use conquer_once::spin::OnceCell;
 use core::{
@@ -91,6 +91,8 @@ impl<T> SendRawPointer<T> {
 }
 
 unsafe impl<T> Send for SendRawPointer<T> {}
+
+pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions>> = OnceCell::uninit();
 
 pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));

@@ -30,6 +30,7 @@ unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] 
 x2apic = "0.4.1"
 x86_64 = "0.14.10"
 xmas-elf = "0.8.0"
+byteorder = { version = "1.4.3", default-features = false }
 
 [profile.release]
 debug = true

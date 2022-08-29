@@ -176,6 +176,7 @@ dependencies = [
  "aml",
  "bit",
  "bitflags",
+ "byteorder",
  "conquer-once",
  "hashbrown",
  "lazy_static",
