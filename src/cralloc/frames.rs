@@ -144,17 +144,17 @@ pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
         };
 
         // shut up the borrow checker
-        let mut cloned_table = table.clone();
+        let cloned_table = table.clone();
 
-        let next_available = if let Some(_) = table.iter().find(|e| e.flags().contains(PageTableFlags::PRESENT | PageTableFlags::WRITABLE)) {
-            cloned_table.iter_mut().next()
+        let next_available = if let Some(entry) = cloned_table.iter().find(|e| e.flags().contains(PageTableFlags::PRESENT | PageTableFlags::WRITABLE)) {
+            let size = entry.frame().unwrap().size() as usize;
+            table.iter_mut().skip(size / 16).next()
         } else {
             panic!("Page table only contains one entry")
         };
 
         if let Some(entry) = next_available {
-            entry.set_flags(PageTableFlags::PRESENT | PageTableFlags::WRITABLE);
-            let frame = entry.frame().unwrap();
+            let frame = PhysFrame::<Size4KiB>::containing_address(entry.addr());
             unsafe { (OffsetPageTable::new(&mut *table, offset), frame) }
         } else {
             panic!("Couldn't find any available page table entries")
