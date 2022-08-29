@@ -5,7 +5,7 @@ use core::alloc::Layout;
 use core::mem::MaybeUninit;
 use uefi::table::boot::{MemoryDescriptor, MemoryType};
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
+    structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB, mapper::MapToError},
     PhysAddr, VirtAddr,
 };
 
@@ -46,7 +46,7 @@ where
     pub fn new(map: T) -> Self {
         // Start at the memory offset constant
         let first_frame =
-            PhysFrame::containing_address(PhysAddr::new(unsafe { get_phys_offset() }));
+            PhysFrame::containing_address(PhysAddr::new(0x1000));
         Self::new_at(first_frame, map)
     }
 
@@ -227,7 +227,17 @@ where
                 .map_to(p, frame, flags, &mut uefi_map)
         } {
             Ok(tlb) => tlb.flush(),
-            Err(e) => panic!("Error attempting to flush page tables: {:#?}", e),
+            Err(e) => match e {
+                MapToError::PageAlreadyMapped(_) => {
+                    log::debug!("Already have a page here; skipping mapping");
+                    continue;
+                },
+                MapToError::ParentEntryHugePage => {
+                    log::debug!("Already have a huge page here; skipping mapping");
+                    continue;
+                },
+                MapToError::FrameAllocationFailed => panic!("Unknown error attempting to allocate frames"),
+            },
         }
     }
 
