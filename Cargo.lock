@@ -194,7 +194,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cryptos-next"
+name = "cryptos"
 version = "0.1.0"
 dependencies = [
  "bootloader_api",
@@ -500,7 +500,7 @@ version = "0.1.0"
 dependencies = [
  "bootloader",
  "bootloader-x86_64-uefi",
- "cryptos-next",
+ "cryptos",
 ]
 
 [[package]]
