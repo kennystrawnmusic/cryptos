@@ -23,6 +23,7 @@ lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
 pcics = "0.3.1"
+printk = "^0.3.0-beta"
 raw-cpuid = "10.6.0"
 redox_syscall = "0.3.4"
 sha3 = { version = "0.10.6", default-features = false }

@@ -118,7 +118,7 @@ dependencies = [
  "bootloader_api",
  "conquer-once",
  "log",
- "noto-sans-mono-bitmap",
+ "noto-sans-mono-bitmap 0.2.0",
  "rand",
  "rand_hc",
  "raw-cpuid",
@@ -273,8 +273,9 @@ dependencies = [
  "conquer-once",
  "lazy_static",
  "log",
- "noto-sans-mono-bitmap",
+ "noto-sans-mono-bitmap 0.2.0",
  "pcics",
+ "printk",
  "raw-cpuid",
  "redox_syscall 0.3.4",
  "sha3",
@@ -543,6 +544,12 @@ dependencies = [
 
 [[package]]
 name = "noto-sans-mono-bitmap"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f45ec3ff6dc7bea48d52dd14a5565be0d596ac4758c9a55e42539177001a983b"
+
+[[package]]
+name = "noto-sans-mono-bitmap"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a27daf9557165efe1d09b52f97393bf6283cadb0a76fbe64a1061e15553a994a"
@@ -586,6 +593,19 @@ checksum = "19a3888a40067ddcda5624b8a7e8bae202c33bddd77ac25b4463a3272799869c"
 dependencies = [
  "heterob",
  "snafu",
+]
+
+[[package]]
+name = "printk"
+version = "0.3.0-beta"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab7ed1d90aab7a1f1942a45bf85f47a82ad4933af59dda54403fb8001bba3df5"
+dependencies = [
+ "bootloader_api",
+ "conquer-once",
+ "log",
+ "noto-sans-mono-bitmap 0.1.6",
+ "spinning_top",
 ]
 
 [[package]]

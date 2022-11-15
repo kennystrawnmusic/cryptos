@@ -5,4 +5,4 @@ bindeps = true
 jobs = 8
 
 [alias]
-bin = "run --package runner --"
+bin = "run --release --package runner --"

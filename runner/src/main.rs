@@ -6,7 +6,7 @@ use std::{
 };
 
 fn main() {
-    let kernel_path = Path::new(env!("CARGO_BIN_FILE_CRYPTOS_NEXT_cryptos-next"));
+    let kernel_path = Path::new(env!("CARGO_BIN_FILE_CRYPTOS_cryptos"));
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_str = format!("{}/cryptos.img", &kdir.display());
     let out_path = Path::new(&out_str);
