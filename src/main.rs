@@ -15,23 +15,49 @@ pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 
+use ahci::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
 use bootloader_api::{*, config::{Mapping, Mappings, FrameBuffer}, info::FrameBufferInfo};
-use acpi::{AcpiTables, InterruptModel, PciConfigRegions};
-use alloc::vec::Vec;
+use acpi::{
+    sdt::{Signature, SdtHeader}, AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel,
+    PciConfigRegions, PhysicalMapping, PlatformInfo, RsdpError, fadt::Fadt,
+};
+use alloc::{
+    vec::Vec,
+    boxed::Box,
+    format,
+    sync::Arc, string::String
+};
+use aml::{
+    pci_routing::{Pin, PciRoutingTable},
+    LevelType, AmlContext, AmlValue, value::Args, AmlName,
+};
 use conquer_once::spin::OnceCell;
-use crate::acpi_impl::KernelAcpi;
+use crate::{
+    acpi_impl::KernelAcpi,
+    ahci::Disk, interrupts::IDT,
+
+};
+use pcics::header::{Header, InterruptPin, HeaderType};
 use printk::LockedPrintk;
 use core::{
-    alloc::Layout, any::TypeId, fmt::Write, iter::Copied, mem::MaybeUninit, panic::PanicInfo,
+    alloc::Layout,
+    any::TypeId,
+    fmt::Write,
+    iter::Copied,
+    marker::PhantomData,
+    mem::MaybeUninit,
+    ops::{Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Not, Sub, SubAssign},
+    panic::PanicInfo,
+    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
 };
 use cralloc::{
     frames::{map_memory, Falloc},
     heap_init,
 };
 use log::{debug, error, info};
-use spin::Mutex;
+use spin::{Mutex, RwLock};
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB},
+    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB, Size2MiB},
     PhysAddr, VirtAddr,
 };
 use xmas_elf::ElfFile;
@@ -126,6 +152,119 @@ pub fn get_mcfg() -> Option<PciConfigRegions> {
     PCI_CONFIG.get().clone().unwrap().clone()
 }
 
+/// Function which retrieves a debug string for handling I/O errors
+///
+/// TODO: register this function as a system call
+pub fn eio_debug() -> (Option<String>, Option<InterruptError>) {
+    let msg = match EIO_DEBUG.read().clone() {
+        Some(s) => Some(s.clone()),
+        None => None,
+    };
+    let internal = match EIO_STATUS.read().clone() {
+        Some(err) => Some(err.clone()),
+        None => None,
+    };
+    (msg, internal)
+}
+
+/// Returns an Iterator of all possible `Option<u64>` in the PCIe extended address space
+///
+/// Use the `.filter(|i| i.is_some())` method of the resulting iterator to get the PCI devices present on the system
+pub fn mcfg_brute_force() -> impl Iterator<Item = Option<u64>> {
+    (0x0u32..0x00ffffffu32).map(|i: u32| match get_mcfg() {
+        Some(mcfg) => match mcfg.physical_address(
+            i.to_be_bytes()[0] as u16,
+            i.to_be_bytes()[1],
+            i.to_be_bytes()[2],
+            i.to_be_bytes()[3],
+        ) {
+            Some(addr) => Some(addr),
+            None => None,
+        },
+        None => None,
+    })
+}
+
+pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) -> Option<[(u32, InterruptPin); 4]> {
+    let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
+
+    let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
+
+    // Properly reintroduce the size/length of the header
+    let dsdt_addr = fadt.dsdt_address().unwrap();
+    info!("DSDT address: {:#x}", dsdt_addr.clone());
+    let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
+
+    let aml_test_page =
+        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
+    let aml_virt = aml_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+
+    map_page!(
+        dsdt_addr,
+        aml_virt,
+        Size4KiB,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+    );
+
+    let raw_table = unsafe {
+        core::slice::from_raw_parts_mut(
+            aml_virt as *mut u8,
+            dsdt_len.clone() + core::mem::size_of::<SdtHeader>(),
+        )
+    };
+
+    if let Ok(()) = aml_ctx.initialize_objects() {
+        if let Ok(()) =
+            aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
+        {
+            let _ = aml_ctx.invoke_method(
+                &AmlName::from_str("\\_PIC").unwrap(),
+                Args([
+                    Some(AmlValue::Integer(1)),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ]),
+            );
+
+            if let Ok(prt) = PciRoutingTable::from_prt_path(
+                &AmlName::from_str("\\_SB.PCI0._PRT").unwrap(),
+                &mut aml_ctx,
+            ) {
+                let mut a: [(u32, InterruptPin); 4] = [
+                    (0, InterruptPin::IntA),
+                    (0, InterruptPin::IntB),
+                    (0, InterruptPin::IntC),
+                    (0, InterruptPin::IntD),
+                ];
+                if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntA, &mut aml_ctx) {
+                    debug!("IRQ descriptor A: {:#?}", desc);
+                    a[0] = (desc.irq, InterruptPin::IntA);
+                }
+                if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntB, &mut aml_ctx) {
+                    debug!("IRQ descriptor B: {:#?}", desc);
+                    a[1] = (desc.irq, InterruptPin::IntB);
+                }
+                if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntC, &mut aml_ctx) {
+                    debug!("IRQ descriptor C: {:#?}", desc);
+                    a[2] = (desc.irq, InterruptPin::IntC);
+                }
+                if let Ok(desc) = prt.route(0x1, 0x6, Pin::IntD, &mut aml_ctx) {
+                    debug!("IRQ descriptor D: {:#?}", desc);
+                    a[3] = (desc.irq, InterruptPin::IntD);
+                }
+                return Some(a);
+            }
+            return None;
+        }
+        return None;
+    }
+    None
+}
+
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
     log::set_logger(p).expect("Logger has already been set!");
@@ -138,6 +277,8 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     }
     info!("CryptOS v. 0.1.1-alpha");
 }
+
+pub static ALL_DISKS: OnceCell<RwLock<Vec<Box<dyn Disk + Send + Sync>>>> = OnceCell::uninit();
 
 entry_point!(maink, config = &CONFIG);
 
@@ -207,6 +348,78 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     debug!("TLS template: {:#?}", boot_info.tls_template);
     debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
+
+    for dev in mcfg_brute_force()
+        .filter(|i| i.is_some())
+        .map(|i| i.unwrap())
+    {
+        let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
+
+        let virt = test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+
+        map_page!(
+            dev,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+        );
+
+        let raw_header = unsafe { *(virt as *const [u8; 64]) };
+        let header = Header::from(raw_header);
+
+        if header.class_code.base == 0x01 && header.class_code.sub == 0x06 {
+            info!(
+                "Found AHCI controller {:x}:{:x} at {:#x}",
+                header.vendor_id, header.device_id, dev
+            );
+            info!("Class Code: {:#x?}", header.class_code);
+
+            let arr = aml_init(&mut tables);
+
+            if arr.is_some() {
+                match header.interrupt_pin {
+                    InterruptPin::IntA => {
+                        IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntB => {
+                        IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntC => {
+                        IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    InterruptPin::IntD => {
+                        IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci)
+                    }
+                    _ => panic!("Invalid interrupt pin"),
+                };
+            }
+
+            crate::interrupts::init();
+
+            info!("Interrupt pin: {:#?}", header.interrupt_pin);
+
+            if let HeaderType::Normal(normal_header) = header.header_type {
+                let abar = normal_header.base_addresses.orig()[5];
+                let abar_test_page =
+                    Page::<Size2MiB>::containing_address(VirtAddr::new(abar as u64));
+                let abar_virt =
+                    abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+
+                map_page!(
+                    abar,
+                    abar_virt,
+                    Size4KiB,
+                    PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+                );
+
+                let (_, disks) = ahci::all_disks(abar_virt as usize);
+                info!("Found {:#?} disks", disks.len());
+                ALL_DISKS.get_or_init(move || RwLock::new(disks));
+            }
+
+            break;
+        }
+    }
 
     loop {
         unsafe { 
