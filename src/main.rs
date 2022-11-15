@@ -36,8 +36,14 @@ use x86_64::{
 use xmas_elf::ElfFile;
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+fn panic(info: &PanicInfo) -> ! {
+    error!("Kernel panic -- not syncing: {info}");
+    loop {
+        unsafe { 
+            core::arch::asm!("cli");
+            core::arch::asm!("hlt")
+        };
+    }
 }
 
 const MAPPINGS: Mappings = {
