@@ -1,2 +1,5 @@
 /target
-OVMF-pure-efi.fd
+/runner/target
+/OVMF-pure-efi.fd
+/cryptos.img
+/cargo.log
