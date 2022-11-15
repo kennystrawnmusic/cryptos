@@ -1,11 +1,14 @@
 use alloc::vec::Vec;
 use bitflags::bitflags;
+use x86_64::{structures::paging::{Page, Size4KiB, PageTableFlags, Mapper}, VirtAddr};
 use core::{
     mem::MaybeUninit,
     ops::{BitAnd, BitOr, Not},
     ptr::{addr_of, addr_of_mut},
 };
 use syscall::io::Io;
+
+use crate::map_page;
 
 #[repr(packed)]
 pub struct Mmio<T>(MaybeUninit<T>);
@@ -35,10 +38,28 @@ where
     type Value = T;
 
     fn read(&self) -> Self::Value {
+        let val_addr = addr_of!(self.0) as usize as u64;
+        let val_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(val_addr));
+        let val_virt = val_test_page.start_address().as_u64();
+        map_page!(
+            val_addr,
+            val_virt,
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+        );
         unsafe { core::ptr::read_volatile(addr_of!(self.0).cast::<T>()) }
     }
 
     fn write(&mut self, value: Self::Value) {
+        let val_addr = addr_of!(self.0) as usize as u64;
+        let val_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(val_addr));
+        let val_virt = val_test_page.start_address().as_u64();
+        map_page!(
+            val_addr,
+            val_virt,
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+        );
         unsafe { core::ptr::write_volatile(addr_of_mut!(self.0).cast::<T>(), value) }
     }
 }

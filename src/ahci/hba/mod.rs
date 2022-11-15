@@ -76,6 +76,14 @@ impl HbaPort {
         }
     }
 
+    pub fn start(&mut self) {
+        while self.command.readf(HBA_PORT_CMD_CR) {
+            spin_loop();
+        }
+
+        self.command.writef(HBA_PORT_CMD_FRE | HBA_PORT_CMD_ST, true);
+    }
+
     pub fn stop(&mut self) {
         self.command.writef(HBA_PORT_CMD_ST, false);
 

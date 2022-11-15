@@ -57,7 +57,7 @@ use cralloc::{
 use log::{debug, error, info};
 use spin::{Mutex, RwLock};
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB, Size2MiB},
+    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB, Size2MiB, Size1GiB},
     PhysAddr, VirtAddr,
 };
 use xmas_elf::ElfFile;
@@ -75,7 +75,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
-    mappings.kernel_stack = Mapping::FixedAddress(0xf000_0000_0000);
+    mappings.kernel_stack = Mapping::Dynamic;
     mappings.boot_info = Mapping::Dynamic;
     mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
@@ -401,14 +401,14 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             if let HeaderType::Normal(normal_header) = header.header_type {
                 let abar = normal_header.base_addresses.orig()[5];
                 let abar_test_page =
-                    Page::<Size2MiB>::containing_address(VirtAddr::new(abar as u64));
+                    Page::<Size4KiB>::containing_address(VirtAddr::new(abar as u64));
                 let abar_virt =
                     abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
                 map_page!(
                     abar,
                     abar_virt,
-                    Size4KiB,
+                    Size1GiB,
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
                 );
 

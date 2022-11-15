@@ -1,7 +1,11 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use core::fmt::Debug;
+use core::{fmt::Debug, ptr::addr_of};
+
+use x86_64::{structures::paging::{Page, Size4KiB, PageTableFlags, Mapper, Size2MiB}, VirtAddr};
+
+use crate::map_page;
 
 pub mod fis;
 pub mod hba;
@@ -37,6 +41,7 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk + Send +
     mem.init();
 
     let port_impl = mem.port_impl.read();
+    info!("Port implementation: {:#?}", &port_impl);
 
     let disks = (0..mem.ports.len())
         .filter(|&i| port_impl & 1 << i as i32 == 1 << i as i32)
