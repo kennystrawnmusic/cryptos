@@ -12,6 +12,7 @@ pub mod ahci;
 pub mod apic_impl;
 pub mod cralloc;
 pub mod exceptions;
+pub mod hmfs;
 pub mod interrupts;
 
 use bootloader_api::{*, config::{Mapping, Mappings, FrameBuffer}, info::FrameBufferInfo};
