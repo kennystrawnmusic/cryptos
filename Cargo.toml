@@ -19,6 +19,7 @@ bitflags = "1.3.2"
 bootloader_api = "0.11.0-beta"
 byteorder = { version = "1.4.3", default-features = false }
 conquer-once = { version = "0.3.2", default-features = false }
+hashbrown = { version = "0.13.1", default-features = false, features = ["inline-more"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
@@ -31,6 +32,7 @@ slab_allocator_rs = "1.0.1"
 spin = "0.9.4"
 spinning_top = "0.2.4"
 strum = { version = "0.24.1", default-features = false }
+unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
 x2apic = "0.4.1"
 x86_64 = "0.14.10"
 xmas-elf = "0.8.0"
