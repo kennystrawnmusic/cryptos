@@ -1,171 +1,13 @@
 use core::ops::DerefMut;
-
-use super::uefi_map::UefiMemoryRegion;
-use uefi::table::boot::MemoryDescriptor;
-use x86_64::structures::paging::PageTableFlags;
+use bootloader_api::info::{MemoryRegion, MemoryRegions, MemoryRegionKind};
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},
     structures::paging::{
-        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PhysFrame, Size4KiB,
+        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame, Size4KiB,
     },
     PhysAddr, VirtAddr,
 };
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[repr(C)]
-pub enum MemoryRegionKind {
-    Usable,
-    // as a UEFI stub, we *are* the bootloader now ― so no need to add that as a variant
-    Unknown(u32),
-    // don't need two unknowns because no plan to support BIOS here
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[repr(C)]
-pub struct MemoryRegion {
-    pub begin: u64,
-    pub end: u64,
-    pub kind: MemoryRegionKind,
-}
-
-impl MemoryRegion {
-    pub const fn empty() -> Self {
-        MemoryRegion {
-            begin: 0,
-            end: 0,
-            kind: MemoryRegionKind::Usable,
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct MemoryRegions {
-    pub ptr: *mut MemoryRegion,
-    pub len: usize,
-}
-
-impl MemoryRegions {
-    pub fn from_uefi(regions: &'static mut [MemoryDescriptor]) -> Self {
-        let mut converted_iter = regions.iter().map(|uefi_region| MemoryRegion {
-            begin: uefi_region.start().as_u64(),
-            end: uefi_region.start().as_u64() + uefi_region.len(),
-            kind: uefi_region.kind(),
-        });
-
-        let first_addr = &mut converted_iter.nth(0).unwrap() as *mut _ as usize as u64;
-        Self {
-            ptr: first_addr as *mut MemoryRegion,
-            len: converted_iter.len(),
-        }
-    }
-
-    pub fn as_static_mut(&'static mut self) -> &'static mut Self {
-        self
-    }
-
-    pub fn as_static_slice(&'static mut self) -> &'static mut [MemoryRegion] {
-        self.deref_mut()
-    }
-}
-
-impl core::ops::Deref for MemoryRegions {
-    type Target = [MemoryRegion];
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { core::slice::from_raw_parts(self.ptr, self.len) }
-    }
-}
-
-impl core::ops::DerefMut for MemoryRegions {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { core::slice::from_raw_parts_mut(self.ptr, self.len) }
-    }
-}
-
-impl From<&'static mut [MemoryRegion]> for MemoryRegions {
-    fn from(slice: &'static mut [MemoryRegion]) -> Self {
-        MemoryRegions {
-            ptr: slice.as_mut_ptr(),
-            len: slice.len(),
-        }
-    }
-}
-
-impl From<MemoryRegions> for &'static mut [MemoryRegion] {
-    fn from(map: MemoryRegions) -> Self {
-        unsafe { core::slice::from_raw_parts_mut(map.ptr, map.len) }
-    }
-}
-
-impl From<MemoryDescriptor> for MemoryRegion {
-    fn from(uefi_region: MemoryDescriptor) -> Self {
-        MemoryRegion {
-            begin: uefi_region.start().as_u64(),
-            end: uefi_region.start().as_u64() + uefi_region.len(),
-            kind: uefi_region.kind(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct StubTables {
-    pub stub_kernel: OffsetPageTable<'static>,
-    pub pml4: PhysFrame,
-}
-
-// impl StubTables {
-//     fn clone(&mut self) -> Self {
-//         let stub_kernel = unsafe {
-//             let cloned_offset = self.stub_kernel.phys_offset().clone();
-//             OffsetPageTable::new(
-//                 &mut self.stub_kernel.level_4_table().clone(),
-//                 cloned_offset,
-//             )
-//         };
-//         let pml4 = unsafe {
-//             PhysFrame::<Size4KiB>::from_start_address(self.pml4.start_address()).unwrap()
-//         };
-//         Self { stub_kernel, pml4 }
-//     }
-// }
-
-pub fn build_from_uefi(fa: &mut impl FrameAllocator<Size4KiB>) -> StubTables {
-    // UEFI identity-maps everything
-    let offset = VirtAddr::new(0);
-
-    let (stub_kernel, pml4) = {
-        let (table, old_flags) = {
-            let f = Cr3::read().0;
-            let flags = Cr3::read().1;
-            let ptptr = (offset + f.start_address().as_u64()).as_mut_ptr::<PageTable>();
-            (unsafe { &mut *ptptr }, flags)
-        };
-
-        // Debug
-        log::info!("Next available page frame: {:#?}", fa.allocate_frame());
-
-        // shut up the borrow checker
-        let cloned_table = table.clone();
-
-        let next_available = if let Some(entry) = cloned_table.iter().find(|e| e.flags().contains(PageTableFlags::PRESENT | PageTableFlags::WRITABLE)) {
-            let size = entry.frame().unwrap().size() as usize;
-            table.iter_mut().skip(size / 16).next()
-        } else {
-            panic!("Page table only contains one entry")
-        };
-
-        if let Some(entry) = next_available {
-            let frame = PhysFrame::<Size4KiB>::containing_address(entry.addr());
-            unsafe { (OffsetPageTable::new(&mut *table, offset), frame) }
-        } else {
-            panic!("Couldn't find any available page table entries")
-        }
-    };
-
-    StubTables { stub_kernel, pml4 }
-}
 
 unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
     let (pml4_frame, _) = Cr3::read();
@@ -183,12 +25,12 @@ pub unsafe fn map_memory(offset: VirtAddr) -> OffsetPageTable<'static> {
 }
 
 pub struct Falloc {
-    map: &'static mut [MemoryRegion],
+    map: &'static MemoryRegions,
     next: usize,
 }
 
 impl Falloc {
-    pub unsafe fn new(map: &'static mut [MemoryRegion]) -> Self {
+    pub unsafe fn new(map: &'static MemoryRegions) -> Self {
         Self { map, next: 0 }
     }
 
@@ -196,7 +38,7 @@ impl Falloc {
         let all = self.map.iter();
         let usable = all.filter(|r| r.kind == MemoryRegionKind::Usable);
 
-        let ranges = usable.map(|r| r.begin..r.end);
+        let ranges = usable.map(|r| r.start..r.end);
         let faddrs = ranges.flat_map(|r| r.step_by(4096));
         faddrs.map(|a| PhysFrame::containing_address(PhysAddr::new(a)))
     }
@@ -223,7 +65,7 @@ macro_rules! map_page {
         // suppress warnings if this macro is called from an unsafe fn
         #[allow(unused_unsafe)]
         let res = unsafe {
-            crate::STUB_TABLES.get().unwrap().lock().stub_kernel.map_to(
+            crate::MAPPER.get().unwrap().lock().map_to(
                 page,
                 frame,
                 $flags,

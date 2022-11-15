@@ -1,9 +1,14 @@
 [toolchain]
 channel = "nightly"
 components = [
+    "clippy",
     "llvm-tools-preview",
     "rust-src",
     "rustc-dev",
     "rustfmt",
     "rust-analyzer-preview"
+]
+targets = [
+    "x86_64-unknown-none",
+    "x86_64-unknown-uefi"
 ]

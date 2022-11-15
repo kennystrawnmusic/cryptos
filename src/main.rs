@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(abi_efiapi)]
 #![feature(alloc_error_handler)]
 #![feature(abi_x86_interrupt)]
 #![feature(maybe_uninit_slice)]
@@ -9,53 +8,66 @@
 extern crate alloc;
 
 pub mod acpi_impl;
+pub mod ahci;
 pub mod apic_impl;
 pub mod cralloc;
 pub mod exceptions;
-pub mod hmfs;
 pub mod interrupts;
-pub mod uefi_video;
-pub mod ahci;
 
+use bootloader_api::{*, config::{Mapping, Mappings, FrameBuffer}, info::FrameBufferInfo};
 use acpi::{AcpiTables, InterruptModel, PciConfigRegions};
 use alloc::vec::Vec;
 use conquer_once::spin::OnceCell;
+use crate::acpi_impl::KernelAcpi;
+use printk::LockedPrintk;
 use core::{
     alloc::Layout, any::TypeId, fmt::Write, iter::Copied, mem::MaybeUninit, panic::PanicInfo,
 };
 use cralloc::{
-    frames::{Falloc, MemoryRegion, MemoryRegions, StubTables},
+    frames::{map_memory, Falloc},
     heap_init,
-    uefi_map::{create_region_slice, UefiMap, UefiMemoryRegion},
 };
-use log::{error, info};
+use log::{debug, error, info};
 use spin::Mutex;
-use uefi::{
-    prelude::entry,
-    proto::{
-        console::gop::ModeInfo,
-        media::block::{BlockIO, BlockIOMedia},
-    },
-    table::{
-        boot::MemoryDescriptor, boot::MemoryType, Boot, SystemTable, SystemTableView,
-        SystemTableViewStatus,
-    },
-    Handle, Status,
-};
-use uefi_video::{Framebuffer, FramebufferInfo, LockedPrintk};
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, Size4KiB},
+    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB},
     PhysAddr, VirtAddr,
 };
 use xmas_elf::ElfFile;
 
-// defining this constant because we don't have a bootloader to depend on for this anymore
-pub const PHYS_OFFSET: u64 = 0x1000_0000_0000;
-
-pub unsafe fn get_phys_offset() -> u64 {
-    PHYS_OFFSET.clone()
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    error!("Kernel panic -- not syncing: {info}");
+    loop {
+        unsafe { 
+            core::arch::asm!("cli");
+            core::arch::asm!("hlt")
+        };
+    }
 }
 
+const MAPPINGS: Mappings = {
+    let mut mappings = Mappings::new_default();
+    mappings.kernel_stack = Mapping::FixedAddress(0xf000_0000_0000);
+    mappings.boot_info = Mapping::Dynamic;
+    mappings.framebuffer = Mapping::Dynamic;
+    mappings.physical_memory = Some(Mapping::Dynamic);
+    mappings.page_table_recursive = None;
+    mappings.aslr = false;
+    mappings.dynamic_range_start = Some(0);
+    mappings.dynamic_range_end = Some(0xffff_ffff_ffff);
+    mappings
+};
+
+const CONFIG: BootloaderConfig = {
+    let mut config = BootloaderConfig::new_default();
+    config.mappings = MAPPINGS;
+    config.frame_buffer = FrameBuffer::new_default();
+    config
+};
+
+/// Creates a page-aligned size of something by creating a test page at a given address
+///
 pub fn page_align(size: u64, addr: u64) -> usize {
     let test = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
     let test_size = test.size() as usize;
@@ -63,19 +75,7 @@ pub fn page_align(size: u64, addr: u64) -> usize {
     (((size as usize) - 1) / test_size + 1) * test_size
 }
 
-// store init process in a static until ready to spawn it
-// This is a Plan B in case the Block I/O protocol needs Boot Services active to be accessed
-pub static INIT: OnceCell<ElfFile<'static>> = OnceCell::uninit();
-
-// as before
 pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
-
-// store the mapper's parent struct in a static OnceCell to satisfy the borrow checker
-pub static STUB_TABLES: OnceCell<Mutex<StubTables>> = OnceCell::uninit();
-
-// as before
-pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
-pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
 
 // override compiler's pickiness about raw pointers not implementing Send
 pub struct SendRawPointer<T>(*mut T);
@@ -92,9 +92,40 @@ impl<T> SendRawPointer<T> {
 
 unsafe impl<T> Send for SendRawPointer<T> {}
 
+// Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
+pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
+pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
+
+pub fn get_next_usable_frame() -> PhysFrame {
+    FRAME_ALLOCATOR
+        .get()
+        .as_ref()
+        .unwrap()
+        .lock()
+        .usable()
+        .next()
+        .clone()
+        .expect("Out of memory")
+        .clone()
+}
+
+pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
+
+/// Convenient wrapper for getting the physical memory offset
+///
+/// Safety: only call this if you know that the OnceCell holding the physical memory offset has been initialized
+pub unsafe fn get_phys_offset() -> u64 {
+    PHYS_OFFSET.get().clone().unwrap().clone()
+}
+
+pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
 pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions>> = OnceCell::uninit();
 
-pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
+pub fn get_mcfg() -> Option<PciConfigRegions> {
+    PCI_CONFIG.get().clone().unwrap().clone()
+}
+
+pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
     log::set_logger(p).expect("Logger has already been set!");
 
@@ -104,108 +135,83 @@ pub fn printk_init(buffer: &'static mut [u8], info: ModeInfo) {
     } else {
         log::set_max_level(log::LevelFilter::Info);
     }
-    info!("CryptOS v. 0.1.0");
+    info!("CryptOS v. 0.1.1-alpha");
 }
 
-pub fn read_init_from_disk(blkdev: &mut BlockIOMedia) -> ElfFile<'static> {
-    todo!()
-}
+entry_point!(maink, config = &CONFIG);
 
-pub static SYSTEM_TABLE_ADDR: Mutex<Option<u64>> = Mutex::new(None);
-
-pub fn get_current_system_table<View: SystemTableView>() -> &'static SystemTable<View> {
-    unsafe { &*(SYSTEM_TABLE_ADDR.lock().unwrap() as *mut SystemTable<View>) }
-}
-
-#[entry]
-fn maink(image: Handle, mut table: SystemTable<Boot>) -> Status {
-    // FIXME: figure out why this isn't working
-    let (_addr, _info) = uefi_video::printk_init(&mut table);
-
-    // need to use a raw pointer to get the address here because the function returning the current address isn't available in boot services mode
-    let table_addr = &table as *const _ as usize as u64;
-    *SYSTEM_TABLE_ADDR.lock() = Some(table_addr);
-
-    let mem_map = {
-        let max_len = table.boot_services().memory_map_size().map_size
-            * table.boot_services().memory_map_size().entry_size;
-        let ptr = table
-            .boot_services()
-            .allocate_pool(MemoryType::LOADER_DATA, max_len)?;
-        unsafe { core::slice::from_raw_parts_mut(ptr, max_len) }
-    };
-
-    // make sure the Block I/O protocol is available before exiting boot services
-    let bio = unsafe { table.boot_services().locate_protocol::<BlockIO>()? };
-    let bio = unsafe { &mut *bio.get() };
-
-    let _bio_media_addr = bio.media() as *const _ as usize;
-
-    // TODO: try freeing pool manually and remapping it as CONVENTIONAL before exiting boot services to see if that makes a difference
-    // shadow the boot table with the runtime table so access can't be attempted after boot services are exited
-    let (table, memory_map) = table
-        .exit_boot_services(image, mem_map)
-        .expect("Couldn't exit UEFI boot services");
-
-    // Overwrite the global system table address immediately
-    *SYSTEM_TABLE_ADDR.lock() = Some(table.get_current_system_table_addr());
-
-    // Interrupt init function only loads the IDT this time; we can wait to init the APICs until later
-    // Needed here to ensure that exceptions are handled properly in case any are thrown trying to set up the heap, etc
-    crate::interrupts::init();
-
-    let mut map = UefiMap::new(memory_map.copied());
-    let page_tables = cralloc::frames::build_from_uefi(&mut map);
-
-    STUB_TABLES.get_or_init(move || Mutex::new(page_tables));
-
-    let stub_regions = create_region_slice(
-        map,
-        &mut *STUB_TABLES.get().as_mut().unwrap().clone().lock(),
+pub fn maink(boot_info: &'static mut BootInfo) -> ! {
+    // set up heap allocation ASAP
+    let offset = VirtAddr::new(
+        boot_info
+            .physical_memory_offset
+            .clone()
+            .into_option()
+            .unwrap(),
     );
+    let map = unsafe { map_memory(offset) };
+    let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
 
-    // immediately remap memory that's freed after boot services are exited
-    let falloc = unsafe { Falloc::new(stub_regions) };
+    MAPPER.get_or_init(move || Mutex::new(map));
     FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
 
-    // immediately reconfigure the heap
     heap_init(
-        &mut STUB_TABLES.get().as_mut().unwrap().lock().stub_kernel,
-        &mut *FRAME_ALLOCATOR.get().as_mut().unwrap().lock(),
+        &mut *MAPPER.get().unwrap().lock(),
+        &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
     )
-    .unwrap_or_else(|e| panic!("Error allocating heap: {:#?}", e));
+    .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 
-    // get the RSDP address from the UEFI config table
-    let rsdp = {
-        use uefi::table::cfg;
-        let mut entries = table.config_table().iter();
-        let acpi2 = entries.find(|e| matches!(e.guid, cfg::ACPI2_GUID));
+    // clone the physical memory offset into a static ASAP
+    // so it doesn't need to be hardcoded everywhere it's needed
+    let cloned_offset = boot_info
+        .physical_memory_offset
+        .clone()
+        .into_option()
+        .unwrap();
+    PHYS_OFFSET.get_or_init(move || cloned_offset);
 
-        let rsdp = acpi2.or_else(|| entries.find(|e| matches!(e.guid, cfg::ACPI_GUID)));
-        rsdp.map(|e| PhysAddr::new(e.address as u64))
+    let buffer_optional = &mut boot_info.framebuffer;
+    let buffer_option = buffer_optional.as_mut();
+    let buffer = buffer_option.unwrap();
+    let bi = buffer.info().clone();
+    let raw_buffer = buffer.buffer_mut();
+
+    let rsdp = boot_info.rsdp_addr.clone().into_option().unwrap();
+    printk_init(raw_buffer, bi);
+    info!(
+        "Using version {}.{}.{} of crates.io/crates/bootloader",
+        boot_info.api_version.version_major(),
+        boot_info.api_version.version_minor(),
+        boot_info.api_version.version_patch()
+    );
+
+    info!("RSDP address: {:#x}", rsdp.clone());
+    info!(
+        "Memory region start address: {:#x}",
+        &boot_info.memory_regions.first().unwrap() as *const _ as usize
+    );
+
+    let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
+    let mcfg = match PciConfigRegions::new(&tables) {
+        Ok(mcfg) => Some(mcfg),
+        Err(_) => None,
     };
 
-    let acpi = unsafe {
-        AcpiTables::from_rsdp(acpi_impl::KernelAcpi, rsdp.unwrap().as_u64() as usize)
-            .unwrap_or_else(|e| panic!("Error parsing ACPI tables: {:#?}", e))
-    };
-    let interrupts = acpi.platform_info().unwrap().interrupt_model;
+    let interrupts = tables.platform_info().unwrap().interrupt_model;
 
     INTERRUPT_MODEL.get_or_init(move || interrupts);
+    PCI_CONFIG.get_or_init(move || mcfg.clone());
 
-    // NOW we can init the APICs
-    crate::apic_impl::init_all_available_apics();
+    debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
+
+    debug!("TLS template: {:#?}", boot_info.tls_template);
+    debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
 
     loop {
-        unsafe { core::arch::asm!("hlt") };
-    }
-}
-
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    error!("Kernel panic -- not syncing: {info}");
-    loop {
-        unsafe { core::arch::asm!("hlt") };
+        unsafe { 
+            core::arch::asm!("cli");
+            core::arch::asm!("hlt");
+        };
     }
 }
 
