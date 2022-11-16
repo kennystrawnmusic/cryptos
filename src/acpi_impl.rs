@@ -61,20 +61,26 @@ impl AcpiHandler for KernelAcpi {
 
 impl aml::Handler for KernelAcpi {
     fn read_u8(&self, address: usize) -> u8 {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u8) }
-    }
+    } 
 
     fn read_u16(&self, address: usize) -> u16 {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -83,9 +89,12 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn read_u32(&self, address: usize) -> u32 {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -94,9 +103,12 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn read_u64(&self, address: usize) -> u64 {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -105,9 +117,12 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn write_u8(&mut self, address: usize, value: u8) {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -118,9 +133,12 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn write_u16(&mut self, address: usize, value: u16) {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -131,9 +149,12 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn write_u32(&mut self, address: usize, value: u32) {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -144,9 +165,11 @@ impl aml::Handler for KernelAcpi {
     }
 
     fn write_u64(&mut self, address: usize, value: u64) {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));
+        let test_start = test.start_address().as_u64();
         map_page!(
             address,
-            address as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -212,9 +235,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -236,9 +262,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -260,9 +289,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -292,9 +324,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -326,9 +361,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -360,9 +398,12 @@ impl aml::Handler for KernelAcpi {
             offs_bytes[1],
         ]);
 
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(rebuilt));
+        let test_start = test.start_address().as_u64();
+
         map_page!(
             rebuilt,
-            rebuilt as u64 + unsafe { get_phys_offset() },
+            test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );

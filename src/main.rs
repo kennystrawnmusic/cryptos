@@ -423,7 +423,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
                 );
 
-                let (_, disks) = ahci::all_disks(abar_virt as usize);
+                let (_mem, disks) = ahci::all_disks(abar_virt as usize);
                 info!("Found {:#?} disks", disks.len());
                 ALL_DISKS.get_or_init(move || RwLock::new(disks));
             }

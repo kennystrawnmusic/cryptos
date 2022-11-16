@@ -43,10 +43,10 @@ where
     fn read(&self) -> Self::Value {
         let val_addr = addr_of!(self.0) as usize as u64;
         let val_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(val_addr));
-        let val_virt = val_test_page.start_address().as_u64();
+        let val_virt = val_test_page.start_address().as_u64() + val_test_page.size();
         map_page!(
             val_addr,
-            val_virt,
+            val_virt + unsafe { crate::get_phys_offset() },
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
@@ -56,10 +56,10 @@ where
     fn write(&mut self, value: Self::Value) {
         let val_addr = addr_of!(self.0) as usize as u64;
         let val_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(val_addr));
-        let val_virt = val_test_page.start_address().as_u64();
+        let val_virt = val_test_page.start_address().as_u64() + val_test_page.size();
         map_page!(
             val_addr,
-            val_virt,
+            val_virt + unsafe { crate::get_phys_offset() },
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );

@@ -146,7 +146,7 @@ impl HbaPort {
 
         // Disable autosuspend
         let sata_ctrl = self.sata_ctrl.read();
-        self.sata_ctrl.write(sata_ctrl);
+        self.sata_ctrl.write(sata_ctrl | 7 << 8);
 
         // Power on and spin up
         self.command.writef(1 << 2 | 1 << 1, true);
@@ -205,13 +205,7 @@ impl HbaPort {
             }
             self.cmd_issue.writef(1 << s, true);
 
-            // Could see why the Redox team wanted to remove their implementation's start() method:
-            // this is the only place where it's ever used
-            while self.command.readf(HBA_PORT_CMD_CR) {
-                spin_loop();
-            }
-            self.command
-                .writef(HBA_PORT_CMD_FRE | HBA_PORT_CMD_ST, true);
+            self.start();
 
             Some(s)
         } else {
