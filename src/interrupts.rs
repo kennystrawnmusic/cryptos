@@ -211,6 +211,11 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
     }
 }
 
+// FIXME: if this is indeed the cause of the #10 page fault, figure out why
+pub extern "x86-interrupt" fn dummy_ahci(frame: InterruptStackFrame) {
+    info!("Received AHCI interrupt: {:#?}", &frame)
+}
+
 #[allow(dead_code)]
 pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
     // Spinloop until all statics are initialized
