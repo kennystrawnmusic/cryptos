@@ -41,7 +41,6 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk + Send +
     mem.init();
 
     let port_impl = mem.port_impl.read();
-    info!("Port implementation: {:#?}", &port_impl);
 
     let disks = (0..mem.ports.len())
         .filter(|&i| port_impl & 1 << i as i32 == 1 << i as i32)

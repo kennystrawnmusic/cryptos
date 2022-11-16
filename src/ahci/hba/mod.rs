@@ -2,6 +2,8 @@ use core::ptr::write_volatile;
 
 use log::debug;
 
+use crate::interrupts::IDT;
+
 pub mod consts;
 pub mod structs;
 
@@ -483,6 +485,7 @@ impl HbaMem {
         *GLOBAL_IS.write() = Some(self.interrupt_status.read().clone());
 
         info!("Port implementation pointer: {:#x}", self.port_impl.read());
+
         info!("Version: {:#x}", self.version.read());
         info!(
             "Extended host capability pointer: {:#x}",

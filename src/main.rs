@@ -379,22 +379,28 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             if arr.is_some() {
                 match header.interrupt_pin {
                     InterruptPin::IntA => {
-                        IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci)
+                        IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntB => {
-                        IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci)
+                        IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntC => {
-                        IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci)
+                        IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntD => {
-                        IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci)
+                        IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
                     }
                     _ => panic!("Invalid interrupt pin"),
                 };
             }
-
-            crate::interrupts::init();
 
             info!("Interrupt pin: {:#?}", header.interrupt_pin);
 
@@ -408,7 +414,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 map_page!(
                     abar,
                     abar_virt,
-                    Size1GiB,
+                    Size2MiB,
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
                 );
 
