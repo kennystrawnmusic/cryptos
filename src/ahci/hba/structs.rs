@@ -1,12 +1,15 @@
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use x86_64::{structures::paging::{Page, Size4KiB, PageTableFlags, Mapper}, VirtAddr};
 use core::{
     mem::MaybeUninit,
     ops::{BitAnd, BitOr, Not},
     ptr::{addr_of, addr_of_mut},
 };
 use syscall::io::Io;
+use x86_64::{
+    structures::paging::{Mapper, Page, PageTableFlags, Size4KiB},
+    VirtAddr,
+};
 
 use crate::map_page;
 

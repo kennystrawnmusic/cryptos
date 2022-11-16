@@ -15,30 +15,26 @@ pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 
-use ahci::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
-use bootloader_api::{*, config::{Mapping, Mappings, FrameBuffer}, info::FrameBufferInfo};
+use crate::{acpi_impl::KernelAcpi, ahci::Disk, interrupts::IDT};
 use acpi::{
-    sdt::{Signature, SdtHeader}, AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel,
-    PciConfigRegions, PhysicalMapping, PlatformInfo, RsdpError, fadt::Fadt,
+    fadt::Fadt,
+    sdt::{SdtHeader, Signature},
+    AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
+    PhysicalMapping, PlatformInfo, RsdpError,
 };
-use alloc::{
-    vec::Vec,
-    boxed::Box,
-    format,
-    sync::Arc, string::String
-};
+use ahci::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
+use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use aml::{
-    pci_routing::{Pin, PciRoutingTable},
-    LevelType, AmlContext, AmlValue, value::Args, AmlName,
+    pci_routing::{PciRoutingTable, Pin},
+    value::Args,
+    AmlContext, AmlName, AmlValue, LevelType,
+};
+use bootloader_api::{
+    config::{FrameBuffer, Mapping, Mappings},
+    info::FrameBufferInfo,
+    *,
 };
 use conquer_once::spin::OnceCell;
-use crate::{
-    acpi_impl::KernelAcpi,
-    ahci::Disk, interrupts::IDT,
-
-};
-use pcics::header::{Header, InterruptPin, HeaderType};
-use printk::LockedPrintk;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -55,9 +51,14 @@ use cralloc::{
     heap_init,
 };
 use log::{debug, error, info};
+use pcics::header::{Header, HeaderType, InterruptPin};
+use printk::LockedPrintk;
 use spin::{Mutex, RwLock};
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, OffsetPageTable, PhysFrame, Page, PageTableFlags, Size4KiB, Size2MiB, Size1GiB},
+    structures::paging::{
+        FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size1GiB,
+        Size2MiB, Size4KiB,
+    },
     PhysAddr, VirtAddr,
 };
 use xmas_elf::ElfFile;
@@ -66,7 +67,7 @@ use xmas_elf::ElfFile;
 fn panic(info: &PanicInfo) -> ! {
     error!("Kernel panic -- not syncing: {info}");
     loop {
-        unsafe { 
+        unsafe {
             core::arch::asm!("cli");
             core::arch::asm!("hlt")
         };
@@ -379,22 +380,26 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             if arr.is_some() {
                 match header.interrupt_pin {
                     InterruptPin::IntA => {
-                        IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::dummy_ahci);
+                        IDT.lock()[32 + arr.unwrap()[0].0 as usize]
+                            .set_handler_fn(interrupts::dummy_ahci);
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntB => {
-                        IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::dummy_ahci);
+                        IDT.lock()[32 + arr.unwrap()[1].0 as usize]
+                            .set_handler_fn(interrupts::dummy_ahci);
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntC => {
-                        IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::dummy_ahci);
+                        IDT.lock()[32 + arr.unwrap()[2].0 as usize]
+                            .set_handler_fn(interrupts::dummy_ahci);
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
                     InterruptPin::IntD => {
-                        IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::dummy_ahci);
+                        IDT.lock()[32 + arr.unwrap()[3].0 as usize]
+                            .set_handler_fn(interrupts::dummy_ahci);
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
@@ -428,7 +433,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     }
 
     loop {
-        unsafe { 
+        unsafe {
             core::arch::asm!("cli");
             core::arch::asm!("hlt");
         };

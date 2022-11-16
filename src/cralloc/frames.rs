@@ -1,10 +1,11 @@
+use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
 use core::ops::DerefMut;
-use bootloader_api::info::{MemoryRegion, MemoryRegions, MemoryRegionKind};
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},
     structures::paging::{
-        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame, Size4KiB,
+        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
+        Size4KiB,
     },
     PhysAddr, VirtAddr,
 };

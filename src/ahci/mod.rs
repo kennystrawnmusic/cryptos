@@ -3,7 +3,10 @@
 
 use core::{fmt::Debug, ptr::addr_of};
 
-use x86_64::{structures::paging::{Page, Size4KiB, PageTableFlags, Mapper, Size2MiB}, VirtAddr};
+use x86_64::{
+    structures::paging::{Mapper, Page, PageTableFlags, Size2MiB, Size4KiB},
+    VirtAddr,
+};
 
 use crate::map_page;
 

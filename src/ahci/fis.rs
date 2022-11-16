@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use super::hba::structs::Mmio;
+use alloc::vec::Vec;
 
 #[repr(u8)]
 pub enum FisKind {

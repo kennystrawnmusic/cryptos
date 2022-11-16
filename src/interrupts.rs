@@ -1,6 +1,9 @@
 use x86_64::structures::idt::SelectorErrorCode;
 
-use crate::{ahci::hba::{EIO_STATUS, GLOBAL_IS, structs::InterruptError}, ALL_DISKS};
+use crate::{
+    ahci::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
+    ALL_DISKS,
+};
 
 #[allow(unused_imports)]
 use {
