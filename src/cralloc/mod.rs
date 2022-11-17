@@ -15,7 +15,7 @@ use {
 pub static ALLOC: LockedHeap = LockedHeap::empty();
 
 pub const BEGIN_HEAP: usize = 0x5000_0000_0000;
-pub const HEAP_LEN: usize = 64 * 1024 * 1024;
+pub const HEAP_LEN: usize = 16 * 1024 * 1024;
 
 pub fn heap_init(
     mapper: &mut impl Mapper<Size4KiB>,

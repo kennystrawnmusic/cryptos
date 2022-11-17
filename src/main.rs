@@ -91,6 +91,7 @@ const CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings = MAPPINGS;
     config.frame_buffer = FrameBuffer::new_default();
+    config.kernel_stack_size = 1024*1024*64;
     config
 };
 
