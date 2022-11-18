@@ -76,7 +76,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
-    mappings.kernel_stack = Mapping::Dynamic;
+    mappings.kernel_stack = Mapping::FixedAddress(0xffff_0000_0000);
     mappings.boot_info = Mapping::Dynamic;
     mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
