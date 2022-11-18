@@ -70,6 +70,8 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("OVMF-pure-efi.fd")
         .arg("-machine")
         .arg("q35")
+        .arg("-m")
+        .arg("4G")
         .arg("-d")
         .arg("int");
 
