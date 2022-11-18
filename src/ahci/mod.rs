@@ -45,11 +45,11 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk + Send +
 
     let port_impl = mem.port_impl.read();
 
-    let overflow_test = Page::<Size4KiB>::containing_address(VirtAddr::new(0xfffefffffb90));
+    let overflow_test = Page::<Size4KiB>::containing_address(VirtAddr::new(0xeffffffffc00));
     let overflow_virt = overflow_test.start_address().as_u64();
 
     map_page!(
-        0xfffefffffb90,
+        0xeffffffffc00,
         overflow_virt,
         Size4KiB,
         PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
