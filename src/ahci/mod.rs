@@ -45,6 +45,16 @@ pub fn all_disks(base: usize) -> (&'static mut HbaMem, Vec<Box<dyn Disk + Send +
 
     let port_impl = mem.port_impl.read();
 
+    let overflow_test = Page::<Size4KiB>::containing_address(VirtAddr::new(0xfffffff720));
+    let overflow_virt = overflow_test.start_address().as_u64();
+
+    map_page!(
+        0xfffffff720,
+        overflow_virt,
+        Size4KiB,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+    );
+
     let disks = (0..mem.ports.len())
         .filter(|&i| port_impl & 1 << i as i32 == 1 << i as i32)
         .filter_map(|i| {

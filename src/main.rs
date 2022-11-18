@@ -31,7 +31,7 @@ use aml::{
 };
 use bootloader_api::{
     config::{FrameBuffer, Mapping, Mappings},
-    info::FrameBufferInfo,
+    info::{FrameBufferInfo, MemoryRegions},
     *,
 };
 use conquer_once::spin::OnceCell;
@@ -42,7 +42,7 @@ use core::{
     iter::Copied,
     marker::PhantomData,
     mem::MaybeUninit,
-    ops::{Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Not, Sub, SubAssign},
+    ops::{Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Not, Sub, SubAssign, DerefMut},
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
 };
@@ -91,7 +91,7 @@ const CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings = MAPPINGS;
     config.frame_buffer = FrameBuffer::new_default();
-    config.kernel_stack_size = 1024*1024*64;
+    config.kernel_stack_size = 1024*1024*66;
     config
 };
 
@@ -412,6 +412,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
             if let HeaderType::Normal(normal_header) = header.header_type {
                 let abar = normal_header.base_addresses.orig()[5];
+                info!("AHCI Base Address: {:#x}", &abar);
                 let abar_test_page =
                     Page::<Size4KiB>::containing_address(VirtAddr::new(abar as u64));
                 let abar_virt =
