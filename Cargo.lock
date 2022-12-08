@@ -20,7 +20,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd4333c62efb3e54178ca34fa1bf6903b4a91147a2f8dcc6e03fffffcce16605"
 dependencies = [
  "bit_field",
- "bitvec",
+ "bitvec 0.22.3",
  "byteorder",
  "log",
  "spinning_top",
@@ -81,9 +81,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5237f00a8c86130a0cc317830e558b966dd7850d48a953d998c813f01a41b527"
 dependencies = [
  "funty 1.2.0",
- "radium",
+ "radium 0.6.2",
  "tap",
- "wyz",
+ "wyz 0.4.0",
+]
+
+[[package]]
+name = "bitvec"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bc2832c24239b0141d5674bb9174f9d68a8b5b3f2753311927c172ca46f7e9c"
+dependencies = [
+ "funty 2.0.0",
+ "radium 0.7.0",
+ "tap",
+ "wyz 0.5.1",
 ]
 
 [[package]]
@@ -97,9 +109,9 @@ dependencies = [
 
 [[package]]
 name = "bootloader"
-version = "0.11.0-beta.1"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0827f3fdeb087e90726e18f74dd21c770d26dbef454ac1755ed1258cd12ebe19"
+checksum = "d8880371b6167e7b3aaf341ee9a2f41de1e09215e9e6fb2460d10ee080edda6d"
 dependencies = [
  "anyhow",
  "fatfs",
@@ -111,9 +123,9 @@ dependencies = [
 
 [[package]]
 name = "bootloader-x86_64-common"
-version = "0.11.0-beta"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b18b356f44cfbb176c503138dced66b5aec70b91aca3bfc7ca4190f45df2bba"
+checksum = "f956ccf8487ce15b49f1c1dccad7c4123743d5cd548c56cfd15d4bcea77e984b"
 dependencies = [
  "bootloader_api",
  "conquer-once",
@@ -125,14 +137,14 @@ dependencies = [
  "spinning_top",
  "usize_conversions",
  "x86_64",
- "xmas-elf",
+ "xmas-elf 0.8.0",
 ]
 
 [[package]]
 name = "bootloader-x86_64-uefi"
-version = "0.11.0-beta"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35a58bcf7fec7406ebd1a696b822c5ecd41a892a6c64a97d5fef76e53de78524"
+checksum = "1427cf1345a68b7988e9b9a94d487350a3bb3beb4bd387bda13a09ebcedd51db"
 dependencies = [
  "bootloader-x86_64-common",
  "bootloader_api",
@@ -143,9 +155,9 @@ dependencies = [
 
 [[package]]
 name = "bootloader_api"
-version = "0.11.0-beta"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2abd80df6ece4c1a35bbf9bc7ffcbfd9b9ced7f8a0c996dcfb84fd5ba34aab07"
+checksum = "babfb07dea4565842980315ad530a023aa348db43d03dfa104a70fdaca97d48e"
 
 [[package]]
 name = "buddy_system_allocator"
@@ -287,7 +299,7 @@ dependencies = [
  "unix_path",
  "x2apic",
  "x86_64",
- "xmas-elf",
+ "xmas-elf 0.9.0",
 ]
 
 [[package]]
@@ -540,13 +552,14 @@ dependencies = [
 
 [[package]]
 name = "mbrman"
-version = "0.4.2"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef6f6de0b8cfc56e13dc3ac3c662d9419f8aa5e3ebceb2d0eb25abce49e00395"
+checksum = "a4b239f4755d00466e3ac1d55ddeaf77a66c7580352fc6cbc40d56c218fc94a9"
 dependencies = [
  "bincode",
- "bitvec",
+ "bitvec 1.0.1",
  "serde",
+ "serde-big-array",
  "thiserror",
 ]
 
@@ -639,6 +652,12 @@ name = "radium"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "643f8f41a8ebc4c5dc4515c82bb8abd397b527fc20fd681b7c011c2aee5d44fb"
+
+[[package]]
+name = "radium"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
 name = "rand"
@@ -743,6 +762,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d193d69bae983fc11a79df82342761dfbf28a99fc8d203dca4c3c1b590948965"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3323f09a748af288c3dc2474ea6803ee81f118321775bffa3ac8f7e65c5e90e7"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -1104,6 +1132,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wyz"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
+dependencies = [
+ "tap",
+]
+
+[[package]]
 name = "x2apic"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1133,6 +1170,15 @@ name = "xmas-elf"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d29b4d8e7beaceb4e77447ba941a7600d23d0319ab52da0461abea214832d5a"
+dependencies = [
+ "zero",
+]
+
+[[package]]
+name = "xmas-elf"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f820cc767d65b32eef9d7ce7201448f28501c59edc55d47b71375fea579fc2df"
 dependencies = [
  "zero",
 ]
