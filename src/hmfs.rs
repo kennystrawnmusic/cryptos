@@ -28,7 +28,7 @@ pub type HashMap<K, V> = hashbrown::HashMap<K, V, HMFSHashBuilder>;
 
 // going one-further than most other implementations to ensure this never overflows
 #[allow(non_camel_case_types)]
-pub type time_t = u128;
+pub type time_t = i128;
 
 pub type FileData = Vec<u8>;
 
