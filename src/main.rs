@@ -404,7 +404,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
-                    _ => panic!("Invalid interrupt pin"),
+                    _ => unreachable!("Interrupt pin should only have 4 possible values"),
                 };
             }
 
