@@ -618,9 +618,9 @@ dependencies = [
 
 [[package]]
 name = "printk"
-version = "0.3.0-beta"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab7ed1d90aab7a1f1942a45bf85f47a82ad4933af59dda54403fb8001bba3df5"
+checksum = "223c6bdc662b71eca7c754cf65dd0bd843070dc5c7a057fedc601666994423a0"
 dependencies = [
  "bootloader_api",
  "conquer-once",
