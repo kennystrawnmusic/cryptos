@@ -8,21 +8,21 @@
 extern crate alloc;
 
 pub mod acpi_impl;
-pub mod ahci;
+pub mod ahci_old;
 pub mod apic_impl;
 pub mod cralloc;
 pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 
-use crate::{acpi_impl::KernelAcpi, ahci::Disk, interrupts::IDT};
+use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT};
 use acpi::{
     fadt::Fadt,
     sdt::{SdtHeader, Signature},
     AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
     PhysicalMapping, PlatformInfo, RsdpError,
 };
-use ahci::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
+use ahci_old::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
 use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
@@ -425,7 +425,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
                 );
 
-                let (_mem, disks) = ahci::all_disks(abar_virt as usize);
+                let (_mem, disks) = ahci_old::all_disks(abar_virt as usize);
                 info!("Found {:#?} disks", disks.len());
                 ALL_DISKS.get_or_init(move || RwLock::new(disks));
             }
