@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::convert::TryInto;
@@ -32,9 +33,25 @@ pub type time_t = i128;
 
 pub type FileData = Vec<u8>;
 
+// work around Box not implementing Hash
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct HashBox<T>(*mut T);
+
+impl<T> HashBox<T> {
+    pub fn new(inner: T) -> Self {
+        Self(Box::into_raw(Box::new(inner)))
+    }
+}
+
+impl<T> Drop for HashBox<T> {
+    fn drop(&mut self) {
+        core::mem::drop(self.0);
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum EntryKind {
-    Directory(*mut HashMap<Properties, *mut Entry>),
+    Directory(HashBox<HashMap<Properties, HashBox<Entry>>>),
     File(FileData),
 }
 
