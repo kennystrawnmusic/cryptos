@@ -1,4 +1,4 @@
-use x86_64::structures::idt::SelectorErrorCode;
+use x86_64::{structures::idt::SelectorErrorCode, registers::rflags::{self, RFlags}, instructions::interrupts};
 
 use crate::{
     ahci_old::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
@@ -253,4 +253,19 @@ pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
         }
     }
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+#[inline(always)]
+pub fn is_enabled() -> bool {
+    rflags::read().contains(RFlags::INTERRUPT_FLAG)
+}
+
+#[inline(always)]
+pub unsafe fn disable_interrupts() {
+    interrupts::disable();
+}
+
+#[inline(always)]
+pub unsafe fn enable_interrupts() {
+    interrupts::enable();
 }

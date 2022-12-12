@@ -279,6 +279,7 @@ dependencies = [
  "acpi",
  "aml",
  "bit",
+ "bit_field",
  "bitflags",
  "bootloader_api",
  "byteorder",

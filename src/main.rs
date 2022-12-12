@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(allocator_api)]
 #![feature(alloc_error_handler)]
 #![feature(abi_x86_interrupt)]
 #![feature(maybe_uninit_slice)]
@@ -15,6 +16,7 @@ pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 pub mod ahci;
+pub mod pci_impl;
 
 use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT};
 use acpi::{
