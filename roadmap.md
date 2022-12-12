@@ -10,7 +10,7 @@
 * Heap allocation — done (set up immediately at the very top of the main loop)
 * Configuring of APICs — done
 * ACPI/AML table handling — done
-* AHCI driver — almost done (see [Issue #1](https://github.com/kennystrawnmusic/cryptos/issues/1) — should be done when that showstopper is fixed)
+* AHCI driver — almost done (see [Issue #10](https://github.com/kennystrawnmusic/cryptos/issues/10) — should be done when that showstopper is fixed)
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
 * Graphics — TODO (idea is to rewrite the framebuffer structure provided by the `bootloader` crate as a new structure that implements both `Clone` as a compositor backend and `From` to convert from the bootloader's impl, then use the aforementioned `FrameBuffer + Clone + From` rewrite to actually bake a compositor into the kernel itself)
