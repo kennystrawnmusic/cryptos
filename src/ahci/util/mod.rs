@@ -2,6 +2,8 @@
 // Code in this file was originally part of the Aero Project; see https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/utils/mod.rs for details
 // Only including the parts of that file relevant to (working) AHCI implementation here
 
+pub mod sync;
+
 use core::cell::UnsafeCell;
 
 /// Just like [`Cell`] but with [volatile] read / write operations
