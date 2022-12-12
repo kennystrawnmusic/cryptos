@@ -279,34 +279,34 @@ macro_rules! refactor_hba_int_err {
     ($obj:expr) => {
         if let Err(e) = $obj {
             match e {
-                $crate::ahci::hba::structs::InterruptError::InvalidSlot => {
-                    *$crate::ahci::hba::EIO_DEBUG.write() =
+                $crate::ahci_old::hba::structs::InterruptError::InvalidSlot => {
+                    *$crate::ahci_old::hba::EIO_DEBUG.write() =
                         Some(alloc::string::String::from("Slot entry value must be between 0 and 32"));
-                    *$crate::ahci::hba::EIO_STATUS.write() = Some($crate::ahci::hba::structs::InterruptError::InvalidSlot.clone());
+                    *$crate::ahci_old::hba::EIO_STATUS.write() = Some($crate::ahci_old::hba::structs::InterruptError::InvalidSlot.clone());
                     return Err(syscall::Error::new(syscall::EIO));
                 }
-                $crate::ahci::hba::structs::InterruptError::TaskFile => {
-                    *$crate::ahci::hba::EIO_DEBUG.write() = Some(alloc::string::String::from("Task file error"));
-                    *$crate::ahci::hba::EIO_STATUS.write() = Some($crate::ahci::hba::structs::InterruptError::TaskFile.clone());
+                $crate::ahci_old::hba::structs::InterruptError::TaskFile => {
+                    *$crate::ahci_old::hba::EIO_DEBUG.write() = Some(alloc::string::String::from("Task file error"));
+                    *$crate::ahci_old::hba::EIO_STATUS.write() = Some($crate::ahci_old::hba::structs::InterruptError::TaskFile.clone());
                     return Err(syscall::Error::new(syscall::EIO));
                 }
-                $crate::ahci::hba::structs::InterruptError::HostBusFatal => {
-                    *$crate::ahci::hba::EIO_DEBUG.write() = Some(alloc::string::String::from("Host bus encountered an error (i.e. null pointer) from which it could not recover"));
-                    *$crate::ahci::hba::EIO_STATUS.write() = Some($crate::ahci::hba::structs::InterruptError::HostBusFatal.clone());
+                $crate::ahci_old::hba::structs::InterruptError::HostBusFatal => {
+                    *$crate::ahci_old::hba::EIO_DEBUG.write() = Some(alloc::string::String::from("Host bus encountered an error (i.e. null pointer) from which it could not recover"));
+                    *$crate::ahci_old::hba::EIO_STATUS.write() = Some($crate::ahci_old::hba::structs::InterruptError::HostBusFatal.clone());
                     return Err(syscall::Error::new(syscall::EIO));
                 }
-                $crate::ahci::hba::structs::InterruptError::HostBusData => {
-                    *$crate::ahci::hba::EIO_DEBUG.write() = Some(alloc::string::String::from(
+                $crate::ahci_old::hba::structs::InterruptError::HostBusData => {
+                    *$crate::ahci_old::hba::EIO_DEBUG.write() = Some(alloc::string::String::from(
                         "Attempted write has been performed using invalid or corrupt data",
                     ));
-                    *$crate::ahci::hba::EIO_STATUS.write() = Some($crate::ahci::hba::structs::InterruptError::HostBusData.clone());
+                    *$crate::ahci_old::hba::EIO_STATUS.write() = Some($crate::ahci_old::hba::structs::InterruptError::HostBusData.clone());
                     return Err(syscall::Error::new(syscall::EIO));
                 }
-                $crate::ahci::hba::structs::InterruptError::InterfaceFatal => {
-                    *$crate::ahci::hba::EIO_DEBUG.write() = Some(alloc::string::String::from(
+                $crate::ahci_old::hba::structs::InterruptError::InterfaceFatal => {
+                    *$crate::ahci_old::hba::EIO_DEBUG.write() = Some(alloc::string::String::from(
                         "SATA interface encountered an error that it couldn't recover from",
                     ));
-                    *$crate::ahci::hba::EIO_STATUS.write() = Some($crate::ahci::hba::structs::InterruptError::InterfaceFatal.clone());
+                    *$crate::ahci_old::hba::EIO_STATUS.write() = Some($crate::ahci_old::hba::structs::InterruptError::InterfaceFatal.clone());
                     return Err(syscall::Error::new(syscall::EIO));
                 }
             }

@@ -14,6 +14,7 @@ pub mod cralloc;
 pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
+pub mod ahci;
 
 use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT};
 use acpi::{
