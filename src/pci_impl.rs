@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
-use crate::apic_impl::LOCAL_APIC;
+use crate::{apic_impl::LOCAL_APIC, get_mcfg};
 
 use {
-    alloc::{alloc::Global, vec::Vec},
+    alloc::{alloc::Global, vec::Vec, sync::Arc},
     bit_field::BitField,
     bitflags::bitflags,
     core::{alloc::Allocator, arch::asm},
@@ -13,6 +13,8 @@ use {
 };
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
+
+pub static PCI_TABLE: Mutex<PciTable> = Mutex::new(PciTable::new());
 
 const fn calculate_blocks(bits: usize) -> usize {
     if bits % BLOCK_BITS == 0 {
@@ -652,6 +654,12 @@ impl PciHeader {
     }
 }
 
+impl From<u32> for PciHeader {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum DeviceType {
     Unknown,
@@ -962,4 +970,71 @@ impl DeviceType {
 pub trait PciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
     fn start(&self, header: &PciHeader, offset_table: &mut OffsetPageTable);
+}
+
+pub struct PciDevice {
+    pub handle: Arc<dyn PciDeviceHandle>,
+}
+
+pub struct PciTable {
+    pub inner: Vec<PciDevice>,
+}
+
+impl PciTable {
+    const fn new() -> Self {
+        Self { inner: Vec::new() }
+    }
+}
+
+pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
+    PCI_TABLE.lock().inner.push(PciDevice { handle })
+}
+
+/// Lookup and initialize all PCI devices.
+pub fn init(offset_table: &mut OffsetPageTable) {
+    // Check if the MCFG table is avaliable.
+    if get_mcfg().is_some() {
+        let _mcfg_table = get_mcfg().unwrap();
+    }
+
+    /*
+     * Use the brute force method to go through each possible bus,
+     * device, function ID and check if we have a driver for it. If a driver
+     * for the PCI device is found then initialize it.
+     */
+    for bus in 0..255 {
+        for device in 0..32 {
+            let function_count = if PciHeader::new(bus, device, 0x00).has_multiple_functions() {
+                8
+            } else {
+                1
+            };
+
+            for function in 0..function_count {
+                let device = PciHeader::new(bus, device, function);
+
+                unsafe {
+                    if !device.get_vendor().is_valid() {
+                        // Device does not exist.
+                        continue;
+                    }
+
+                    log::debug!(
+                        "PCI device (device={:?}, vendor={:?})",
+                        device.get_device(),
+                        device.get_vendor()
+                    );
+
+                    for driver in &mut PCI_TABLE.lock().inner {
+                        if driver
+                            .handle
+                            .handles(device.get_vendor(), device.get_device())
+                        {
+                            driver.handle.start(&device, offset_table)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

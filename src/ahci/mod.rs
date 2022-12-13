@@ -1,3 +1,4 @@
+use conquer_once::spin::OnceCell;
 use x86_64::{structures::paging::FrameAllocator, registers::control::Cr3};
 
 use crate::{get_phys_offset, cralloc::frames::safe_active_pml4, PHYS_OFFSET, MAPPER, map_page};
@@ -21,6 +22,8 @@ static BUDDY_SIZE: [u64; 3] = [
     Page::<Size4KiB>::SIZE * 4,
     Page::<Size2MiB>::SIZE,
 ];
+
+pub static ABAR: OnceCell<u64> = OnceCell::uninit();
 
 #[repr(usize)]
 pub enum BuddyOrdering {
@@ -416,6 +419,26 @@ struct FisRegH2D {
     _reserved: [u8; 4],
 }
 
+#[repr(C)]
+#[allow(dead_code)] //future-proof
+struct FisRegD2H {
+    fis_type: VolatileCell<FisType>,
+    pm: VolatileCell<u8>,
+    pub status: VolatileCell<u8>,
+    pub err: VolatileCell<u8>,
+    pub lba0: VolatileCell<u8>,
+    pub lba1: VolatileCell<u8>,
+    pub lba2: VolatileCell<u8>,
+    pub dev: VolatileCell<u8>,
+    pub lba3: VolatileCell<u8>,
+    pub lba4: VolatileCell<u8>,
+    pub lba5: VolatileCell<u8>,
+    pub _rsvd0: VolatileCell<u8>,
+    pub count_low: VolatileCell<u8>,
+    pub count_high: VolatileCell<u8>,
+    pub _rsvd1: [VolatileCell<u8>; 6],
+}
+
 impl FisRegH2D {
     fn set_lba(&mut self, lba: usize) {
         debug_assert!(lba < 1 << 48, "LBA is limited to 48 bits");
@@ -487,8 +510,16 @@ impl HbaPrdtEntry {
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
+#[allow(dead_code)] //future-proof
 enum FisType {
     RegH2D = 0x27,
+    RegD2H = 0x34,
+    DmaInit = 0x39,
+    DmaSetup = 0x41,
+    Data = 0x46,
+    Bist = 0x58,
+    PioSetup = 0x5f,
+    DevBits = 0xa1,
 }
 
 enum HbaPortDd {
@@ -930,8 +961,12 @@ impl AhciProtected {
 
         self.hba = VirtAddr::new(crate::IO_VIRTUAL_BASE + abar_address); // Update the HBA address
 
+        // Can't just write this in one line without pissing off the borrow checker
+        let cloned_hba = self.hba.clone();
+        ABAR.init_once(move || cloned_hba.as_u64());
+
         map_page!(
-            self.hba.as_u64(),
+            ABAR.get().clone().unwrap().clone(),
             abar_address,
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::NO_CACHE | PageTableFlags::WRITABLE | PageTableFlags::WRITE_THROUGH
@@ -945,7 +980,7 @@ impl AhciProtected {
 }
 
 /// Structure representing the ACHI driver.
-struct AhciDriver {
+pub struct AhciDriver {
     inner: Mutex<AhciProtected>,
 }
 
@@ -973,8 +1008,25 @@ impl PciDeviceHandle for AhciDriver {
 }
 
 /// Returns a reference-counting pointer to the AHCI driver.
-fn get_ahci() -> &'static Arc<AhciDriver> {
+pub fn get_ahci() -> &'static Arc<AhciDriver> {
     DRIVER
         .get()
         .expect("Attempted to get the AHCI driver before it was initialized")
+}
+
+pub fn ahci_init() {
+    // Initialize the AHCI driver instance.
+    DRIVER.call_once(|| {
+        const EMPTY: Option<Arc<AhciPort>> = None; // To satisfy the Copy trait bound when the AHCI creating data.
+
+        Arc::new(AhciDriver {
+            inner: Mutex::new(AhciProtected {
+                ports: [EMPTY; 32],    // Initialize the AHCI ports to an empty slice.
+                hba: VirtAddr::zero(), // Initialize the AHCI HBA address to zero.
+            }),
+        })
+    });
+
+    // Now register the AHCI driver with the PCI subsystem.
+    register_device_driver(get_ahci().clone());
 }

@@ -18,7 +18,7 @@ pub mod interrupts;
 pub mod ahci;
 pub mod pci_impl;
 
-use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT};
+use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT, ahci::{ahci_init, get_ahci, ABAR}, pci_impl::{PCI_TABLE, PciHeader, PciDeviceHandle}};
 use acpi::{
     fadt::Fadt,
     sdt::{SdtHeader, Signature},
@@ -427,12 +427,19 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                     abar,
                     abar_virt,
                     Size2MiB,
-                    PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+                    PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
                 );
 
-                let (_mem, disks) = ahci_old::all_disks(abar_virt as usize);
-                info!("Found {:#?} disks", disks.len());
-                ALL_DISKS.get_or_init(move || RwLock::new(disks));
+                ahci_init();
+                
+                let header = &PciHeader::from(unsafe { *(abar_virt as *const u32) });
+                let offset_table = &mut *MAPPER.get().unwrap().lock();
+
+                get_ahci().start(header, offset_table);
+
+                // let (_mem, disks) = ahci_old::all_disks(abar_virt as usize);
+                // info!("Found {:#?} disks", disks.len());
+                // ALL_DISKS.get_or_init(move || RwLock::new(disks));
             }
 
             break;
