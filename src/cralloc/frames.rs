@@ -1,4 +1,5 @@
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
+use spin::RwLock;
 use core::ops::DerefMut;
 #[allow(unused_imports)] //future-proof
 use x86_64::{
@@ -10,6 +11,8 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
+use crate::ahci::util::sync::Mutex;
+
 unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
     let (pml4_frame, _) = Cr3::read();
 
@@ -18,6 +21,10 @@ unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
     let ptpt: *mut PageTable = virt.as_mut_ptr();
 
     &mut *ptpt // Safety: returns mutable reference to raw pointer
+}
+
+pub fn safe_active_pml4(offset: VirtAddr) -> Mutex<PageTable> {
+    Mutex::new(unsafe { active_pml4(offset).clone() })
 }
 
 pub unsafe fn map_memory(offset: VirtAddr) -> OffsetPageTable<'static> {
