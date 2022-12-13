@@ -368,7 +368,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             dev,
             virt,
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         let raw_header = unsafe { *(virt as *const [u8; 64]) };

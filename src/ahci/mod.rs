@@ -1,6 +1,6 @@
 use x86_64::{structures::paging::FrameAllocator, registers::control::Cr3};
 
-use crate::{get_phys_offset, cralloc::frames::safe_active_pml4, PHYS_OFFSET, MAPPER};
+use crate::{get_phys_offset, cralloc::frames::safe_active_pml4, PHYS_OFFSET, MAPPER, map_page};
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
@@ -11,7 +11,7 @@ use {
     bit_field::BitField,
     spin::Once,
     util::{sync::Mutex, CeilDiv, VolatileCell},
-    crate::{pci_impl::*, FRAME_ALLOCATOR},
+    crate::{mcfg_brute_force, pci_impl::*, FRAME_ALLOCATOR},
     x86_64::{structures::paging::{Mapper, mapper::MapToError, PageTableFlags, Page, PhysFrame, Size4KiB, Size2MiB, OffsetPageTable}, PhysAddr, VirtAddr},
 };
 
@@ -928,20 +928,14 @@ impl AhciProtected {
             Bar::IO { .. } => panic!("ABAR is in port space o_O"),
         };
 
-        self.hba = VirtAddr::new(crate::IO_VIRTUAL_BASE + abar_address); // Update the HBA address.
+        self.hba = VirtAddr::new(crate::IO_VIRTUAL_BASE + abar_address); // Update the HBA address
 
-        unsafe {
-            MAPPER.get().unwrap().lock().map_to(
-                Page::containing_address(self.hba),
-                PhysFrame::containing_address(PhysAddr::new(abar_address)),
-                PageTableFlags::PRESENT
-                    | PageTableFlags::NO_CACHE
-                    | PageTableFlags::WRITABLE
-                    | PageTableFlags::WRITE_THROUGH,
-                &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
-            )
-        }?
-        .flush();
+        map_page!(
+            self.hba.as_u64(),
+            abar_address,
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::NO_CACHE | PageTableFlags::WRITABLE | PageTableFlags::WRITE_THROUGH
+        );
 
         self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
         self.enable_interrupts(header);
