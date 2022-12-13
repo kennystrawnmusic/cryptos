@@ -4,7 +4,7 @@
 use core::{fmt::Debug, ptr::addr_of};
 
 use x86_64::{
-    structures::paging::{Mapper, Page, PageTableFlags, Size2MiB, Size4KiB, Size1GiB},
+    structures::paging::{Mapper, Page, PageTableFlags, Size1GiB, Size2MiB, Size4KiB},
     VirtAddr,
 };
 

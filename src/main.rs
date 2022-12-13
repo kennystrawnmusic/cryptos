@@ -9,16 +9,22 @@
 extern crate alloc;
 
 pub mod acpi_impl;
+pub mod ahci;
 pub mod ahci_old;
 pub mod apic_impl;
 pub mod cralloc;
 pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
-pub mod ahci;
 pub mod pci_impl;
 
-use crate::{acpi_impl::KernelAcpi, ahci_old::Disk, interrupts::IDT, ahci::{ahci_init, get_ahci, ABAR}, pci_impl::{PCI_TABLE, PciHeader, PciDeviceHandle}};
+use crate::{
+    acpi_impl::KernelAcpi,
+    ahci::{ahci_init, get_ahci, ABAR},
+    ahci_old::Disk,
+    interrupts::IDT,
+    pci_impl::{PciDeviceHandle, PciHeader, PCI_TABLE},
+};
 use acpi::{
     fadt::Fadt,
     sdt::{SdtHeader, Signature},
@@ -45,7 +51,10 @@ use core::{
     iter::Copied,
     marker::PhantomData,
     mem::MaybeUninit,
-    ops::{Add, AddAssign, BitAnd, BitOr, Div, DivAssign, Mul, MulAssign, Not, Sub, SubAssign, DerefMut},
+    ops::{
+        Add, AddAssign, BitAnd, BitOr, DerefMut, Div, DivAssign, Mul, MulAssign, Not, Sub,
+        SubAssign,
+    },
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
 };
@@ -54,7 +63,7 @@ use cralloc::{
     heap_init,
 };
 use log::{debug, error, info};
-use pcics::header::{Header, HeaderType, InterruptPin};
+use pcics::{header::{Header, HeaderType, InterruptPin}, capabilities::pci_express::Device};
 use printk::LockedPrintk;
 use spin::{Mutex, RwLock};
 use x86_64::{
@@ -96,7 +105,7 @@ const CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings = MAPPINGS;
     config.frame_buffer = FrameBuffer::new_default();
-    config.kernel_stack_size = 1024*1024*128;
+    config.kernel_stack_size = 1024 * 1024 * 128;
     config
 };
 
@@ -368,27 +377,26 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             dev,
             virt,
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
         );
 
-        // prevent unaligned access
-        let dev = virt;
-
         let raw_header = unsafe { *(virt as *const [u8; 64]) };
-        let header = Header::from(raw_header);
+        let pcics_header = Header::from(raw_header);
 
-        if header.class_code.base == 0x01 && header.class_code.sub == 0x06 {
-            let code = header.class_code.clone(); // don't piss off the borrow checker
+        if pcics_header.class_code.base == 0x01 && pcics_header.class_code.sub == 0x06 {
             info!(
                 "Found AHCI controller {:x}:{:x} at {:#x}",
-                header.vendor_id, header.device_id, dev
+                pcics_header.vendor_id, pcics_header.device_id, dev
             );
-            info!("Class Code: {:#x?}", header.class_code);
+            info!("Class Code: {:#x?}", pcics_header.class_code);
 
             let arr = aml_init(&mut tables);
 
             if arr.is_some() {
-                match header.interrupt_pin {
+                match pcics_header.interrupt_pin {
                     InterruptPin::IntA => {
                         IDT.lock()[32 + arr.unwrap()[0].0 as usize]
                             .set_handler_fn(interrupts::ahci);
@@ -417,9 +425,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 };
             }
 
-            info!("Interrupt pin: {:#?}", header.interrupt_pin);
+            info!("Interrupt pin: {:#?}", pcics_header.interrupt_pin);
 
-            if let HeaderType::Normal(normal_header) = header.header_type {
+            if let HeaderType::Normal(normal_header) = pcics_header.header_type {
                 let abar = normal_header.base_addresses.orig()[5];
                 info!("AHCI Base Address: {:#x}", &abar);
                 let abar_test_page =
@@ -431,15 +439,23 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                     abar,
                     abar_virt,
                     Size4KiB,
-                    PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::NO_CACHE
+                        | PageTableFlags::WRITE_THROUGH
                 );
 
                 ahci_init();
-                
-                let header = &PciHeader::from(code);
+
+                let device = &PciHeader::new(
+                    pcics_header.class_code.base,
+                    pcics_header.class_code.sub,
+                    pcics_header.class_code.interface,
+                );
+
                 let offset_table = &mut *MAPPER.get().unwrap().lock();
 
-                get_ahci().start(header, offset_table);
+                get_ahci().start(device, offset_table);
 
                 // let (_mem, disks) = ahci_old::all_disks(abar_virt as usize);
                 // info!("Found {:#?} disks", disks.len());

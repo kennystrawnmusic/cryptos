@@ -1,6 +1,6 @@
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
-use spin::RwLock;
 use core::ops::DerefMut;
+use spin::RwLock;
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},

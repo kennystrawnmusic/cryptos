@@ -72,7 +72,7 @@ impl aml::Handler for KernelAcpi {
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u8) }
-    } 
+    }
 
     fn read_u16(&self, address: usize) -> u16 {
         let test = Page::<Size4KiB>::containing_address(VirtAddr::new(address as u64));

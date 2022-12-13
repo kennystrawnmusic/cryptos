@@ -1,19 +1,25 @@
 use conquer_once::spin::OnceCell;
-use x86_64::{structures::paging::FrameAllocator, registers::control::Cr3};
+use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator};
 
-use crate::{get_phys_offset, cralloc::frames::safe_active_pml4, PHYS_OFFSET, MAPPER, map_page};
+use crate::{cralloc::frames::safe_active_pml4, get_phys_offset, map_page, MAPPER, PHYS_OFFSET};
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
 pub mod util;
 
 use {
+    crate::{mcfg_brute_force, pci_impl::*, FRAME_ALLOCATOR},
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
     spin::Once,
     util::{sync::Mutex, CeilDiv, VolatileCell},
-    crate::{mcfg_brute_force, pci_impl::*, FRAME_ALLOCATOR},
-    x86_64::{structures::paging::{Mapper, mapper::MapToError, PageTableFlags, Page, PhysFrame, Size4KiB, Size2MiB, OffsetPageTable}, PhysAddr, VirtAddr},
+    x86_64::{
+        structures::paging::{
+            mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size2MiB,
+            Size4KiB,
+        },
+        PhysAddr, VirtAddr,
+    },
 };
 
 static DRIVER: Once<Arc<AhciDriver>> = Once::new();
@@ -35,7 +41,12 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
     let order = order as usize;
     debug_assert!(order <= BUDDY_SIZE.len());
 
-    let frame = FRAME_ALLOCATOR.get().expect("Frame allocator not initialized").lock().allocate_frame().expect("Out of memory");
+    let frame = FRAME_ALLOCATOR
+        .get()
+        .expect("Frame allocator not initialized")
+        .lock()
+        .allocate_frame()
+        .expect("Out of memory");
 
     let phys = frame.start_address().as_u64();
     let virt = unsafe { phys + get_phys_offset() as u64 };
@@ -629,7 +640,7 @@ impl HbaPort {
                             | PageTableFlags::WRITABLE
                             | PageTableFlags::WRITE_THROUGH
                             | PageTableFlags::NO_CACHE,
-                        &mut *FRAME_ALLOCATOR.get().unwrap().lock()
+                        &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
                     )?
                     .flush();
             }
@@ -950,7 +961,6 @@ impl AhciProtected {
 
     /// This function is responsible for initializing and starting the AHCI driver.
     fn start_driver(&mut self, header: &PciHeader) -> Result<(), MapToError<Size4KiB>> {
-
         let abar = header.get_bar(5).expect("Failed to get ABAR");
 
         let (abar_address, _) = match abar {
@@ -969,7 +979,10 @@ impl AhciProtected {
             ABAR.get().clone().unwrap().clone(),
             abar_address,
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::NO_CACHE | PageTableFlags::WRITABLE | PageTableFlags::WRITE_THROUGH
+            PageTableFlags::PRESENT
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::WRITE_THROUGH
         );
 
         self.start_hba(&mut *MAPPER.get().unwrap().lock())?;

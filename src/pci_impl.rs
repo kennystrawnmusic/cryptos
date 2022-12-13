@@ -2,16 +2,23 @@
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
 use pcics::header::ClassCode;
+use x86_64::{
+    structures::paging::{Mapper, Page, Size4KiB},
+    VirtAddr,
+};
 
-use crate::{apic_impl::LOCAL_APIC, get_mcfg};
+use crate::{apic_impl::LOCAL_APIC, get_mcfg, mcfg_brute_force};
 
 use {
-    alloc::{alloc::Global, vec::Vec, sync::Arc},
+    crate::{
+        ahci::util::{sync::Mutex, VolatileCell},
+        map_page,
+    },
+    alloc::{alloc::Global, sync::Arc, vec::Vec},
     bit_field::BitField,
     bitflags::bitflags,
     core::{alloc::Allocator, arch::asm},
-    x86_64::structures::paging::OffsetPageTable,
-    crate::ahci::util::{sync::Mutex, VolatileCell},
+    x86_64::structures::paging::{OffsetPageTable, PageTableFlags},
 };
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
@@ -251,7 +258,10 @@ impl Message {
         data.set_bits(0..8, vector as u32);
 
         let mut addr = 0;
-        addr.set_bits(12..20, unsafe { LOCAL_APIC.lock().as_ref().unwrap().id().clone() } as u32);
+        addr.set_bits(
+            12..20,
+            unsafe { LOCAL_APIC.lock().as_ref().unwrap().id().clone() } as u32,
+        );
         addr.set_bits(20..32, 0xfee);
 
         self.data.set(data);
@@ -512,9 +522,9 @@ impl PciHeader {
         outl(PCI_CONFIG_ADDRESS_PORT, address);
 
         match core::mem::size_of::<T>() {
-            1 => outb(PCI_CONFIG_DATA_PORT, value as u8), // u8
+            1 => outb(PCI_CONFIG_DATA_PORT, value as u8),  // u8
             2 => outw(PCI_CONFIG_DATA_PORT, value as u16), // u16
-            4 => outl(PCI_CONFIG_DATA_PORT, value),       // u32
+            4 => outl(PCI_CONFIG_DATA_PORT, value),        // u32
             width => unreachable!("unknown PCI write width: `{}`", width),
         }
     }
@@ -1009,47 +1019,93 @@ pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
 pub fn init(offset_table: &mut OffsetPageTable) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
-        let _mcfg_table = get_mcfg().unwrap();
-    }
+        /*
+         * Use the brute force method to go through each possible bus,
+         * device, function ID and check if we have a driver for it. If a driver
+         * for the PCI device is found then initialize it.
+         */
+        for dev in mcfg_brute_force()
+            .filter(|i| i.is_some())
+            .map(|i| i.unwrap())
+        {
+            let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 
-    /*
-     * Use the brute force method to go through each possible bus,
-     * device, function ID and check if we have a driver for it. If a driver
-     * for the PCI device is found then initialize it.
-     */
-    for bus in 0..255 {
-        for device in 0..32 {
-            let function_count = if PciHeader::new(bus, device, 0x00).has_multiple_functions() {
-                8
-            } else {
-                1
-            };
+            let virt = test_page.start_address().as_u64() + unsafe { crate::get_phys_offset() };
 
-            for function in 0..function_count {
-                let device = PciHeader::new(bus, device, function);
+            map_page!(
+                dev,
+                virt,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
 
-                unsafe {
-                    if !device.get_vendor().is_valid() {
-                        // Device does not exist.
-                        continue;
-                    }
+            let raw_header = unsafe { *(virt as *const [u8; 64]) };
+            let pcics_header = pcics::Header::from(raw_header);
 
-                    log::debug!(
-                        "PCI device (device={:?}, vendor={:?})",
-                        device.get_device(),
-                        device.get_vendor()
-                    );
+            let device = PciHeader::new(
+                pcics_header.class_code.base,
+                pcics_header.class_code.sub,
+                pcics_header.class_code.interface,
+            );
 
-                    for driver in &mut PCI_TABLE.lock().inner {
-                        if driver
-                            .handle
-                            .handles(device.get_vendor(), device.get_device())
-                        {
-                            driver.handle.start(&device, offset_table)
-                        }
+            unsafe {
+                log::debug!(
+                    "PCI device (device={:?}, vendor={:?})",
+                    device.get_device(),
+                    device.get_vendor()
+                );
+
+                for driver in &mut PCI_TABLE.lock().inner {
+                    if driver
+                        .handle
+                        .handles(device.get_vendor(), device.get_device())
+                    {
+                        driver.handle.start(&device, offset_table)
                     }
                 }
             }
         }
+    } else {
+        panic!("MCFG table not present");
     }
+
+    // Deprecated
+    // for bus in 0..255 {
+    //     for device in 0..32 {
+    //         let function_count = if PciHeader::new(bus, device, 0x00).has_multiple_functions() {
+    //             8
+    //         } else {
+    //             1
+    //         };
+
+    //         for function in 0..function_count {
+    //             let device = PciHeader::new(bus, device, function);
+
+    //             unsafe {
+    //                 if !device.get_vendor().is_valid() {
+    //                     // Device does not exist.
+    //                     continue;
+    //                 }
+
+    //                 log::debug!(
+    //                     "PCI device (device={:?}, vendor={:?})",
+    //                     device.get_device(),
+    //                     device.get_vendor()
+    //                 );
+
+    //                 for driver in &mut PCI_TABLE.lock().inner {
+    //                     if driver
+    //                         .handle
+    //                         .handles(device.get_vendor(), device.get_device())
+    //                     {
+    //                         driver.handle.start(&device, offset_table)
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }

@@ -48,7 +48,10 @@ where
             val_addr,
             val_virt + unsafe { crate::get_phys_offset() },
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
         );
         unsafe { core::ptr::read_volatile(addr_of!(self.0).cast::<T>()) }
     }
@@ -61,7 +64,10 @@ where
             val_addr,
             val_virt + unsafe { crate::get_phys_offset() },
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
         );
         unsafe { core::ptr::write_volatile(addr_of_mut!(self.0).cast::<T>(), value) }
     }

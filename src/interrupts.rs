@@ -1,4 +1,8 @@
-use x86_64::{structures::idt::SelectorErrorCode, registers::rflags::{self, RFlags}, instructions::interrupts};
+use x86_64::{
+    instructions::interrupts,
+    registers::rflags::{self, RFlags},
+    structures::idt::SelectorErrorCode,
+};
 
 use crate::{
     ahci_old::hba::{structs::InterruptError, EIO_STATUS, GLOBAL_IS},
@@ -243,12 +247,18 @@ pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
             // Checklist item 3
             match EIO_STATUS.read().as_ref().unwrap() {
                 InterruptError::TaskFile => error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read()),
-                InterruptError::HostBusFatal => error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read()),
-                InterruptError::HostBusData => error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read()),
+                InterruptError::HostBusFatal => {
+                    error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
+                }
+                InterruptError::HostBusData => {
+                    error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
+                }
                 InterruptError::InterfaceFatal => {
                     error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
                 }
-                InterruptError::InvalidSlot => error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read()),
+                InterruptError::InvalidSlot => {
+                    error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
+                }
             }
         }
     }

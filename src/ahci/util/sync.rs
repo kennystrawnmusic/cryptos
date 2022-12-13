@@ -3,8 +3,8 @@
 // Refactored to work standalone without dependency on a foreign kernel
 
 use {
-    alloc::{sync::Arc, vec::Vec},
     crate::interrupts,
+    alloc::{sync::Arc, vec::Vec},
 };
 
 // Note: port the BlockQueue later, but not now — can wait until we have a working userland
