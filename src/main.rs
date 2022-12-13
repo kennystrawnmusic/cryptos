@@ -371,6 +371,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
+        // prevent unaligned access
+        let dev = virt;
+
         let raw_header = unsafe { *(virt as *const [u8; 64]) };
         let header = Header::from(raw_header);
 
@@ -426,13 +429,13 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 map_page!(
                     abar,
                     abar_virt,
-                    Size2MiB,
+                    Size4KiB,
                     PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
                 );
 
                 ahci_init();
                 
-                let header = &PciHeader::from(unsafe { *(abar_virt as *const u32) });
+                let header = &PciHeader::from(unsafe { *(dev as *const u32) });
                 let offset_table = &mut *MAPPER.get().unwrap().lock();
 
                 get_ahci().start(header, offset_table);
