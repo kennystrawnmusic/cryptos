@@ -378,6 +378,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         let header = Header::from(raw_header);
 
         if header.class_code.base == 0x01 && header.class_code.sub == 0x06 {
+            let code = header.class_code.clone(); // don't piss off the borrow checker
             info!(
                 "Found AHCI controller {:x}:{:x} at {:#x}",
                 header.vendor_id, header.device_id, dev
@@ -435,7 +436,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
                 ahci_init();
                 
-                let header = &PciHeader::from(unsafe { *(dev as *const u32) });
+                let header = &PciHeader::from(code);
                 let offset_table = &mut *MAPPER.get().unwrap().lock();
 
                 get_ahci().start(header, offset_table);

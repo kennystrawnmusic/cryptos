@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
+use pcics::header::ClassCode;
+
 use crate::{apic_impl::LOCAL_APIC, get_mcfg};
 
 use {
@@ -447,6 +449,19 @@ impl Vendor {
     }
 }
 pub struct PciHeader(u32);
+
+impl From<ClassCode> for PciHeader {
+    fn from(value: ClassCode) -> Self {
+        let mut res: u32 = 0;
+
+        res.set_bits(0..3, value.interface as u32);
+        res.set_bits(3..8, value.sub as u32);
+        res.set_bits(8..16, value.base as u32);
+        res.set_bits(16..32, 0);
+
+        Self(res)
+    }
+}
 
 impl PciHeader {
     pub fn new(bus: u8, device: u8, function: u8) -> Self {
