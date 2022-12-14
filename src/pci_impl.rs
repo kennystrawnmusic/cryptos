@@ -8,7 +8,14 @@ use x86_64::{
     VirtAddr,
 };
 
-use crate::{apic_impl::LOCAL_APIC, get_mcfg, mcfg_brute_force, acpi_impl::KernelAcpi, aml_init, interrupts::{IDT, self}};
+use crate::{
+    acpi_impl::KernelAcpi,
+    aml_init,
+    apic_impl::LOCAL_APIC,
+    get_mcfg,
+    interrupts::{self, IDT},
+    mcfg_brute_force,
+};
 
 use {
     crate::{
@@ -1053,7 +1060,7 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetP
                 pcics_header.class_code.sub,
                 pcics_header.class_code.interface,
             );
-            
+
             let arr = aml_init(acpi_tables);
 
             if arr.is_some() {

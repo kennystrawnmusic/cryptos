@@ -63,7 +63,10 @@ use cralloc::{
     heap_init,
 };
 use log::{debug, error, info};
-use pcics::{header::{Header, HeaderType, InterruptPin}, capabilities::pci_express::Device};
+use pcics::{
+    capabilities::pci_express::Device,
+    header::{Header, HeaderType, InterruptPin},
+};
 use printk::LockedPrintk;
 use spin::{Mutex, RwLock};
 use x86_64::{

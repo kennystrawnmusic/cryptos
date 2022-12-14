@@ -966,7 +966,9 @@ impl AhciProtected {
         let (abar_address, _) = match abar {
             Bar::Memory32 { address, size, .. } => (address as u64, size as u64),
             Bar::Memory64 { address, size, .. } => (address, size),
-            Bar::IO { .. } => {panic!("ABAR is in port space o_O")},
+            Bar::IO { .. } => {
+                panic!("ABAR is in port space o_O")
+            }
         };
 
         self.hba = VirtAddr::new(crate::IO_VIRTUAL_BASE + abar_address); // Update the HBA address
