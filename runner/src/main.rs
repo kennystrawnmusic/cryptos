@@ -38,13 +38,20 @@ fn main() {
 }
 
 fn download_ovmf() {
+    let mut url_cmd = Command::new("bash");
+    url_cmd.arg("-c").arg("curl -s https://github.com/rust-osdev/ovmf-prebuilt/releases/ | grep \"href\" | grep \"OVMF-pure-efi.fd\" | cut -d\\\" -f2");
+    
+    let url_fragment = url_cmd.output().unwrap_or_else(|e| panic!("Error attempting to parse URL of latest version of OVMF: {:#?}", e));
+    let url_fragment_string = String::from_utf8(url_fragment.stdout).expect("Malformed command line output: not valid UTF-8");
+    let url = format!("https://github.com{}", url_fragment_string);
+
     let mut download_cmd = Command::new("curl");
 
     download_cmd
         .arg("-L")
         .arg("-o")
         .arg("OVMF-pure-efi.fd")
-        .arg("https://github.com/rust-osdev/ovmf-prebuilt/releases/download/v0.20220719.209%2Bgf0064ac3af/OVMF-pure-efi.fd");
+        .arg(url.as_str());
 
     let download_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     download_cmd.current_dir(&download_dir);
@@ -65,7 +72,11 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
 
     uefi_cmd
         .arg("-drive")
-        .arg(format!("format=raw,file={}", &out_path.display()))
+        .arg(format!("id=disk,format=raw,file={},if=none", &out_path.display()))
+        .arg("-device")
+        .arg("ahci,id=ahci")
+        .arg("-device")
+        .arg("ide-hd,drive=disk,bus=ahci.0")
         .arg("-bios")
         .arg("OVMF-pure-efi.fd")
         .arg("-machine")
