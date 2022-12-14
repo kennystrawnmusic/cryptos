@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
-use pcics::header::ClassCode;
+use acpi::AcpiTables;
+use pcics::header::{ClassCode, InterruptPin};
 use x86_64::{
     structures::paging::{Mapper, Page, Size4KiB},
     VirtAddr,
 };
 
-use crate::{apic_impl::LOCAL_APIC, get_mcfg, mcfg_brute_force};
+use crate::{apic_impl::LOCAL_APIC, get_mcfg, mcfg_brute_force, acpi_impl::KernelAcpi, aml_init, interrupts::{IDT, self}};
 
 use {
     crate::{
@@ -20,6 +21,8 @@ use {
     core::{alloc::Allocator, arch::asm},
     x86_64::structures::paging::{OffsetPageTable, PageTableFlags},
 };
+
+use log::*;
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
@@ -1016,7 +1019,7 @@ pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
 }
 
 /// Lookup and initialize all PCI devices.
-pub fn init(offset_table: &mut OffsetPageTable) {
+pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetPageTable) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
         /*
@@ -1050,6 +1053,40 @@ pub fn init(offset_table: &mut OffsetPageTable) {
                 pcics_header.class_code.sub,
                 pcics_header.class_code.interface,
             );
+            
+            let arr = aml_init(acpi_tables);
+
+            if arr.is_some() {
+                match pcics_header.interrupt_pin {
+                    InterruptPin::IntA => {
+                        IDT.lock()[32 + arr.unwrap()[0].0 as usize]
+                            .set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
+                    }
+                    InterruptPin::IntB => {
+                        IDT.lock()[32 + arr.unwrap()[1].0 as usize]
+                            .set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
+                    }
+                    InterruptPin::IntC => {
+                        IDT.lock()[32 + arr.unwrap()[2].0 as usize]
+                            .set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
+                    }
+                    InterruptPin::IntD => {
+                        IDT.lock()[32 + arr.unwrap()[3].0 as usize]
+                            .set_handler_fn(interrupts::ahci);
+                        crate::interrupts::init();
+                        crate::apic_impl::init_all_available_apics();
+                    }
+                    _ => unreachable!("Interrupt pin should only have 4 possible values"),
+                };
+            }
+
+            info!("Interrupt pin: {:#?}", pcics_header.interrupt_pin);
 
             unsafe {
                 log::debug!(
@@ -1071,41 +1108,4 @@ pub fn init(offset_table: &mut OffsetPageTable) {
     } else {
         panic!("MCFG table not present");
     }
-
-    // Deprecated
-    // for bus in 0..255 {
-    //     for device in 0..32 {
-    //         let function_count = if PciHeader::new(bus, device, 0x00).has_multiple_functions() {
-    //             8
-    //         } else {
-    //             1
-    //         };
-
-    //         for function in 0..function_count {
-    //             let device = PciHeader::new(bus, device, function);
-
-    //             unsafe {
-    //                 if !device.get_vendor().is_valid() {
-    //                     // Device does not exist.
-    //                     continue;
-    //                 }
-
-    //                 log::debug!(
-    //                     "PCI device (device={:?}, vendor={:?})",
-    //                     device.get_device(),
-    //                     device.get_vendor()
-    //                 );
-
-    //                 for driver in &mut PCI_TABLE.lock().inner {
-    //                     if driver
-    //                         .handle
-    //                         .handles(device.get_vendor(), device.get_device())
-    //                     {
-    //                         driver.handle.start(&device, offset_table)
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
