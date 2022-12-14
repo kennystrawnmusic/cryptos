@@ -959,6 +959,10 @@ impl AhciProtected {
         header.enable_bus_mastering();
     }
 
+    fn enable_interrupts_new(&mut self, header: &mut pcics::Header) {
+        todo!()
+    }
+
     /// This function is responsible for initializing and starting the AHCI driver.
     fn start_driver(&mut self, header: &PciHeader) -> Result<(), MapToError<Size4KiB>> {
         let abar = header.get_bar(5).expect("Failed to get ABAR");
