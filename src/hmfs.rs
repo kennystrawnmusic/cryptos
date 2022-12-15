@@ -64,6 +64,12 @@ impl Hash for EntryKind {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Entry(EntryKind);
 
+impl Entry {
+    pub fn new(kind: EntryKind) -> Self {
+        Self(kind)
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Properties {
     name: String,
@@ -76,10 +82,65 @@ pub struct Properties {
     owner: String,
 }
 
+impl Properties {
+    pub fn new(
+        name: String,
+        entry_kind: EntryKind,
+        mime_type: Option<String>,
+        mode: u32,
+        created_by: String,
+        date_created: time_t,
+        date_modified: time_t,
+        owner: String,
+    ) -> Self {
+        Self {
+            name,
+            entry_kind,
+            mime_type,
+            mode,
+            created_by,
+            date_created,
+            date_modified,
+            owner,
+        }
+    }
+}
+
 // Needed to allow writing HashMaps directly to the disk
 pub fn hashmap_bytes<K, V>(map: HashMap<K, V>) -> &'static mut [u8] {
     let map_addr = &map as *const _ as usize as u64;
     unsafe {
         core::slice::from_raw_parts_mut(map_addr as *mut u8, core::mem::size_of::<HashMap<K, V>>())
+    }
+}
+
+#[allow(dead_code)]
+pub struct RootEntry {
+    magic: u32,
+    dir: Entry,
+}
+
+impl RootEntry {
+    pub fn new() -> Self {
+        let mut root_map_inner = HashMap::<Properties, Rc<Entry>>::default();
+        let root_map = Rc::new(root_map_inner.clone());
+
+        let root_props = Properties::new(
+            String::from("/"),
+            EntryKind::Directory(Rc::clone(&root_map)),
+            None, 
+            0777,
+            String::from("root"),
+            1671142579,  // seconds since 1970 as of December 15, 2022
+            1671142579, // will find a way to compute this in real time later
+            String::from("root"),
+        );
+
+        root_map_inner.insert(root_props, Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)))));
+
+        Self {
+            magic: 0x90a7cafe,
+            dir: Entry::new(EntryKind::Directory(Rc::new(root_map_inner))),
+        }
     }
 }
