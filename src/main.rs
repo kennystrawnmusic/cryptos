@@ -21,7 +21,7 @@ use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
     interrupts::IDT,
-    pci_impl::{PciDeviceHandle, PciHeader, PCI_TABLE},
+    pci_impl::{PciDeviceHandle, PCI_TABLE},
 };
 use acpi::{
     fadt::Fadt,

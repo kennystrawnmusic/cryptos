@@ -969,18 +969,14 @@ impl AhciProtected {
 
     /// This function is responsible for enabling bus mastering and add AHCI
     /// IRQ handler.
-    fn enable_interrupts(&mut self, header: &PciHeader) {
-        header.enable_mmio();
-        header.enable_bus_mastering();
-    }
-
-    fn enable_interrupts_new(&mut self, header: &mut pcics::Header) {
+    fn enable_interrupts(&mut self, header: &mut pcics::Header) {
         header.command.io_space = false;
         header.command.memory_space = true;
         header.command.bus_master = true;
     }
 
-    fn start_driver_new(
+    /// This function is responsible for initializing and starting the AHCI driver.
+    fn start_driver(
         &mut self,
         header: &mut pcics::Header,
         tables: &mut AcpiTables<KernelAcpi>,
@@ -1036,46 +1032,12 @@ impl AhciProtected {
             self.hba = VirtAddr::new(abar_virt);
 
             self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
-            self.enable_interrupts_new(header);
+            self.enable_interrupts(header);
 
             Ok(())
         } else {
             panic!("AHCI: Not a normal header")
         }
-    }
-
-    /// This function is responsible for initializing and starting the AHCI driver.
-    fn start_driver(&mut self, header: &PciHeader) -> Result<(), MapToError<Size4KiB>> {
-        let abar = header.get_bar(5).expect("Failed to get ABAR");
-
-        let (abar_address, _) = match abar {
-            Bar::Memory32 { address, size, .. } => (address as u64, size as u64),
-            Bar::Memory64 { address, size, .. } => (address, size),
-            Bar::IO { .. } => {
-                panic!("ABAR is in port space o_O")
-            }
-        };
-
-        self.hba = VirtAddr::new(crate::IO_VIRTUAL_BASE + abar_address); // Update the HBA address
-
-        // Can't just write this in one line without pissing off the borrow checker
-        let cloned_hba = self.hba.clone();
-        ABAR.init_once(move || cloned_hba.as_u64());
-
-        map_page!(
-            ABAR.get().clone().unwrap().clone(),
-            abar_address,
-            Size4KiB,
-            PageTableFlags::PRESENT
-                | PageTableFlags::NO_CACHE
-                | PageTableFlags::WRITABLE
-                | PageTableFlags::WRITE_THROUGH
-        );
-
-        self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
-        self.enable_interrupts(header);
-
-        Ok(())
     }
 }
 
@@ -1093,26 +1055,13 @@ impl PciDeviceHandle for AhciDriver {
         }
     }
 
-    fn start_old(&self, header: &PciHeader, _offset_table: &mut OffsetPageTable) {
-        log::info!("ahci: starting driver...");
-
-        get_ahci().inner.lock_irq().start_driver(header).unwrap(); // Start and initialize the AHCI controller.
-
-        // Temporary testing...
-        if let Some(port) = get_ahci().inner.lock().ports[0].clone() {
-            let buffer = &mut [0u8; 512];
-            port.read(0, buffer);
-            log::info!("Read sector 0: {:?}", buffer);
-        }
-    }
-
-    fn start_new(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
+    fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
 
         get_ahci()
             .inner
             .lock()
-            .start_driver_new(header, tables)
+            .start_driver(header, tables)
             .unwrap();
 
         info!("Port 0: {:#?}", get_ahci().inner.lock().ports[0].clone());
