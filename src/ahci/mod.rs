@@ -960,7 +960,9 @@ impl AhciProtected {
     }
 
     fn enable_interrupts_new(&mut self, header: &mut pcics::Header) {
-        todo!()
+        header.command.io_space = false;
+        header.command.memory_space = true;
+        header.command.bus_master = true;
     }
 
     /// This function is responsible for initializing and starting the AHCI driver.
