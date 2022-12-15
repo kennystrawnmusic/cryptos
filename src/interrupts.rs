@@ -175,11 +175,11 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         selector.descriptor_table(),
         match selector.external() {
             true => "Yes",
-            false => "No"
+            false => "No",
         },
         match selector.is_null() {
             true => "Yes",
-            false => "No"
+            false => "No",
         },
         frame
     );

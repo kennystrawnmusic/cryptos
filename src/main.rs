@@ -186,7 +186,10 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = Option<u64>> {
     })
 }
 
-pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>, header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
+pub fn aml_init(
+    tables: &mut AcpiTables<KernelAcpi>,
+    header: &mut Header,
+) -> Option<[(u32, InterruptPin); 4]> {
     info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
@@ -243,19 +246,39 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>, header: &mut Header) -> Opt
                     (0, InterruptPin::IntC),
                     (0, InterruptPin::IntD),
                 ];
-                if let Ok(desc) = prt.route(header.class_code.base as u16, header.class_code.base as u16, Pin::IntA, &mut aml_ctx) {
+                if let Ok(desc) = prt.route(
+                    header.class_code.base as u16,
+                    header.class_code.base as u16,
+                    Pin::IntA,
+                    &mut aml_ctx,
+                ) {
                     debug!("IRQ descriptor A: {:#?}", desc);
                     a[0] = (desc.irq, InterruptPin::IntA);
                 }
-                if let Ok(desc) = prt.route(header.class_code.base as u16, header.class_code.base as u16, Pin::IntB, &mut aml_ctx) {
+                if let Ok(desc) = prt.route(
+                    header.class_code.base as u16,
+                    header.class_code.base as u16,
+                    Pin::IntB,
+                    &mut aml_ctx,
+                ) {
                     debug!("IRQ descriptor B: {:#?}", desc);
                     a[1] = (desc.irq, InterruptPin::IntB);
                 }
-                if let Ok(desc) = prt.route(header.class_code.base as u16, header.class_code.base as u16, Pin::IntC, &mut aml_ctx) {
+                if let Ok(desc) = prt.route(
+                    header.class_code.base as u16,
+                    header.class_code.base as u16,
+                    Pin::IntC,
+                    &mut aml_ctx,
+                ) {
                     debug!("IRQ descriptor C: {:#?}", desc);
                     a[2] = (desc.irq, InterruptPin::IntC);
                 }
-                if let Ok(desc) = prt.route(header.class_code.base as u16, header.class_code.base as u16, Pin::IntD, &mut aml_ctx) {
+                if let Ok(desc) = prt.route(
+                    header.class_code.base as u16,
+                    header.class_code.base as u16,
+                    Pin::IntD,
+                    &mut aml_ctx,
+                ) {
                     debug!("IRQ descriptor D: {:#?}", desc);
                     a[3] = (desc.irq, InterruptPin::IntD);
                 }

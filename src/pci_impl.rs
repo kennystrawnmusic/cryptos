@@ -656,18 +656,14 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
             let mut header = pcics::Header::from(raw_header);
 
-            if let DeviceType::Unknown = DeviceType::new(
-                header.class_code.base as u32,
-                header.class_code.sub as u32,
-            ) {
+            if let DeviceType::Unknown =
+                DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32)
+            {
                 continue; // don't print unknown devices
             } else {
                 log::info!(
                     "PCI device (device={:?}, vendor={:?})",
-                    DeviceType::new(
-                        header.class_code.base as u32,
-                        header.class_code.sub as u32,
-                    ),
+                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32,),
                     Vendor::new(header.vendor_id as u32),
                 );
             }
@@ -677,10 +673,8 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             for driver in &mut PCI_TABLE.lock().inner {
                 // can't declare these earlier than this without pissing off the borrow checker
 
-                let pcics_dev_type = DeviceType::new(
-                    header.class_code.base as u32,
-                    header.class_code.sub as u32,
-                );
+                let pcics_dev_type =
+                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32);
                 let pcics_vendor = Vendor::new(header.vendor_id as u32);
 
                 if driver.handle.handles(pcics_vendor, pcics_dev_type) {
