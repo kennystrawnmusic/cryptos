@@ -627,7 +627,7 @@ impl PciTable {
 
 pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
     PCI_TABLE.lock().inner.push(PciDevice { handle });
-    PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
+    PCI_DRIVER_COUNT.store(PCI_TABLE.lock().inner.len(), Ordering::SeqCst);
 }
 
 /// Lookup and initialize all PCI devices.
