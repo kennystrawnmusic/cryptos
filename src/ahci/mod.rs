@@ -21,6 +21,7 @@ use {
         },
         PhysAddr, VirtAddr,
     },
+    log::*,
 };
 
 static DRIVER: Once<Arc<AhciDriver>> = Once::new();
@@ -966,8 +967,8 @@ impl AhciProtected {
         header.command.bus_master = true;
     }
 
-    fn start_driver_new(&mut self, header: &mut pcics::Header) {
-        if let HeaderType::Normal(normal_header) = header.header_type {
+    fn start_driver_new(&mut self, header: &mut pcics::Header)-> Result<(), MapToError<Size4KiB>> {
+        if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
             info!("AHCI Base Address: {:#x}", &abar);
@@ -987,10 +988,12 @@ impl AhciProtected {
                     | PageTableFlags::WRITE_THROUGH
             );
 
-            self.hba = abar_virt;
+            self.hba = VirtAddr::new(abar_virt);
 
             self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
             self.enable_interrupts_new(header);
+
+            Ok(())
         } else {
             panic!("AHCI: Not a normal header")
         }
