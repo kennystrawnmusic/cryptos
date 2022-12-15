@@ -219,10 +219,12 @@ impl HbaCmdHeaderFlags {
     }
 }
 
+#[derive(Debug)]
 enum DmaCommand {
     Read,
 }
 
+#[derive(Debug)]
 pub struct DmaBuffer {
     /// The start address of the DMA buffer.
     start: PhysAddr,
@@ -244,6 +246,7 @@ impl DmaBuffer {
     }
 }
 
+#[derive(Debug)]
 pub struct DmaRequest {
     sector: usize,
     pub count: usize,
@@ -795,10 +798,12 @@ impl HbaMemory {
 }
 
 #[allow(dead_code)] // need this for later
+#[derive(Debug)]
 struct AhciCommand {
     request: Arc<DmaRequest>,
 }
 
+#[derive(Debug)]
 struct AhciPortProtected {
     address: VirtAddr,
     cmds: [Option<AhciCommand>; 32],
@@ -853,6 +858,7 @@ impl AhciPortProtected {
     }
 }
 
+#[derive(Debug)]
 struct AhciPort {
     inner: Mutex<AhciPortProtected>,
 }
@@ -1061,8 +1067,19 @@ impl PciDeviceHandle for AhciDriver {
         }
     }
 
-    fn start_new(&self, header: &mut pcics::Header, offset_table: &mut OffsetPageTable) {
-        todo!()
+    fn start_new(&self, header: &mut pcics::Header) {
+        info!("AHCI: Initializing");
+
+        get_ahci().inner.lock().start_driver_new(header).unwrap();
+
+        info!("Port 0: {:#?}", get_ahci().inner.lock().ports[0].clone());
+
+        // Temporary testing...
+        if let Some(port) = get_ahci().inner.lock().ports[0].clone() {
+            let buffer = &mut [0u8; 512];
+            port.read(0, buffer);
+            info!("Read sector 0: {:?}", buffer);
+        }
     }
 }
 

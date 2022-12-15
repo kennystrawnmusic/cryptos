@@ -1005,7 +1005,7 @@ impl DeviceType {
 pub trait PciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
     fn start_old(&self, header: &PciHeader, offset_table: &mut OffsetPageTable);
-    fn start_new(&self, header: &mut pcics::Header, offset_table: &mut OffsetPageTable);
+    fn start_new(&self, header: &mut pcics::Header);
 }
 
 pub struct PciDevice {
@@ -1027,7 +1027,7 @@ pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
 }
 
 /// Lookup and initialize all PCI devices.
-pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetPageTable) {
+pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
         /*
@@ -1054,13 +1054,20 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetP
             );
 
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
-            let pcics_header = pcics::Header::from(raw_header);
+            let mut pcics_header = pcics::Header::from(raw_header);
 
-            let device = PciHeader::new(
-                pcics_header.class_code.base,
-                pcics_header.class_code.sub,
-                pcics_header.class_code.interface,
-            );
+            if let Vendor::Unknown(_) = Vendor::new(pcics_header.vendor_id as u32) {
+                continue // don't print unknown devices
+            } else {
+                log::info!(
+                    "PCI device (device={:?}, vendor={:?})",
+                    DeviceType::new(
+                        pcics_header.class_code.base as u32,
+                        pcics_header.class_code.sub as u32,
+                    ),
+                    Vendor::new(pcics_header.vendor_id as u32),
+                );
+            }
 
             let arr = aml_init(acpi_tables);
 
@@ -1090,26 +1097,27 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetP
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
-                    _ => unreachable!("Interrupt pin should only have 4 possible values"),
+                    InterruptPin::Unused => { continue }
+                    InterruptPin::Reserved(err) => { panic!("Invalid interrupt pin: {:#?}", err) }
                 };
             }
 
             info!("Interrupt pin: {:#?}", pcics_header.interrupt_pin);
+            
+            for driver in &mut PCI_TABLE.lock().inner {
+                // can't declare these earlier than this without pissing off the borrow checker
 
-            unsafe {
-                log::debug!(
-                    "PCI device (device={:?}, vendor={:?})",
-                    device.get_device(),
-                    device.get_vendor()
+                let pcics_dev_type = DeviceType::new(
+                    pcics_header.class_code.base as u32,
+                    pcics_header.class_code.sub as u32,
                 );
+                let pcics_vendor = Vendor::new(pcics_header.vendor_id as u32);
 
-                for driver in &mut PCI_TABLE.lock().inner {
-                    if driver
-                        .handle
-                        .handles(device.get_vendor(), device.get_device())
-                    {
-                        driver.handle.start_old(&device, offset_table)
-                    }
+                if driver
+                    .handle
+                    .handles(pcics_vendor, pcics_dev_type)
+                {
+                    driver.handle.start_new(&mut pcics_header)
                 }
             }
         }

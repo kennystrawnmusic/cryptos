@@ -40,6 +40,7 @@ impl Drop for IrqGuard {
 }
 
 /// A spin-based lock providing mutually exclusive access to data.
+#[derive(Debug)]
 pub struct Mutex<T> {
     inner: spin::Mutex<T>,
 }
