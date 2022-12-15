@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 use alloc::alloc::Global;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
