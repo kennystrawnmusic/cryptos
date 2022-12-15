@@ -934,7 +934,7 @@ impl AhciProtected {
         let minor_version = version & 0xffff;
 
         log::info!(
-            "ahci: controller version {}.{}",
+            "AHCI: controller version {}.{}",
             major_version,
             minor_version
         );
@@ -981,7 +981,7 @@ impl AhciProtected {
         header: &mut pcics::Header,
         tables: &mut AcpiTables<KernelAcpi>,
     ) -> Result<(), MapToError<Size4KiB>> {
-        let arr = aml_init(tables);
+        let arr = aml_init(tables, header);
 
         if arr.is_some() {
             match header.interrupt_pin {
