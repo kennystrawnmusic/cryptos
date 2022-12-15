@@ -165,15 +165,13 @@ extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
 extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
     let selector = SelectorErrorCode::new_truncate(code);
     panic!(
-        "Segment selector at index {:#x?} is not present\n\
+        "Segment selector at index {:#?} is not present\n\
         Descriptor table involved: {:#?}\n\
-        Selector index: {:#?}\n\
         Is external? {}\n\
         Is null? {}\n\
         Backtrace: {:#?}",
-        code,
-        selector.descriptor_table(),
         selector.index(),
+        selector.descriptor_table(),
         match selector.external() {
             true => "Yes",
             false => "No"
