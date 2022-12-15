@@ -1,4 +1,5 @@
 use conquer_once::spin::OnceCell;
+use pcics::header::HeaderType;
 use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator};
 
 use crate::{cralloc::frames::safe_active_pml4, get_phys_offset, map_page, MAPPER, PHYS_OFFSET};
@@ -963,6 +964,36 @@ impl AhciProtected {
         header.command.io_space = false;
         header.command.memory_space = true;
         header.command.bus_master = true;
+    }
+
+    fn start_driver_new(&mut self, header: &mut pcics::Header) {
+        if let HeaderType::Normal(normal_header) = header.header_type {
+            let abar = normal_header.base_addresses.orig()[5] as u64;
+
+            info!("AHCI Base Address: {:#x}", &abar);
+
+            let abar_test_page =
+                Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
+            let abar_virt =
+                abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+
+            map_page!(
+                abar,
+                abar_virt,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
+
+            self.hba = abar_virt;
+
+            self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
+            self.enable_interrupts_new(header);
+        } else {
+            panic!("AHCI: Not a normal header")
+        }
     }
 
     /// This function is responsible for initializing and starting the AHCI driver.
