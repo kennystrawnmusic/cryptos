@@ -136,7 +136,7 @@ dependencies = [
  "raw-cpuid",
  "spinning_top",
  "usize_conversions",
- "x86_64",
+ "x86_64 0.14.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "xmas-elf 0.8.0",
 ]
 
@@ -150,7 +150,7 @@ dependencies = [
  "bootloader_api",
  "log",
  "uefi",
- "x86_64",
+ "x86_64 0.14.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -299,7 +299,7 @@ dependencies = [
  "strum",
  "unix_path",
  "x2apic",
- "x86_64",
+ "x86_64 0.14.10 (git+https://github.com/kennystrawnmusic/x86_64?branch=patch-2)",
  "xmas-elf 0.9.0",
 ]
 
@@ -1145,7 +1145,7 @@ dependencies = [
  "bitflags",
  "paste",
  "raw-cpuid",
- "x86_64",
+ "x86_64 0.14.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1153,6 +1153,17 @@ name = "x86_64"
 version = "0.14.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "100555a863c0092238c2e0e814c1096c1e5cf066a309c696a87e907b5f8c5d69"
+dependencies = [
+ "bit_field",
+ "bitflags",
+ "rustversion",
+ "volatile",
+]
+
+[[package]]
+name = "x86_64"
+version = "0.14.10"
+source = "git+https://github.com/kennystrawnmusic/x86_64?branch=patch-2#71ac2c9de0f7fff1536135cda1d0993541c236d6"
 dependencies = [
  "bit_field",
  "bitflags",

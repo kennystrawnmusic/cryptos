@@ -633,7 +633,7 @@ impl HbaPort {
 
     /// This function is responsible for allocating space for command lists,
     /// tables, etc.. for a given this instance of HBA port.
-    fn start(&mut self, offset_table: &mut OffsetPageTable) -> Result<(), MapToError<Size4KiB>> {
+    fn start(&mut self, offset_table: &mut OffsetPageTable) {
         self.stop_cmd(); // Stop the command engine before starting the port
 
         /*
@@ -641,11 +641,12 @@ impl HbaPort {
          * two 4KiB size frames).
          */
         let frame_addr = pmm_alloc(BuddyOrdering::Size8KiB);
-        let page_addr = crate::IO_VIRTUAL_BASE + frame_addr.as_u64();
+        let page_addr = unsafe { get_phys_offset() } + frame_addr.as_u64();
 
         for size in (0..0x2000u64).step_by(0x1000) {
+
             unsafe {
-                offset_table
+                let res = offset_table
                     .map_to(
                         Page::<Size4KiB>::containing_address(VirtAddr::new(page_addr + size)),
                         PhysFrame::<Size4KiB>::containing_address(frame_addr + size),
@@ -654,9 +655,28 @@ impl HbaPort {
                             | PageTableFlags::WRITE_THROUGH
                             | PageTableFlags::NO_CACHE,
                         &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
-                    )?
-                    .flush();
+                    );
+
+                let flush = match res {
+                    Ok(flush) => Some(flush),
+                    Err(e) => match e {
+                        MapToError::FrameAllocationFailed => panic!("Out of memory"),
+                        MapToError::PageAlreadyMapped(_) => {
+                            debug!("Already have a page here; skipping mapping");
+                            None
+                        },
+                        MapToError::ParentEntryHugePage => {
+                            debug!("Already have a huge page here; skipping mapping");
+                            None
+                        }
+                    }
+                };
+
+                if let Some(flush) = flush {
+                    flush.flush();
+                }
             }
+
         }
 
         for i in 0..32 {
@@ -673,8 +693,6 @@ impl HbaPort {
 
         self.ie.set(HbaPortIE::all());
         self.start_cmd(); // Start the command engine...
-
-        Ok(())
     }
 
     fn start_cmd(&mut self) {
@@ -701,7 +719,7 @@ impl HbaPort {
         &mut self,
         offset_table: &mut OffsetPageTable,
         port: usize,
-    ) -> Result<bool, MapToError<Size4KiB>> {
+    ) -> bool {
         let status = self.ssts.get();
 
         let ipm = status.interface_power_management();
@@ -712,11 +730,11 @@ impl HbaPort {
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
             log::trace!("ahci: enabling port {}", port);
 
-            self.start(offset_table)?;
-            Ok(true)
+            self.start(offset_table);
+            true
         } else {
             // Else we can't enable the port.
-            Ok(false)
+            false
         }
     }
 
@@ -746,7 +764,7 @@ impl HbaPort {
         let length = ((count - 1) >> 4) + 1;
         header.prdtl.set(length as _); // Update the number of PRD entries.
 
-        let command_table_addr = VirtAddr::new(crate::IO_VIRTUAL_BASE + header.ctb.get().as_u64());
+        let command_table_addr = VirtAddr::new(unsafe { get_phys_offset() } + header.ctb.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
         for pri in 0..length {
@@ -924,7 +942,7 @@ impl AhciProtected {
     fn start_hba(
         &mut self,
         offset_table: &mut OffsetPageTable,
-    ) -> Result<(), MapToError<Size4KiB>> {
+    ) {
         let mut hba = self.hba_mem();
         let current_flags = hba.global_host_control.get();
 
@@ -946,7 +964,7 @@ impl AhciProtected {
             if pi.get_bit(i) {
                 let port = hba.port_mut(i);
 
-                if port.probe(offset_table, i)? {
+                if port.probe(offset_table, i) {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
 
@@ -964,8 +982,6 @@ impl AhciProtected {
                 }
             }
         }
-
-        Ok(())
     }
 
     /// This function is responsible for enabling bus mastering and add AHCI
@@ -981,7 +997,7 @@ impl AhciProtected {
         &mut self,
         header: &mut pcics::Header,
         tables: &mut AcpiTables<KernelAcpi>,
-    ) -> Result<(), MapToError<Size4KiB>> {
+    ) {
         let arr = aml_init(tables, header);
 
         if arr.is_some() {
@@ -1036,10 +1052,8 @@ impl AhciProtected {
 
             self.hba = VirtAddr::new(abar_virt);
 
-            self.start_hba(&mut *MAPPER.get().unwrap().lock())?;
+            self.start_hba(&mut *MAPPER.get().unwrap().lock());
             self.enable_interrupts(header);
-
-            Ok(())
         } else {
             panic!("AHCI: Not a normal header")
         }
@@ -1066,10 +1080,9 @@ impl PciDeviceHandle for AhciDriver {
         get_ahci()
             .inner
             .lock()
-            .start_driver(header, tables)
-            .unwrap();
+            .start_driver(header, tables);
 
-        info!("Port 0: {:#?}", get_ahci().inner.lock().ports[0].clone());
+        info!("Port 0: {:?}", get_ahci().inner.lock().ports[0].clone());
 
         // Temporary testing...
         if let Some(port) = get_ahci().inner.lock().ports[0].clone() {

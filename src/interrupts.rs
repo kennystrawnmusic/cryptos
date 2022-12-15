@@ -4,6 +4,8 @@ use x86_64::{
     structures::idt::SelectorErrorCode,
 };
 
+use crate::PRINTK;
+
 #[allow(unused_imports)]
 use {
     crate::apic_impl::LOCAL_APIC,
@@ -125,7 +127,7 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
     debug!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
-        let int3_ip = frame.instruction_pointer.as_u64() - 1; //stack grows downwards
+        let int3_ip = frame.instruction_pointer.as_u64(); //stack grows downwards
 
         // 0xcc is the INT3 opcode
         if unsafe { *(int3_ip as *const u8) } != INT3_OPCODE {
@@ -210,9 +212,10 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
         sel => Some(sel),
     };
     if let Some(code) = is_seg_related {
+        let selector = SelectorErrorCode::new_truncate(code);
         panic!(
             "Segment selector at index {:#?} caused a general protection fault\nBacktrace: {:#?}",
-            code, frame
+            selector.index(), frame
         );
     } else {
         panic!(
@@ -223,8 +226,8 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
 }
 
 // FIXME: if this is indeed the cause of the #10 page fault, figure out why
-pub extern "x86-interrupt" fn dummy_ahci(frame: InterruptStackFrame) {
-    info!("Received AHCI interrupt: {:#?}", &frame)
+pub extern "x86-interrupt" fn dummy_ahci(_frame: InterruptStackFrame) {
+    info!("Received AHCI interrupt");
 }
 
 // #[allow(dead_code)]
