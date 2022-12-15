@@ -1005,7 +1005,7 @@ impl DeviceType {
 pub trait PciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
     fn start_old(&self, header: &PciHeader, offset_table: &mut OffsetPageTable);
-    fn start_new(&self, header: &mut pcics::Header);
+    fn start_new(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>);
 }
 
 pub struct PciDevice {
@@ -1027,7 +1027,7 @@ pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
 }
 
 /// Lookup and initialize all PCI devices.
-pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
+pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
         /*
@@ -1054,69 +1054,37 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
-            let mut pcics_header = pcics::Header::from(raw_header);
+            let mut header = pcics::Header::from(raw_header);
 
-            if let Vendor::Unknown(_) = Vendor::new(pcics_header.vendor_id as u32) {
+            if let DeviceType::Unknown = DeviceType::new(
+                header.class_code.base as u32,
+                header.class_code.sub as u32,
+            ) {
                 continue; // don't print unknown devices
             } else {
                 log::info!(
                     "PCI device (device={:?}, vendor={:?})",
                     DeviceType::new(
-                        pcics_header.class_code.base as u32,
-                        pcics_header.class_code.sub as u32,
+                        header.class_code.base as u32,
+                        header.class_code.sub as u32,
                     ),
-                    Vendor::new(pcics_header.vendor_id as u32),
+                    Vendor::new(header.vendor_id as u32),
                 );
             }
 
-            let arr = aml_init(acpi_tables);
-
-            if arr.is_some() {
-                match pcics_header.interrupt_pin {
-                    InterruptPin::IntA => {
-                        IDT.lock()[32 + arr.unwrap()[0].0 as usize]
-                            .set_handler_fn(interrupts::ahci);
-                        crate::interrupts::init();
-                        crate::apic_impl::init_all_available_apics();
-                    }
-                    InterruptPin::IntB => {
-                        IDT.lock()[32 + arr.unwrap()[1].0 as usize]
-                            .set_handler_fn(interrupts::ahci);
-                        crate::interrupts::init();
-                        crate::apic_impl::init_all_available_apics();
-                    }
-                    InterruptPin::IntC => {
-                        IDT.lock()[32 + arr.unwrap()[2].0 as usize]
-                            .set_handler_fn(interrupts::ahci);
-                        crate::interrupts::init();
-                        crate::apic_impl::init_all_available_apics();
-                    }
-                    InterruptPin::IntD => {
-                        IDT.lock()[32 + arr.unwrap()[3].0 as usize]
-                            .set_handler_fn(interrupts::ahci);
-                        crate::interrupts::init();
-                        crate::apic_impl::init_all_available_apics();
-                    }
-                    InterruptPin::Unused => continue,
-                    InterruptPin::Reserved(err) => {
-                        panic!("Invalid interrupt pin: {:#?}", err)
-                    }
-                };
-            }
-
-            info!("Interrupt pin: {:#?}", pcics_header.interrupt_pin);
+            info!("Interrupt pin: {:#?}", header.interrupt_pin);
 
             for driver in &mut PCI_TABLE.lock().inner {
                 // can't declare these earlier than this without pissing off the borrow checker
 
                 let pcics_dev_type = DeviceType::new(
-                    pcics_header.class_code.base as u32,
-                    pcics_header.class_code.sub as u32,
+                    header.class_code.base as u32,
+                    header.class_code.sub as u32,
                 );
-                let pcics_vendor = Vendor::new(pcics_header.vendor_id as u32);
+                let pcics_vendor = Vendor::new(header.vendor_id as u32);
 
                 if driver.handle.handles(pcics_vendor, pcics_dev_type) {
-                    driver.handle.start_new(&mut pcics_header)
+                    driver.handle.start_new(&mut header, tables)
                 }
             }
         }

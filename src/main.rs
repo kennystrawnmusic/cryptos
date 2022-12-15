@@ -205,6 +205,7 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = Option<u64>> {
 }
 
 pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) -> Option<[(u32, InterruptPin); 4]> {
+    info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
     let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };

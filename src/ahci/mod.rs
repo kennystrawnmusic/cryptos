@@ -1,8 +1,15 @@
+use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
-use pcics::header::HeaderType;
+use pcics::header::{HeaderType, InterruptPin};
 use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator};
 
-use crate::{cralloc::frames::safe_active_pml4, get_phys_offset, map_page, MAPPER, PHYS_OFFSET};
+use crate::{
+    acpi_impl::KernelAcpi,
+    cralloc::frames::safe_active_pml4,
+    get_phys_offset,
+    interrupts::{self, IDT},
+    map_page, MAPPER, PHYS_OFFSET, aml_init,
+};
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
@@ -973,11 +980,45 @@ impl AhciProtected {
         header.command.bus_master = true;
     }
 
-    fn start_driver_new(&mut self, header: &mut pcics::Header) -> Result<(), MapToError<Size4KiB>> {
+    fn start_driver_new(
+        &mut self,
+        header: &mut pcics::Header,
+        tables: &mut AcpiTables<KernelAcpi>,
+    ) -> Result<(), MapToError<Size4KiB>> {
+        let arr = aml_init(tables);
+
+        if arr.is_some() {
+            match header.interrupt_pin {
+                InterruptPin::IntA => {
+                    IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci);
+                    crate::interrupts::init();
+                    crate::apic_impl::init_all_available_apics();
+                }
+                InterruptPin::IntB => {
+                    IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci);
+                    crate::interrupts::init();
+                    crate::apic_impl::init_all_available_apics();
+                }
+                InterruptPin::IntC => {
+                    IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci);
+                    crate::interrupts::init();
+                    crate::apic_impl::init_all_available_apics();
+                }
+                InterruptPin::IntD => {
+                    IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci);
+                    crate::interrupts::init();
+                    crate::apic_impl::init_all_available_apics();
+                }
+                InterruptPin::Unused => {} // ignore unused interrupt pins
+                InterruptPin::Reserved(err) => {
+                    panic!("Invalid interrupt pin: {:#?}", err)
+                }
+            };
+        }
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            info!("AHCI Base Address: {:#x}", &abar);
+            info!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
@@ -1065,10 +1106,14 @@ impl PciDeviceHandle for AhciDriver {
         }
     }
 
-    fn start_new(&self, header: &mut pcics::Header) {
+    fn start_new(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
 
-        get_ahci().inner.lock().start_driver_new(header).unwrap();
+        get_ahci()
+            .inner
+            .lock()
+            .start_driver_new(header, tables)
+            .unwrap();
 
         info!("Port 0: {:#?}", get_ahci().inner.lock().ports[0].clone());
 
