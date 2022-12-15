@@ -644,18 +644,16 @@ impl HbaPort {
         let page_addr = unsafe { get_phys_offset() } + frame_addr.as_u64();
 
         for size in (0..0x2000u64).step_by(0x1000) {
-
             unsafe {
-                let res = offset_table
-                    .map_to(
-                        Page::<Size4KiB>::containing_address(VirtAddr::new(page_addr + size)),
-                        PhysFrame::<Size4KiB>::containing_address(frame_addr + size),
-                        PageTableFlags::PRESENT
-                            | PageTableFlags::WRITABLE
-                            | PageTableFlags::WRITE_THROUGH
-                            | PageTableFlags::NO_CACHE,
-                        &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
-                    );
+                let res = offset_table.map_to(
+                    Page::<Size4KiB>::containing_address(VirtAddr::new(page_addr + size)),
+                    PhysFrame::<Size4KiB>::containing_address(frame_addr + size),
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::WRITE_THROUGH
+                        | PageTableFlags::NO_CACHE,
+                    &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
+                );
 
                 let flush = match res {
                     Ok(flush) => Some(flush),
@@ -664,19 +662,18 @@ impl HbaPort {
                         MapToError::PageAlreadyMapped(_) => {
                             debug!("Already have a page here; skipping mapping");
                             None
-                        },
+                        }
                         MapToError::ParentEntryHugePage => {
                             debug!("Already have a huge page here; skipping mapping");
                             None
                         }
-                    }
+                    },
                 };
 
                 if let Some(flush) = flush {
                     flush.flush();
                 }
             }
-
         }
 
         for i in 0..32 {
@@ -715,11 +712,7 @@ impl HbaPort {
         }
     }
 
-    fn probe(
-        &mut self,
-        offset_table: &mut OffsetPageTable,
-        port: usize,
-    ) -> bool {
+    fn probe(&mut self, offset_table: &mut OffsetPageTable, port: usize) -> bool {
         let status = self.ssts.get();
 
         let ipm = status.interface_power_management();
@@ -764,7 +757,8 @@ impl HbaPort {
         let length = ((count - 1) >> 4) + 1;
         header.prdtl.set(length as _); // Update the number of PRD entries.
 
-        let command_table_addr = VirtAddr::new(unsafe { get_phys_offset() } + header.ctb.get().as_u64());
+        let command_table_addr =
+            VirtAddr::new(unsafe { get_phys_offset() } + header.ctb.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
         for pri in 0..length {
@@ -939,10 +933,7 @@ impl AhciProtected {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
     }
 
-    fn start_hba(
-        &mut self,
-        offset_table: &mut OffsetPageTable,
-    ) {
+    fn start_hba(&mut self, offset_table: &mut OffsetPageTable) {
         let mut hba = self.hba_mem();
         let current_flags = hba.global_host_control.get();
 
@@ -993,11 +984,7 @@ impl AhciProtected {
     }
 
     /// This function is responsible for initializing and starting the AHCI driver.
-    fn start_driver(
-        &mut self,
-        header: &mut pcics::Header,
-        tables: &mut AcpiTables<KernelAcpi>,
-    ) {
+    fn start_driver(&mut self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         let arr = aml_init(tables, header);
 
         if arr.is_some() {
@@ -1077,18 +1064,15 @@ impl PciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
 
-        get_ahci()
-            .inner
-            .lock()
-            .start_driver(header, tables);
+        get_ahci().inner.lock().start_driver(header, tables);
 
-        info!("Port 0: {:?}", get_ahci().inner.lock().ports[0].clone());
+        debug!("Port 0: {:?}", get_ahci().inner.lock().ports[0].clone());
 
         // Temporary testing...
         if let Some(port) = get_ahci().inner.lock().ports[0].clone() {
             let buffer = &mut [0u8; 512];
             port.read(0, buffer);
-            info!("Read sector 0: {:?}", buffer);
+            debug!("Read sector 0: {:?}", buffer);
         }
     }
 }

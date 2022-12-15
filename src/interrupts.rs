@@ -1,7 +1,10 @@
 use x86_64::{
     instructions::interrupts,
-    registers::{rflags::{self, RFlags}, read_rip},
-    structures::idt::SelectorErrorCode,
+    registers::{
+        read_rip,
+        rflags::{self, RFlags},
+    },
+    structures::idt::{DescriptorTable, SelectorErrorCode},
 };
 
 use crate::PRINTK;
@@ -172,7 +175,11 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         Is external? {}\n\
         Is null? {}\n\
         Backtrace: {:#?}",
-        selector.index() / 2,
+        match selector.descriptor_table() {
+            DescriptorTable::Gdt => selector.index(),
+            DescriptorTable::Idt => selector.index() / 2,
+            DescriptorTable::Ldt => selector.index(),
+        },
         selector.descriptor_table(),
         match selector.external() {
             true => "Yes",
@@ -196,7 +203,8 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         let selector = SelectorErrorCode::new_truncate(code);
         panic!(
             "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
-            selector.index() / 2, frame
+            selector.index() / 2,
+            frame
         );
     } else {
         panic!(
@@ -214,8 +222,26 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
     if let Some(code) = is_seg_related {
         let selector = SelectorErrorCode::new_truncate(code);
         panic!(
-            "Segment selector at index {:#?} caused a general protection fault\nBacktrace: {:#?}",
-            selector.index() / 2, frame
+            "Segment selector at index {:#?} caused a general protection fault\n\
+            Descriptor table involved: {:#?}\n\
+            Is external? {}\n\
+            Is null? {}\n\
+            Backtrace: {:#?}",
+            match selector.descriptor_table() {
+                DescriptorTable::Gdt => selector.index(),
+                DescriptorTable::Idt => selector.index() / 2,
+                DescriptorTable::Ldt => selector.index(),
+            },
+            selector.descriptor_table(),
+            match selector.external() {
+                true => "Yes",
+                false => "No",
+            },
+            match selector.is_null() {
+                true => "Yes",
+                false => "No",
+            },
+            frame
         );
     } else {
         panic!(
