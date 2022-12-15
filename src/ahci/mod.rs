@@ -1048,7 +1048,7 @@ impl PciDeviceHandle for AhciDriver {
         }
     }
 
-    fn start(&self, header: &PciHeader, _offset_table: &mut OffsetPageTable) {
+    fn start_old(&self, header: &PciHeader, _offset_table: &mut OffsetPageTable) {
         log::info!("ahci: starting driver...");
 
         get_ahci().inner.lock_irq().start_driver(header).unwrap(); // Start and initialize the AHCI controller.
@@ -1059,6 +1059,10 @@ impl PciDeviceHandle for AhciDriver {
             port.read(0, buffer);
             log::info!("Read sector 0: {:?}", buffer);
         }
+    }
+
+    fn start_new(&self, header: &mut pcics::Header, offset_table: &mut OffsetPageTable) {
+        todo!()
     }
 }
 

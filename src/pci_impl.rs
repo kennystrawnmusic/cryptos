@@ -1004,7 +1004,8 @@ impl DeviceType {
 
 pub trait PciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
-    fn start(&self, header: &PciHeader, offset_table: &mut OffsetPageTable);
+    fn start_old(&self, header: &PciHeader, offset_table: &mut OffsetPageTable);
+    fn start_new(&self, header: &mut pcics::Header, offset_table: &mut OffsetPageTable);
 }
 
 pub struct PciDevice {
@@ -1107,7 +1108,7 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>, offset_table: &mut OffsetP
                         .handle
                         .handles(device.get_vendor(), device.get_device())
                     {
-                        driver.handle.start(&device, offset_table)
+                        driver.handle.start_old(&device, offset_table)
                     }
                 }
             }

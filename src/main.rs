@@ -458,7 +458,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
                 let offset_table = &mut *MAPPER.get().unwrap().lock();
 
-                get_ahci().start(device, offset_table);
+                get_ahci().start_old(device, offset_table);
 
                 // let (_mem, disks) = ahci_old::all_disks(abar_virt as usize);
                 // info!("Found {:#?} disks", disks.len());
