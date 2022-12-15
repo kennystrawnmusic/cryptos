@@ -665,14 +665,14 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             {
                 continue; // don't print unknown devices
             } else {
-                log::info!(
+                info!(
                     "PCI device (device={:?}, vendor={:?})",
                     DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32,),
                     Vendor::new(header.vendor_id as u32),
                 );
             }
 
-            info!("Interrupt pin: {:#?}", header.interrupt_pin);
+            debug!("Interrupt pin: {:#?}", header.interrupt_pin);
 
             for driver in &mut PCI_TABLE.lock().inner {
                 // can't declare these earlier than this without pissing off the borrow checker

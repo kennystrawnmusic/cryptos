@@ -723,7 +723,7 @@ impl HbaPort {
         // Check if the port is active and is present. If thats the case
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
-            log::trace!("ahci: enabling port {}", port);
+            trace!("ahci: enabling port {}", port);
 
             self.start(offset_table);
             true
@@ -799,14 +799,14 @@ impl HbaPort {
         }
 
         if spin == 0 {
-            log::warn!("ahci: port hung");
+            warn!("AHCI: port hung");
             return;
         }
 
         // Wait for the command to complete.
         while self.ci.get() & (1 << slot) == 1 {
             if self.is.get().contains(HbaPortIS::TFES) {
-                log::warn!("ahci: disk error (serr={:#x})", self.serr.get());
+                warn!("AHCI: disk error (serr={:#x})", self.serr.get());
                 break;
             }
         }
@@ -945,7 +945,7 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        log::info!(
+        debug!(
             "AHCI: controller version {}.{}",
             major_version,
             minor_version
@@ -1024,7 +1024,7 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            info!("ABAR: {:#x}", &abar);
+            debug!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
@@ -1064,7 +1064,7 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
-        info!("AHCI: Initializing");
+        debug!("AHCI: Initializing");
 
         get_ahci().inner.lock().start_driver(header, tables);
 
