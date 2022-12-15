@@ -990,22 +990,22 @@ impl AhciProtected {
         if arr.is_some() {
             match header.interrupt_pin {
                 InterruptPin::IntA => {
-                    IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::ahci);
+                    IDT.lock()[32 + arr.unwrap()[0].0 as usize].set_handler_fn(interrupts::dummy_ahci);
                     crate::interrupts::init();
                     crate::apic_impl::init_all_available_apics();
                 }
                 InterruptPin::IntB => {
-                    IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::ahci);
+                    IDT.lock()[32 + arr.unwrap()[1].0 as usize].set_handler_fn(interrupts::dummy_ahci);
                     crate::interrupts::init();
                     crate::apic_impl::init_all_available_apics();
                 }
                 InterruptPin::IntC => {
-                    IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::ahci);
+                    IDT.lock()[32 + arr.unwrap()[2].0 as usize].set_handler_fn(interrupts::dummy_ahci);
                     crate::interrupts::init();
                     crate::apic_impl::init_all_available_apics();
                 }
                 InterruptPin::IntD => {
-                    IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::ahci);
+                    IDT.lock()[32 + arr.unwrap()[3].0 as usize].set_handler_fn(interrupts::dummy_ahci);
                     crate::interrupts::init();
                     crate::apic_impl::init_all_available_apics();
                 }

@@ -10,7 +10,6 @@ extern crate alloc;
 
 pub mod acpi_impl;
 pub mod ahci;
-pub mod ahci_old;
 pub mod apic_impl;
 pub mod cralloc;
 pub mod exceptions;
@@ -21,7 +20,6 @@ pub mod pci_impl;
 use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
-    ahci_old::Disk,
     interrupts::IDT,
     pci_impl::{PciDeviceHandle, PciHeader, PCI_TABLE},
 };
@@ -31,7 +29,6 @@ use acpi::{
     AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
     PhysicalMapping, PlatformInfo, RsdpError,
 };
-use ahci_old::hba::{structs::InterruptError, EIO_DEBUG, EIO_STATUS};
 use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
@@ -171,21 +168,6 @@ pub fn get_mcfg() -> Option<PciConfigRegions> {
     PCI_CONFIG.get().clone().unwrap().clone()
 }
 
-/// Function which retrieves a debug string for handling I/O errors
-///
-/// TODO: register this function as a system call
-pub fn eio_debug() -> (Option<String>, Option<InterruptError>) {
-    let msg = match EIO_DEBUG.read().clone() {
-        Some(s) => Some(s.clone()),
-        None => None,
-    };
-    let internal = match EIO_STATUS.read().clone() {
-        Some(err) => Some(err.clone()),
-        None => None,
-    };
-    (msg, internal)
-}
-
 /// Returns an Iterator of all possible `Option<u64>` in the PCIe extended address space
 ///
 /// Use the `.filter(|i| i.is_some())` method of the resulting iterator to get the PCI devices present on the system
@@ -297,8 +279,6 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     }
     info!("CryptOS v. 0.1.1-alpha");
 }
-
-pub static ALL_DISKS: OnceCell<RwLock<Vec<Box<dyn Disk + Send + Sync>>>> = OnceCell::uninit();
 
 entry_point!(maink, config = &CONFIG);
 
