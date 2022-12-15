@@ -1,3 +1,5 @@
+use core::sync::atomic::Ordering;
+
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::header::{HeaderType, InterruptPin};
@@ -987,7 +989,7 @@ impl AhciProtected {
     fn start_driver(&mut self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         let arr = aml_init(tables, header);
 
-        if arr.is_some() {
+        if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
             match header.interrupt_pin {
                 InterruptPin::IntA => {
                     IDT.lock()[32 + arr.unwrap()[0].0 as usize]

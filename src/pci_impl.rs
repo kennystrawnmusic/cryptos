@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
 use acpi::AcpiTables;
 use pcics::header::{ClassCode, InterruptPin};
 use x86_64::{
@@ -34,6 +36,7 @@ use log::*;
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
 pub static PCI_TABLE: Mutex<PciTable> = Mutex::new(PciTable::new());
+pub static PCI_DRIVER_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 const fn calculate_blocks(bits: usize) -> usize {
     if bits % BLOCK_BITS == 0 {
@@ -623,7 +626,8 @@ impl PciTable {
 }
 
 pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
-    PCI_TABLE.lock().inner.push(PciDevice { handle })
+    PCI_TABLE.lock().inner.push(PciDevice { handle });
+    PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
 }
 
 /// Lookup and initialize all PCI devices.
