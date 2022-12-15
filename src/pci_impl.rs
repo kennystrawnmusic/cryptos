@@ -1057,7 +1057,7 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
             let mut pcics_header = pcics::Header::from(raw_header);
 
             if let Vendor::Unknown(_) = Vendor::new(pcics_header.vendor_id as u32) {
-                continue // don't print unknown devices
+                continue; // don't print unknown devices
             } else {
                 log::info!(
                     "PCI device (device={:?}, vendor={:?})",
@@ -1097,13 +1097,15 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
                         crate::interrupts::init();
                         crate::apic_impl::init_all_available_apics();
                     }
-                    InterruptPin::Unused => { continue }
-                    InterruptPin::Reserved(err) => { panic!("Invalid interrupt pin: {:#?}", err) }
+                    InterruptPin::Unused => continue,
+                    InterruptPin::Reserved(err) => {
+                        panic!("Invalid interrupt pin: {:#?}", err)
+                    }
                 };
             }
 
             info!("Interrupt pin: {:#?}", pcics_header.interrupt_pin);
-            
+
             for driver in &mut PCI_TABLE.lock().inner {
                 // can't declare these earlier than this without pissing off the borrow checker
 
@@ -1113,10 +1115,7 @@ pub fn init(acpi_tables: &mut AcpiTables<KernelAcpi>) {
                 );
                 let pcics_vendor = Vendor::new(pcics_header.vendor_id as u32);
 
-                if driver
-                    .handle
-                    .handles(pcics_vendor, pcics_dev_type)
-                {
+                if driver.handle.handles(pcics_vendor, pcics_dev_type) {
                     driver.handle.start_new(&mut pcics_header)
                 }
             }

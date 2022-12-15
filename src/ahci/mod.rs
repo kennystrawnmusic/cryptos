@@ -12,6 +12,7 @@ use {
     crate::{mcfg_brute_force, pci_impl::*, FRAME_ALLOCATOR},
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
+    log::*,
     spin::Once,
     util::{sync::Mutex, CeilDiv, VolatileCell},
     x86_64::{
@@ -21,7 +22,6 @@ use {
         },
         PhysAddr, VirtAddr,
     },
-    log::*,
 };
 
 static DRIVER: Once<Arc<AhciDriver>> = Once::new();
@@ -973,16 +973,14 @@ impl AhciProtected {
         header.command.bus_master = true;
     }
 
-    fn start_driver_new(&mut self, header: &mut pcics::Header)-> Result<(), MapToError<Size4KiB>> {
+    fn start_driver_new(&mut self, header: &mut pcics::Header) -> Result<(), MapToError<Size4KiB>> {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
             info!("AHCI Base Address: {:#x}", &abar);
 
-            let abar_test_page =
-                Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
-            let abar_virt =
-                abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+            let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
+            let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
             map_page!(
                 abar,

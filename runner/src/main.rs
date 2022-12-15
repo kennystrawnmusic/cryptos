@@ -92,8 +92,8 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("q35")
         .arg("-m")
         .arg("4G");
-        // .arg("-d")
-        // .arg("int");
+    // .arg("-d")
+    // .arg("int");
 
     uefi_cmd.current_dir(&kdir);
 
