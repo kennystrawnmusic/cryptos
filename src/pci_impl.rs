@@ -666,8 +666,10 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
                 continue; // don't print unknown devices
             } else {
                 info!(
-                    "PCI device (device={:?}, vendor={:?})",
-                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32,),
+                    "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
+                    header.vendor_id,
+                    header.device_id,
+                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32),
                     Vendor::new(header.vendor_id as u32),
                 );
             }

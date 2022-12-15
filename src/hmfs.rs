@@ -1,8 +1,10 @@
+use alloc::alloc::Global;
 use alloc::boxed::Box;
+use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::convert::TryInto;
-use core::hash::{BuildHasherDefault, Hasher};
+use core::hash::{BuildHasherDefault, Hasher, Hash};
 use sha3::{Digest, Sha3_512};
 use unix_path::PathBuf;
 
@@ -12,6 +14,7 @@ pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
 }
 
 // need something far more secure than AHash here to pave the way for things like per-directory encryption
+#[derive(Default)]
 pub struct HMFSHasher(Sha3_512);
 
 impl Hasher for HMFSHasher {
@@ -35,10 +38,26 @@ pub type FileData = Vec<u8>;
 
 // work around Box not implementing Hash
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum EntryKind {
-    Directory(*mut HashMap<Properties, *mut Entry>),
+    Directory(Rc<HashMap<Properties, Rc<Entry>>>),
     File(FileData),
+}
+
+impl Hash for EntryKind {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Directory(map) => {
+                for (properties, entry) in map.iter() {
+                    properties.hash(state);
+                    entry.hash(state);
+                }
+            }
+            Self::File(data) => {
+                data.hash(state);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

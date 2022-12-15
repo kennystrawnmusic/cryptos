@@ -1074,7 +1074,7 @@ impl PciDeviceHandle for AhciDriver {
         // Temporary testing...
         if let Some(port) = get_ahci().inner.lock().ports[0].clone() {
             let buffer = &mut [0u8; 512];
-            port.read(0, buffer);
+            let _ = port.read(0, buffer).unwrap();
             debug!("Read sector 0: {:?}", buffer);
         }
     }
