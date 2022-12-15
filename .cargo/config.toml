@@ -6,3 +6,4 @@ jobs = 8
 
 [alias]
 bin = "run --release --package runner --"
+asm = "rustc --package runner -- --emit=asm -o target/x86_64-unknown-none/debug/cryptos.S"
