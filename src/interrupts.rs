@@ -168,10 +168,20 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         "Segment selector at index {:#x?} is not present\n\
         Descriptor table involved: {:#?}\n\
         Selector index: {:#?}\n\
+        Is external? {}\n\
+        Is null? {}\n\
         Backtrace: {:#?}",
         code,
         selector.descriptor_table(),
         selector.index(),
+        match selector.external() {
+            true => "Yes",
+            false => "No"
+        },
+        match selector.is_null() {
+            true => "Yes",
+            false => "No"
+        },
         frame
     );
 }
