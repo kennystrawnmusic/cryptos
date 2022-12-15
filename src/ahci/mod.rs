@@ -989,6 +989,7 @@ impl AhciProtected {
     fn start_driver(&mut self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         let arr = aml_init(tables, header);
 
+        // GDT will #GP if an IDT-load is attempted more than once
         if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
             match header.interrupt_pin {
                 InterruptPin::IntA => {
