@@ -1,6 +1,6 @@
 use x86_64::{
     instructions::interrupts,
-    registers::rflags::{self, RFlags},
+    registers::{rflags::{self, RFlags}, read_rip},
     structures::idt::SelectorErrorCode,
 };
 
@@ -25,8 +25,6 @@ pub fn init() {
 }
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
-
-const INT3_OPCODE: u8 = 0xcc;
 
 lazy_static! {
     pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.lock().clone();
@@ -127,10 +125,11 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
     debug!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
-        let int3_ip = frame.instruction_pointer.as_u64(); //stack grows downwards
+        let int3_ip = read_rip().as_u64();
+        let ret_ip = frame.instruction_pointer.as_u64();
 
         // 0xcc is the INT3 opcode
-        if unsafe { *(int3_ip as *const u8) } != INT3_OPCODE {
+        if unsafe { *(int3_ip as *const u8) != *(ret_ip as *const u8) } {
             debug!("Resuming");
             break;
         }
@@ -173,7 +172,7 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         Is external? {}\n\
         Is null? {}\n\
         Backtrace: {:#?}",
-        selector.index(),
+        selector.index() / 2,
         selector.descriptor_table(),
         match selector.external() {
             true => "Yes",
@@ -193,10 +192,11 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         sel => Some(sel),
     };
 
-    if let Some(seg) = is_caused_by_np {
+    if let Some(code) = is_caused_by_np {
+        let selector = SelectorErrorCode::new_truncate(code);
         panic!(
             "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
-            seg, frame
+            selector.index() / 2, frame
         );
     } else {
         panic!(
@@ -215,7 +215,7 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
         let selector = SelectorErrorCode::new_truncate(code);
         panic!(
             "Segment selector at index {:#?} caused a general protection fault\nBacktrace: {:#?}",
-            selector.index(), frame
+            selector.index() / 2, frame
         );
     } else {
         panic!(
