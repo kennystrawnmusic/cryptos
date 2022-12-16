@@ -17,6 +17,7 @@
   * Block-level metadata forking
   * Design goal: do what Microsoft tried and failed to do with WinFS, except at the block level instead of the service level
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
+* NVMe — TODO (same as above)
 * Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
 * Graphics — TODO (idea is to rewrite the framebuffer structure provided by the `bootloader` crate as a new structure that implements both `Clone` as a compositor backend and `From` to convert from the bootloader's impl, then use the aforementioned `FrameBuffer + Clone + From` rewrite to actually bake a compositor into the kernel itself)
 * USB HID — TODO (can't have a GUI without a mouse and keyboard)
