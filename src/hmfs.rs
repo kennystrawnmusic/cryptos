@@ -158,7 +158,7 @@ impl RootEntry {
         Self {
             magic: 0x90a7cafe,
             system_clock: timestamp,
-            entry_count: Rc::strong_count(&Rc::clone(&new_root_map)),
+            entry_count: Rc::strong_count(&new_root_map),
             dir: Entry::new(EntryKind::Directory(new_root_map)),
         }
     }
