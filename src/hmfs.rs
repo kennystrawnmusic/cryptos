@@ -62,14 +62,20 @@ impl Hash for EntryKind {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Entry(EntryKind);
+pub struct Entry {
+    kind: EntryKind,
+    parent: Option<Rc<Entry>>,
+}
 
 impl Entry {
-    pub fn new(kind: EntryKind) -> Self {
-        Self(kind)
+    pub fn new(kind: EntryKind, parent: Option<Rc<Entry>>) -> Self {
+        Self {
+            kind,
+            parent,
+        }
     }
     pub fn mkdir(&self, timestamp: time_t) -> Self {
-        match self.0.clone() {
+        match self.kind.clone() {
             EntryKind::Directory(dir) => {
                 todo!(
                     "Use {:#?} as timestamp for the new subdirectory\
@@ -153,7 +159,7 @@ impl RootEntry {
 
         root_map_inner.insert(
             root_props,
-            Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)))),
+            Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)), None)),
         );
 
         drop(root_map);
@@ -164,7 +170,7 @@ impl RootEntry {
             magic: 0x90a7cafe,
             system_clock: timestamp,
             entry_count: Rc::strong_count(&new_root_map),
-            dir: Entry::new(EntryKind::Directory(new_root_map)),
+            dir: Entry::new(EntryKind::Directory(new_root_map), None),
         }
     }
 }
