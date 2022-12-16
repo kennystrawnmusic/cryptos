@@ -68,6 +68,14 @@ impl Entry {
     pub fn new(kind: EntryKind) -> Self {
         Self(kind)
     }
+    pub fn mkdir(&self, timestamp: time_t) -> Self {
+        match self.0.clone() {
+            EntryKind::Directory(dir) => {
+                todo!("Use {:#?} as timestamp for the new subdirectory and {:#?} to source other properties from", timestamp, dir.clone())
+            }
+            EntryKind::File(_) => panic!("Not a directory"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -117,6 +125,7 @@ pub fn root_entry_bytes(entry: RootEntry) -> &'static mut [u8] {
 #[allow(dead_code)]
 pub struct RootEntry {
     magic: u32,
+    system_clock: time_t,
     dir: Entry,
 }
 
@@ -131,8 +140,8 @@ impl RootEntry {
             None,
             0777,
             String::from("root"),
-            timestamp, // seconds since 1970 as of December 15, 2022
-            timestamp, // will find a way to compute this in real time later
+            timestamp,
+            timestamp,
             String::from("root"),
         );
 
@@ -143,6 +152,7 @@ impl RootEntry {
 
         Self {
             magic: 0x90a7cafe,
+            system_clock: timestamp,
             dir: Entry::new(EntryKind::Directory(Rc::new(root_map_inner))),
         }
     }
