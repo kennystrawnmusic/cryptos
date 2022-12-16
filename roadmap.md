@@ -14,7 +14,7 @@
 * Modern file system — HMFS (in progress):
   * Uses `hashbrown::HashMap` instead of a B+ tree or B-tree as its basic data structure (hence the abbreviation: HashMap File System)
   * 512-bit SHA-3 replacing AHash for real-time checksumming — took ZFS a lot of time and effort to do what I could do in just 10 or so lines, due to how powerful the HashMap API is
-  * Block-level metadata forking — why create pesky ".DS_Store" files when you can use block headers to achieve a similar result? 
+  * Block-level metadata forking — why create pesky ".DS_Store" files when you can use block-level key-value pairs to achieve a similar result? 
   * Design goal: do what Microsoft tried and failed to do with WinFS, except at the block level instead of the service level because it's far easier to accomplish in the former case
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * NVMe — TODO (same as above)
