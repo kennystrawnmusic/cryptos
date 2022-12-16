@@ -5,7 +5,7 @@ use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::convert::TryInto;
-use core::hash::{BuildHasherDefault, Hasher, Hash};
+use core::hash::{BuildHasherDefault, Hash, Hasher};
 use sha3::{Digest, Sha3_512};
 use unix_path::PathBuf;
 
@@ -121,22 +121,25 @@ pub struct RootEntry {
 }
 
 impl RootEntry {
-    pub fn new() -> Self {
+    pub fn new(timestamp: time_t) -> Self {
         let mut root_map_inner = HashMap::<Properties, Rc<Entry>>::default();
         let root_map = Rc::new(root_map_inner.clone());
 
         let root_props = Properties::new(
             String::from("/"),
             EntryKind::Directory(Rc::clone(&root_map)),
-            None, 
+            None,
             0777,
             String::from("root"),
-            1671142579,  // seconds since 1970 as of December 15, 2022
-            1671142579, // will find a way to compute this in real time later
+            timestamp, // seconds since 1970 as of December 15, 2022
+            timestamp, // will find a way to compute this in real time later
             String::from("root"),
         );
 
-        root_map_inner.insert(root_props, Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)))));
+        root_map_inner.insert(
+            root_props,
+            Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)))),
+        );
 
         Self {
             magic: 0x90a7cafe,

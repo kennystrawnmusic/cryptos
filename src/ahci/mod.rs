@@ -947,8 +947,7 @@ impl AhciProtected {
 
         debug!(
             "AHCI: controller version {}.{}",
-            major_version,
-            minor_version
+            major_version, minor_version
         );
 
         let pi = hba.ports_implemented.get();
