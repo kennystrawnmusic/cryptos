@@ -71,7 +71,12 @@ impl Entry {
     pub fn mkdir(&self, timestamp: time_t) -> Self {
         match self.0.clone() {
             EntryKind::Directory(dir) => {
-                todo!("Use {:#?} as timestamp for the new subdirectory and {:#?} to source other properties from", timestamp, dir.clone())
+                todo!(
+                    "Use {:#?} as timestamp for the new subdirectory\
+                    and {:#?} to source other properties from",
+                    timestamp,
+                    dir.clone()
+                )
             }
             EntryKind::File(_) => panic!("Not a directory"),
         }
