@@ -61,28 +61,57 @@ impl Hash for EntryKind {
     }
 }
 
+pub fn new_map_shorthand() -> HashMap<Properties, Rc<Entry>> {
+    HashMap::<Properties, Rc<Entry>>::default()
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Entry {
     kind: EntryKind,
-    parent: Option<Rc<Entry>>,
+    parent: Option<EntryKind>,
 }
 
 impl Entry {
-    pub fn new(kind: EntryKind, parent: Option<Rc<Entry>>) -> Self {
+    pub fn new(kind: EntryKind, parent: Option<EntryKind>) -> Self {
         Self {
             kind,
             parent,
         }
     }
-    pub fn mkdir(&self, timestamp: time_t) -> Self {
+    pub fn parent(&self) -> Option<EntryKind> {
+        self.parent.clone()
+    }
+    pub fn mkdir(&self, name: String, timestamp: time_t) -> Self {
         match self.kind.clone() {
-            EntryKind::Directory(dir) => {
-                todo!(
-                    "Use {:#?} as timestamp for the new subdirectory\
-                    and {:#?} to source other properties from",
+            EntryKind::Directory(mut dir) => {
+                let parent = Some(EntryKind::Directory(dir.clone()));
+
+                let new_map_inner = new_map_shorthand();
+                let new_map = Rc::new(new_map_inner);
+
+                let props = Properties::new(
+                    name,
+                    EntryKind::Directory(dir.clone()),
+                    None,
+                    0777,
+                    String::from("root"), // TODO: users
                     timestamp,
-                    dir.clone()
-                )
+                    timestamp,
+                    String::from("root"), // TODO: users
+                );
+
+                let kind = EntryKind::Directory(new_map);
+
+                let to_insert = Self {
+                    kind,
+                    parent
+                };
+
+                let mut_dir = Rc::get_mut(&mut dir).unwrap();
+                mut_dir.insert(props.clone(), Rc::new(to_insert));
+
+                let ret =  dir.get(&props).clone().unwrap();
+                ret.clone().as_ref().clone()
             }
             EntryKind::File(_) => panic!("Not a directory"),
         }
@@ -143,7 +172,7 @@ pub struct RootEntry {
 
 impl RootEntry {
     pub fn new(timestamp: time_t) -> Self {
-        let mut root_map_inner = HashMap::<Properties, Rc<Entry>>::default();
+        let mut root_map_inner = new_map_shorthand();
         let root_map = Rc::new(root_map_inner.clone());
 
         let root_props = Properties::new(
