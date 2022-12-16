@@ -126,6 +126,7 @@ pub fn root_entry_bytes(entry: RootEntry) -> &'static mut [u8] {
 pub struct RootEntry {
     magic: u32,
     system_clock: time_t,
+    entry_count: usize,
     dir: Entry,
 }
 
@@ -150,10 +151,15 @@ impl RootEntry {
             Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)))),
         );
 
+        drop(root_map);
+
+        let new_root_map = Rc::new(root_map_inner);
+
         Self {
             magic: 0x90a7cafe,
             system_clock: timestamp,
-            dir: Entry::new(EntryKind::Directory(Rc::new(root_map_inner))),
+            entry_count: Rc::strong_count(&Rc::clone(&new_root_map)),
+            dir: Entry::new(EntryKind::Directory(new_root_map)),
         }
     }
 }
