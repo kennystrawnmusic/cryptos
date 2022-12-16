@@ -5,7 +5,7 @@ use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::convert::TryInto;
-use core::hash::{BuildHasherDefault, Hash, Hasher};
+use core::hash::{BuildHasherDefault, Hash, Hasher, BuildHasher};
 use sha3::{Digest, Sha3_512};
 use unix_path::PathBuf;
 
@@ -68,6 +68,7 @@ pub fn new_map_shorthand() -> HashMap<Properties, Rc<Entry>> {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Entry {
     kind: EntryKind,
+    checksum: Option<u64>,
     parent: Option<EntryKind>,
 }
 
@@ -75,6 +76,7 @@ impl Entry {
     pub fn new(kind: EntryKind, parent: Option<EntryKind>) -> Self {
         Self {
             kind,
+            checksum: None,
             parent,
         }
     }
@@ -101,9 +103,11 @@ impl Entry {
                 );
 
                 let kind = EntryKind::Directory(new_map);
+                let checksum = Some(dir.hasher().hash_one(&kind));
 
                 let to_insert = Self {
                     kind,
+                    checksum,
                     parent
                 };
 
@@ -167,6 +171,7 @@ pub struct RootEntry {
     magic: u32,
     system_clock: time_t,
     entry_count: usize,
+    checksum: u64,
     dir: Entry,
 }
 
@@ -194,12 +199,14 @@ impl RootEntry {
         drop(root_map);
 
         let new_root_map = Rc::new(root_map_inner);
+        let new_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
 
         Self {
             magic: 0x90a7cafe,
             system_clock: timestamp,
             entry_count: Rc::strong_count(&new_root_map),
-            dir: Entry::new(EntryKind::Directory(new_root_map), None),
+            checksum: new_root_map.hasher().hash_one(&new_entry),
+            dir: new_entry,
         }
     }
 }
