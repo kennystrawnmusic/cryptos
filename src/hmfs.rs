@@ -233,13 +233,13 @@ impl RootEntry {
         );
 
         root_map_inner.insert(
-            root_props,
+            root_props.clone(),
             Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)), None)),
         );
 
         drop(root_map);
 
-        let new_root_map = Rc::new(root_map_inner);
+        let mut new_root_map = Rc::new(root_map_inner);
         let old_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
 
         let mut new_entry_parent = Self {
@@ -260,6 +260,13 @@ impl RootEntry {
         new_entry_parent.dir.parent = Some(EntryKind::Root(Rc::new(new_entry_parent.clone())));
         new_entry_parent.dir.kind = EntryKind::Directory(new_root_map.clone());
         new_entry_parent.checksum = new_root_map.hasher().hash_one(&new_entry);
+
+        // shadow this
+        let new_entry = new_entry_parent.dir.clone();
+
+        // keep HashMap up-to-date
+        Rc::get_mut(&mut new_root_map).unwrap().remove_entry(&root_props);
+        Rc::get_mut(&mut new_root_map).unwrap().insert(root_props, Rc::new(new_entry));
 
         new_entry_parent
     }
