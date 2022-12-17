@@ -222,7 +222,7 @@ impl RootEntry {
         new_entry_parent.dir = new_entry.clone();
 
         // keep these values up-to-date
-        new_entry_parent.dir.kind = EntryKind::Root(Rc::new(new_entry_parent.clone()));
+        new_entry_parent.dir.parent = Some(EntryKind::Root(Rc::new(new_entry_parent.clone())));
         new_entry_parent.checksum = new_root_map.hasher().hash_one(&new_entry);
 
         new_entry_parent
