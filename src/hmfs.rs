@@ -121,7 +121,6 @@ impl Entry {
                 let ret = dir.get(&props).clone().unwrap();
                 ret.clone().as_ref().clone()
             }
-            EntryKind::File(_) => panic!("Not a directory"),
             EntryKind::Root(mut root) => {
                 if let EntryKind::Directory(ref mut dir) = Rc::get_mut(&mut root).unwrap().dir.kind {
                     let parent = Some(EntryKind::Directory(dir.clone()));
@@ -158,6 +157,7 @@ impl Entry {
                     unreachable!("root entry is always a directory")
                 }
             }
+            EntryKind::File(_) => panic!("Not a directory"),
         }
     }
 }
