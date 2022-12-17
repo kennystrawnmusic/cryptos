@@ -122,9 +122,41 @@ impl Entry {
                 ret.clone().as_ref().clone()
             }
             EntryKind::File(_) => panic!("Not a directory"),
-            EntryKind::Root(root) => {
-                let _parent = root.get_root_dir().clone();
-                todo!();
+            EntryKind::Root(mut root) => {
+                if let EntryKind::Directory(ref mut dir) = Rc::get_mut(&mut root).unwrap().dir.kind {
+                    let parent = Some(EntryKind::Directory(dir.clone()));
+
+                    let new_map_inner = new_map_shorthand();
+                    let new_map = Rc::new(new_map_inner);
+
+                    let props = Properties::new(
+                        name,
+                        EntryKind::Directory(dir.clone()),
+                        None,
+                        0777,
+                        String::from("root"), // TODO: users
+                        timestamp,
+                        timestamp,
+                        String::from("root"), // TODO: users
+                    );
+
+                    let kind = EntryKind::Directory(new_map);
+                    let checksum = Some(dir.hasher().hash_one(&kind));
+
+                    let to_insert = Self {
+                        kind,
+                        checksum,
+                        parent,
+                    };
+
+                    let mut_dir = Rc::get_mut(dir).unwrap();
+                    mut_dir.insert(props.clone(), Rc::new(to_insert));
+
+                    let ret = dir.get(&props).clone().unwrap();
+                    ret.clone().as_ref().clone()
+                } else {
+                    unreachable!("root entry is always a directory")
+                }
             }
         }
     }
@@ -217,12 +249,16 @@ impl RootEntry {
             checksum: new_root_map.hasher().hash_one(&old_entry),
             dir: old_entry,
         };
-        
-        let new_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), Some(EntryKind::Root(Rc::new(new_entry_parent.clone()))));
+
+        let new_entry = Entry::new(
+            EntryKind::Directory(new_root_map.clone()),
+            Some(EntryKind::Root(Rc::new(new_entry_parent.clone()))),
+        );
         new_entry_parent.dir = new_entry.clone();
 
         // keep these values up-to-date
         new_entry_parent.dir.parent = Some(EntryKind::Root(Rc::new(new_entry_parent.clone())));
+        new_entry_parent.dir.kind = EntryKind::Directory(new_root_map.clone());
         new_entry_parent.checksum = new_root_map.hasher().hash_one(&new_entry);
 
         new_entry_parent
