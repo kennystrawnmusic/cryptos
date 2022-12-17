@@ -43,6 +43,7 @@ pub type FileData = Vec<u8>;
 pub enum EntryKind {
     Directory(Rc<HashMap<Properties, Rc<Entry>>>),
     File(FileData),
+    Root(Rc<RootEntry>),
 }
 
 impl Hash for EntryKind {
@@ -56,6 +57,9 @@ impl Hash for EntryKind {
             }
             Self::File(data) => {
                 data.hash(state);
+            }
+            Self::Root(root) => {
+                root.hash(state);
             }
         }
     }
@@ -118,6 +122,10 @@ impl Entry {
                 ret.clone().as_ref().clone()
             }
             EntryKind::File(_) => panic!("Not a directory"),
+            EntryKind::Root(root) => {
+                let _parent = root.get_root_dir().clone();
+                todo!();
+            }
         }
     }
 }
@@ -166,6 +174,7 @@ pub fn root_entry_bytes(entry: RootEntry) -> &'static mut [u8] {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[allow(dead_code)]
 pub struct RootEntry {
     magic: u32,
@@ -199,14 +208,26 @@ impl RootEntry {
         drop(root_map);
 
         let new_root_map = Rc::new(root_map_inner);
-        let new_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
+        let old_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
 
-        Self {
+        let mut new_entry_parent = Self {
             magic: 0x90a7cafe,
             system_clock: timestamp,
             entry_count: Rc::strong_count(&new_root_map),
-            checksum: new_root_map.hasher().hash_one(&new_entry),
-            dir: new_entry,
-        }
+            checksum: new_root_map.hasher().hash_one(&old_entry),
+            dir: old_entry,
+        };
+        
+        let new_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), Some(EntryKind::Root(Rc::new(new_entry_parent.clone()))));
+        new_entry_parent.dir = new_entry.clone();
+
+        // keep these values up-to-date
+        new_entry_parent.dir.kind = EntryKind::Root(Rc::new(new_entry_parent.clone()));
+        new_entry_parent.checksum = new_root_map.hasher().hash_one(&new_entry);
+
+        new_entry_parent
+    }
+    pub fn get_root_dir(&self) -> Entry {
+        self.dir.clone()
     }
 }
