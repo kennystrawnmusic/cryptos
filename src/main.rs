@@ -42,6 +42,7 @@ use bootloader_api::{
     *,
 };
 use conquer_once::spin::OnceCell;
+use raw_cpuid::CpuId;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -353,6 +354,8 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         boot_info.api_version.version_minor(),
         boot_info.api_version.version_patch()
     );
+    let vendor_info = CpuId::new().get_vendor_info();
+    info!("CPU vendor: {}", vendor_info.unwrap().as_str());
 
     info!("RSDP address: {:#x}", rsdp.clone());
     info!(

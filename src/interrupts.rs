@@ -1,3 +1,6 @@
+use core::convert::identity;
+
+use raw_cpuid::{CpuId, HypervisorInfo, Hypervisor};
 use x86_64::{
     instructions::interrupts,
     registers::{
@@ -75,8 +78,9 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
-        idt[151].set_handler_fn(dummy_ahci);
+        idt[139].set_handler_fn(dummy_ahci_1);
         idt[0x82].set_handler_fn(spurious);
+        idt[151].set_handler_fn(dummy_ahci_2);
         Mutex::new(idt)
     };
 }
@@ -87,18 +91,18 @@ pub static PID: AtomicU64 = AtomicU64::new(0);
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum IrqIndex {
-    Timer = 0xfe,     // 32
+    Timer = 0xfe,     // 254
     LapicErr = 0x31,  // 49
     IpiWake = 0x40,   // 64
     IpiTlb = 0x41,    // 65
     IpiSwitch = 0x42, // 66
     IpiPit = 0x43,    // 67
-    Spurious = 0xff,  // 254
+    Spurious = 0xff,  // 255
 }
 
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
     TICK_COUNT.fetch_add(1, Ordering::SeqCst);
-    info!("{:#?}", &TICK_COUNT.load(Ordering::SeqCst));
+    debug!("{:#?}", &TICK_COUNT.load(Ordering::SeqCst));
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
@@ -185,10 +189,13 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         Is external? {}\n\
         Is null? {}\n\
         Backtrace: {:#?}",
-        match selector.descriptor_table() {
-            DescriptorTable::Gdt => selector.index(),
-            DescriptorTable::Idt => selector.index() / 2,
-            DescriptorTable::Ldt => selector.index(),
+        match CpuId::new().get_hypervisor_info() {
+            Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
+                selector.index() / 2
+            } else {
+                selector.index()
+            }
+            None => selector.index()
         },
         selector.descriptor_table(),
         match selector.external() {
@@ -213,7 +220,14 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         let selector = SelectorErrorCode::new_truncate(code);
         panic!(
             "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
-            selector.index() / 2,
+            match CpuId::new().get_hypervisor_info() {
+                Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
+                    selector.index() / 2
+                } else {
+                    selector.index()
+                }
+                None => selector.index()
+            },
             frame
         );
     } else {
@@ -237,10 +251,13 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
             Is external? {}\n\
             Is null? {}\n\
             Backtrace: {:#?}",
-            match selector.descriptor_table() {
-                DescriptorTable::Gdt => selector.index(),
-                DescriptorTable::Idt => selector.index() / 2,
-                DescriptorTable::Ldt => selector.index(),
+            match CpuId::new().get_hypervisor_info() {
+                Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
+                    selector.index() / 2
+                } else {
+                    selector.index()
+                }
+                None => selector.index()
             },
             selector.descriptor_table(),
             match selector.external() {
@@ -281,8 +298,13 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn dummy_ahci(_frame: InterruptStackFrame) {
-    info!("Received AHCI interrupt");
+pub extern "x86-interrupt" fn dummy_ahci_1(_frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+pub extern "x86-interrupt" fn dummy_ahci_2(_frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt");
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
