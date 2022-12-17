@@ -2,6 +2,7 @@
 
 use alloc::vec::Vec;
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo};
+use embedded_graphics_core::geometry::Point;
 use spin::RwLock;
 
 use crate::FRAMEBUFFER_ADDR;
@@ -14,4 +15,14 @@ pub fn clone_buffer(old: FrameBuffer) -> FrameBuffer {
     unsafe {
         FrameBuffer::new(FRAMEBUFFER_ADDR, old.info())
     }
+}
+
+pub fn buffer_points(buffer: FrameBuffer) -> Vec<Point> {
+    let pv = Vec::new();
+    for x in 0..buffer.info().width {
+        for y in 0..buffer.info().height {
+            pv.push(Point::new(x as i32, y as i32));
+        }
+    }
+    pv
 }
