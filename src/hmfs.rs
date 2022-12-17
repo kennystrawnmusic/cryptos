@@ -239,7 +239,7 @@ impl RootEntry {
 
         drop(root_map);
 
-        let mut new_root_map = Rc::new(root_map_inner);
+        let new_root_map = Rc::new(root_map_inner);
         let old_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
 
         let mut new_entry_parent = Self {
@@ -265,8 +265,12 @@ impl RootEntry {
         let new_entry = new_entry_parent.dir.clone();
 
         // keep HashMap up-to-date
-        Rc::get_mut(&mut new_root_map).unwrap().remove_entry(&root_props);
-        Rc::get_mut(&mut new_root_map).unwrap().insert(root_props, Rc::new(new_entry));
+        if let EntryKind::Directory(ref mut dir) = &mut new_entry_parent.dir.kind {
+            Rc::get_mut(dir).unwrap().remove_entry(&root_props);
+            Rc::get_mut(dir).unwrap().insert(root_props, Rc::new(new_entry));
+        } else {
+            unreachable!()
+        }
 
         new_entry_parent
     }
