@@ -3,7 +3,7 @@ use core::sync::atomic::Ordering;
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::header::{HeaderType, InterruptPin};
-use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator};
+use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator, instructions::interrupts::without_interrupts};
 
 use crate::{
     acpi_impl::KernelAcpi,
@@ -1041,7 +1041,7 @@ impl AhciProtected {
 
             self.hba = VirtAddr::new(abar_virt);
 
-            self.start_hba(&mut *MAPPER.get().unwrap().lock());
+            without_interrupts(|| self.start_hba(&mut *MAPPER.get().unwrap().lock()));
             self.enable_interrupts(header);
         } else {
             panic!("AHCI: Not a normal header")
@@ -1066,12 +1066,14 @@ impl PciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         debug!("AHCI: Initializing");
 
-        get_ahci().inner.lock().start_driver(header, tables);
+        without_interrupts(|| {
+            get_ahci().inner.lock().start_driver(header, tables);
+        });
 
-        debug!("Port 0: {:?}", get_ahci().inner.lock().ports[0].clone());
+        debug!("Port 0: {:?}", without_interrupts(|| get_ahci().inner.lock().ports[0].clone()));
 
         // Temporary testing...
-        if let Some(port) = get_ahci().inner.lock().ports[0].clone() {
+        if let Some(port) = without_interrupts(|| get_ahci().inner.lock().ports[0].clone()) {
             let buffer = &mut [0u8; 512];
             let _ = port.read(0, buffer).unwrap();
             debug!("Read sector 0: {:?}", buffer);

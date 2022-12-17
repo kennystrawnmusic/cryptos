@@ -251,7 +251,7 @@ pub fn aml_init(
                     Pin::IntA,
                     &mut aml_ctx,
                 ) {
-                    debug!("IRQ descriptor A: {:#?}", desc);
+                    debug!("IntA IRQ number: {:#?}", desc.irq.clone());
                     a[0] = (desc.irq, InterruptPin::IntA);
                 }
                 if let Ok(desc) = prt.route(
@@ -260,7 +260,7 @@ pub fn aml_init(
                     Pin::IntB,
                     &mut aml_ctx,
                 ) {
-                    debug!("IRQ descriptor B: {:#?}", desc);
+                    debug!("IntB IRQ number: {:#?}", desc.irq.clone());
                     a[1] = (desc.irq, InterruptPin::IntB);
                 }
                 if let Ok(desc) = prt.route(
@@ -269,7 +269,7 @@ pub fn aml_init(
                     Pin::IntC,
                     &mut aml_ctx,
                 ) {
-                    debug!("IRQ descriptor C: {:#?}", desc);
+                    debug!("IntC IRQ number: {:#?}", desc.irq.clone());
                     a[2] = (desc.irq, InterruptPin::IntC);
                 }
                 if let Ok(desc) = prt.route(
@@ -278,7 +278,7 @@ pub fn aml_init(
                     Pin::IntD,
                     &mut aml_ctx,
                 ) {
-                    debug!("IRQ descriptor D: {:#?}", desc);
+                    debug!("IntD IRQ number: {:#?}", desc.irq.clone());
                     a[3] = (desc.irq, InterruptPin::IntD);
                 }
                 return Some(a);

@@ -89,6 +89,7 @@ pub enum IrqIndex {
 
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
     TICK_COUNT.fetch_add(1, Ordering::SeqCst);
+    info!("{:#?}", &TICK_COUNT.load(Ordering::SeqCst));
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
@@ -126,7 +127,7 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
-    debug!("Reached breakpoint; waiting for debugger to give the all-clear");
+    info!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
         let int3_ip = read_rip().as_u64();
         let ret_ip = frame.instruction_pointer.as_u64();
@@ -254,6 +255,7 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
 // FIXME: if this is indeed the cause of the #10 page fault, figure out why
 pub extern "x86-interrupt" fn dummy_ahci(_frame: InterruptStackFrame) {
     info!("Received AHCI interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
 // #[allow(dead_code)]

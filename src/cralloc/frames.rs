@@ -70,7 +70,8 @@ macro_rules! map_page {
         let frame = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys as u64));
         let page = x86_64::structures::paging::Page::<$size>::containing_address(x86_64::VirtAddr::new($virt as u64));
 
-        // suppress warnings if this macro is called from an unsafe fn
+        x86_64::instructions::interrupts::without_interrupts(|| {
+            // suppress warnings if this macro is called from an unsafe fn
         #[allow(unused_unsafe)]
         let res = unsafe {
             crate::MAPPER.get().unwrap().lock().map_to(
@@ -99,6 +100,7 @@ macro_rules! map_page {
         if let Some(flush) = flush {
             flush.flush();
         }
+        });
     };
 }
 
