@@ -21,7 +21,7 @@ pub mod pci_impl;
 use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
-    interrupts::IDT,
+    interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::{PciDeviceHandle, PCI_TABLE},
 };
 use acpi::{
@@ -54,7 +54,7 @@ use core::{
         SubAssign,
     },
     panic::PanicInfo,
-    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
+    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull}, sync::atomic::Ordering,
 };
 use cralloc::{
     frames::{map_memory, Falloc},
@@ -252,6 +252,7 @@ pub fn aml_init(
                     &mut aml_ctx,
                 ) {
                     debug!("IntA IRQ number: {:#?}", desc.irq.clone());
+                    INTA_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
                     a[0] = (desc.irq, InterruptPin::IntA);
                 }
                 if let Ok(desc) = prt.route(
@@ -261,6 +262,7 @@ pub fn aml_init(
                     &mut aml_ctx,
                 ) {
                     debug!("IntB IRQ number: {:#?}", desc.irq.clone());
+                    INTB_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
                     a[1] = (desc.irq, InterruptPin::IntB);
                 }
                 if let Ok(desc) = prt.route(
@@ -270,6 +272,7 @@ pub fn aml_init(
                     &mut aml_ctx,
                 ) {
                     debug!("IntC IRQ number: {:#?}", desc.irq.clone());
+                    INTC_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
                     a[2] = (desc.irq, InterruptPin::IntC);
                 }
                 if let Ok(desc) = prt.route(
@@ -279,6 +282,7 @@ pub fn aml_init(
                     &mut aml_ctx,
                 ) {
                     debug!("IntD IRQ number: {:#?}", desc.irq.clone());
+                    INTD_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
                     a[3] = (desc.irq, InterruptPin::IntD);
                 }
                 return Some(a);
@@ -371,6 +375,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     debug!("TLS template: {:#?}", boot_info.tls_template);
     debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
+    
 
     ahci_init();
     pci_impl::init(&mut tables);

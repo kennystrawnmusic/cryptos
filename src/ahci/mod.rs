@@ -3,7 +3,10 @@ use core::sync::atomic::Ordering;
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::header::{HeaderType, InterruptPin};
-use x86_64::{registers::control::Cr3, structures::paging::FrameAllocator, instructions::interrupts::without_interrupts};
+use x86_64::{
+    instructions::interrupts::without_interrupts, registers::control::Cr3,
+    structures::paging::FrameAllocator,
+};
 
 use crate::{
     acpi_impl::KernelAcpi,
@@ -989,30 +992,16 @@ impl AhciProtected {
         let arr = aml_init(tables, header);
 
         // GDT will #GP if an IDT-load is attempted more than once
-        if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+        if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
             match header.interrupt_pin {
-                InterruptPin::IntA => {
-                    IDT.lock()[32 + arr.unwrap()[0].0 as usize]
-                        .set_handler_fn(interrupts::dummy_ahci);
+                InterruptPin::IntA
+                | InterruptPin::IntB
+                | InterruptPin::IntC
+                | InterruptPin::IntD => {
+                    info!("Loading descriptor tables...");
                     crate::interrupts::init();
-                    crate::apic_impl::init_all_available_apics();
-                }
-                InterruptPin::IntB => {
-                    IDT.lock()[32 + arr.unwrap()[1].0 as usize]
-                        .set_handler_fn(interrupts::dummy_ahci);
-                    crate::interrupts::init();
-                    crate::apic_impl::init_all_available_apics();
-                }
-                InterruptPin::IntC => {
-                    IDT.lock()[32 + arr.unwrap()[2].0 as usize]
-                        .set_handler_fn(interrupts::dummy_ahci);
-                    crate::interrupts::init();
-                    crate::apic_impl::init_all_available_apics();
-                }
-                InterruptPin::IntD => {
-                    IDT.lock()[32 + arr.unwrap()[3].0 as usize]
-                        .set_handler_fn(interrupts::dummy_ahci);
-                    crate::interrupts::init();
+
+                    info!("Setting up interrupts...");
                     crate::apic_impl::init_all_available_apics();
                 }
                 InterruptPin::Unused => {} // ignore unused interrupt pins
@@ -1070,7 +1059,10 @@ impl PciDeviceHandle for AhciDriver {
             get_ahci().inner.lock().start_driver(header, tables);
         });
 
-        debug!("Port 0: {:?}", without_interrupts(|| get_ahci().inner.lock().ports[0].clone()));
+        debug!(
+            "Port 0: {:?}",
+            without_interrupts(|| get_ahci().inner.lock().ports[0].clone())
+        );
 
         // Temporary testing...
         if let Some(port) = without_interrupts(|| get_ahci().inner.lock().ports[0].clone()) {

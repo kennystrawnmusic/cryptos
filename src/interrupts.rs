@@ -29,6 +29,11 @@ pub fn init() {
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
+pub static INTA_IRQ: AtomicU64 = AtomicU64::new(0);
+pub static INTB_IRQ: AtomicU64 = AtomicU64::new(0);
+pub static INTC_IRQ: AtomicU64 = AtomicU64::new(0);
+pub static INTD_IRQ: AtomicU64 = AtomicU64::new(0);
+
 lazy_static! {
     pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.lock().clone();
     pub static ref IDT: Mutex<InterruptDescriptorTable> = {
@@ -66,6 +71,10 @@ lazy_static! {
         idt[IrqIndex::Timer as usize].set_handler_fn(timer);
         idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
         idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
+        idt[INTA_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_inta);
+        idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
+        idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
+        idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
         idt[151].set_handler_fn(dummy_ahci);
         idt[0x82].set_handler_fn(spurious);
         Mutex::new(idt)
@@ -252,7 +261,26 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
     }
 }
 
-// FIXME: if this is indeed the cause of the #10 page fault, figure out why
+pub extern "x86-interrupt" fn pin_inta(_frame: InterruptStackFrame) {
+    info!("Received IntA interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+pub extern "x86-interrupt" fn pin_intb(_frame: InterruptStackFrame) {
+    info!("Received IntB interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+pub extern "x86-interrupt" fn pin_intc(_frame: InterruptStackFrame) {
+    info!("Received IntC interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
+pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
+    info!("Received IntD interrupt");
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+}
+
 pub extern "x86-interrupt" fn dummy_ahci(_frame: InterruptStackFrame) {
     info!("Received AHCI interrupt");
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }

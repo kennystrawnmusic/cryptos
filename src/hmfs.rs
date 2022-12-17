@@ -5,7 +5,7 @@ use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::convert::TryInto;
-use core::hash::{BuildHasherDefault, Hash, Hasher, BuildHasher};
+use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
 use sha3::{Digest, Sha3_512};
 use unix_path::PathBuf;
 
@@ -108,13 +108,13 @@ impl Entry {
                 let to_insert = Self {
                     kind,
                     checksum,
-                    parent
+                    parent,
                 };
 
                 let mut_dir = Rc::get_mut(&mut dir).unwrap();
                 mut_dir.insert(props.clone(), Rc::new(to_insert));
 
-                let ret =  dir.get(&props).clone().unwrap();
+                let ret = dir.get(&props).clone().unwrap();
                 ret.clone().as_ref().clone()
             }
             EntryKind::File(_) => panic!("Not a directory"),
