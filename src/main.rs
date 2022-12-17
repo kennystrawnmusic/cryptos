@@ -42,7 +42,6 @@ use bootloader_api::{
     *,
 };
 use conquer_once::spin::OnceCell;
-use raw_cpuid::CpuId;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -55,7 +54,8 @@ use core::{
         SubAssign,
     },
     panic::PanicInfo,
-    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull}, sync::atomic::Ordering,
+    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
+    sync::atomic::Ordering,
 };
 use cralloc::{
     frames::{map_memory, Falloc},
@@ -67,6 +67,7 @@ use pcics::{
     header::{Header, HeaderType, InterruptPin},
 };
 use printk::LockedPrintk;
+use raw_cpuid::CpuId;
 use spin::{Mutex, RwLock};
 use x86_64::{
     structures::paging::{
@@ -378,7 +379,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     debug!("TLS template: {:#?}", boot_info.tls_template);
     debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
-    
 
     ahci_init();
     pci_impl::init(&mut tables);

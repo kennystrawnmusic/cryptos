@@ -1,6 +1,6 @@
 use core::convert::identity;
 
-use raw_cpuid::{CpuId, HypervisorInfo, Hypervisor};
+use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
     instructions::interrupts,
     registers::{
@@ -190,12 +190,13 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
         Is null? {}\n\
         Backtrace: {:#?}",
         match CpuId::new().get_hypervisor_info() {
-            Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
-                selector.index() / 2
-            } else {
-                selector.index()
-            }
-            None => selector.index()
+            Some(hypervisor) =>
+                if let Hypervisor::QEMU = hypervisor.identify() {
+                    selector.index() / 2
+                } else {
+                    selector.index()
+                },
+            None => selector.index(),
         },
         selector.descriptor_table(),
         match selector.external() {
@@ -221,12 +222,13 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         panic!(
             "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
             match CpuId::new().get_hypervisor_info() {
-                Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
-                    selector.index() / 2
-                } else {
-                    selector.index()
-                }
-                None => selector.index()
+                Some(hypervisor) =>
+                    if let Hypervisor::QEMU = hypervisor.identify() {
+                        selector.index() / 2
+                    } else {
+                        selector.index()
+                    },
+                None => selector.index(),
             },
             frame
         );
@@ -252,12 +254,13 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
             Is null? {}\n\
             Backtrace: {:#?}",
             match CpuId::new().get_hypervisor_info() {
-                Some(hypervisor) => if let Hypervisor::QEMU = hypervisor.identify() {
-                    selector.index() / 2
-                } else {
-                    selector.index()
-                }
-                None => selector.index()
+                Some(hypervisor) =>
+                    if let Hypervisor::QEMU = hypervisor.identify() {
+                        selector.index() / 2
+                    } else {
+                        selector.index()
+                    },
+                None => selector.index(),
             },
             selector.descriptor_table(),
             match selector.external() {
