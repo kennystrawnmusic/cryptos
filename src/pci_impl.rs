@@ -298,14 +298,22 @@ pub enum Vendor {
     Google,
     ATT,
     Qualcomm,
+    Lenovo,
+    Sapphire,
+    Seagate,
+    Patriot,
+    MSI,
+    Ralink,
+    TpLink,
+    Hauppauge,
     Unknown(u32),
 }
 
 impl Vendor {
     pub fn new(id: u32) -> Self {
         match id {
-            0x8086 => Self::Intel,
-            0x1022 => Self::AMD,
+            0x8086 | 0x34ba => Self::Intel,
+            0x1002 | 0x1022 => Self::AMD,
             0x10DE | 0x12d2 => Self::NVIDIA,
             0x1234 => Self::Qemu,
             0x1000 | 0x1166 | 0x14e4 | 0x166d | 0x173b | 0x182f | 0xfeda => Self::Broadcom,
@@ -329,6 +337,14 @@ impl Vendor {
             0x1ae0 => Self::Google,
             0x18a3 => Self::ATT,
             0x168c | 0x17cb | 0x1969 | 0x5143 => Self::Qualcomm,
+            0x17aa | 0x1d49 => Self::Lenovo,
+            0x0721 | 0x174b | 0x1da2 => Self::Sapphire,
+            0x1bb1 => Self::Seagate,
+            0x137e => Self::Patriot,
+            0x1462 => Self::MSI,
+            0x1804 | 0x1814 => Self::Ralink,
+            0x7470 => Self::TpLink,
+            0x0070 | 0x0270 | 0x13eb => Self::Hauppauge,
             _ => Self::Unknown(id),
         }
     }
