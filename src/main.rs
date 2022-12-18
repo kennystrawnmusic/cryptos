@@ -13,11 +13,11 @@ pub mod acpi_impl;
 pub mod ahci;
 pub mod apic_impl;
 pub mod cralloc;
+pub mod drm;
 pub mod exceptions;
 pub mod hmfs;
 pub mod interrupts;
 pub mod pci_impl;
-pub mod drm;
 
 use crate::{
     acpi_impl::KernelAcpi,

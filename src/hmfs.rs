@@ -122,7 +122,8 @@ impl Entry {
                 ret.clone().as_ref().clone()
             }
             EntryKind::Root(mut root) => {
-                if let EntryKind::Directory(ref mut dir) = Rc::get_mut(&mut root).unwrap().dir.kind {
+                if let EntryKind::Directory(ref mut dir) = Rc::get_mut(&mut root).unwrap().dir.kind
+                {
                     let parent = Some(EntryKind::Directory(dir.clone()));
 
                     let new_map_inner = new_map_shorthand();
@@ -267,7 +268,9 @@ impl RootEntry {
         // keep HashMap up-to-date
         if let EntryKind::Directory(ref mut dir) = &mut new_entry_parent.dir.kind {
             Rc::get_mut(dir).unwrap().remove_entry(&root_props);
-            Rc::get_mut(dir).unwrap().insert(root_props, Rc::new(new_entry));
+            Rc::get_mut(dir)
+                .unwrap()
+                .insert(root_props, Rc::new(new_entry));
         } else {
             unreachable!()
         }
