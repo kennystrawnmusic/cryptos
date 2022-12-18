@@ -17,12 +17,12 @@ pub fn clone_buffer(old: FrameBuffer) -> FrameBuffer {
     }
 }
 
-pub fn buffer_points(buffer: FrameBuffer) -> Vec<Point> {
-    let pv = Vec::new();
+pub fn buffer_points(buffer: FrameBuffer) -> impl Iterator<Item = Point> {
+    let mut pv = Vec::new();
     for x in 0..buffer.info().width {
         for y in 0..buffer.info().height {
             pv.push(Point::new(x as i32, y as i32));
         }
     }
-    pv
+    pv.into_iter()
 }
