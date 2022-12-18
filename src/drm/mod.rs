@@ -9,7 +9,7 @@ use spin::RwLock;
 use crate::FRAMEBUFFER_ADDR;
 
 #[allow(dead_code)] // needed for later
-pub static COMPOSITING_TABLE: RwLock<Vec<FrameBuffer>> = RwLock::new(Vec::new());
+pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
 // Needed to allow rendering in multiple separate buffers — the very definition of compositing
 pub fn clone_buffer(old: FrameBuffer) -> FrameBuffer {
@@ -26,4 +26,13 @@ pub fn buffer_points(buffer: FrameBuffer) -> impl Iterator<Item = Point> {
 #[allow(unused_mut)]
 pub fn render_points(points: impl Iterator<Item = Point>, mut buffer: FrameBuffer) {
     todo!()
+}
+
+// Idea is to eventually implement DrawTarget for this
+#[allow(dead_code)]
+pub struct CompositingLayer {
+    fb: &'static mut [u8],
+    info: FrameBufferInfo,
+    x: usize,
+    y: usize,
 }
