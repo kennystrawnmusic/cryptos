@@ -2,9 +2,9 @@
 
 use alloc::vec::Vec;
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo};
-use core::iter::zip;
 use embedded_graphics_core::geometry::Point;
 use spin::RwLock;
+use core::iter::zip;
 
 use crate::FRAMEBUFFER_ADDR;
 
@@ -17,7 +17,7 @@ pub fn clone_buffer(old: FrameBuffer) -> FrameBuffer {
 }
 
 pub fn buffer_points(buffer: FrameBuffer) -> impl Iterator<Item = Point> {
-    (0..buffer.info().width)
-        .zip(0..buffer.info().height)
-        .map(|(x, y)| Point::new(x as i32, y as i32))
+    (0..buffer.info().width).for_each(|x| {
+        (0..buffer.info().height).map(|y| Point::new(x as i32, y as i32))
+    })
 }
