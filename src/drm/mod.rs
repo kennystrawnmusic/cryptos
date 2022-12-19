@@ -22,13 +22,6 @@ pub fn buffer_points(buffer: FrameBuffer) -> impl Iterator<Item = Point> {
         .flat_map(move |x| (0..buffer.info().height).map(move |y| Point::new(x as i32, y as i32)))
 }
 
-// future-proof
-#[allow(unused_variables)]
-#[allow(unused_mut)]
-pub fn render_points(points: impl Iterator<Item = Point>, mut buffer: FrameBuffer) {
-    todo!()
-}
-
 pub enum PixelColorKind {
     Rgb(Rgb888),
     Bgr(Bgr888),
