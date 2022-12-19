@@ -62,7 +62,6 @@ impl CompositingLayer {
         let info = buffer.info().clone();
         Self { 
             color: PixelColorKind::new(info, red, green, blue),
-            // borrow checker throws a fit if I don't do this
             fb: buffer.buffer_mut().iter().map(|i| i.clone()).collect::<Vec<_>>(),
             info,
             x,
