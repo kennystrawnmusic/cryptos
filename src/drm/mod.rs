@@ -51,7 +51,7 @@ impl PixelColorKind {
 #[allow(dead_code)]
 pub struct CompositingLayer {
     color: PixelColorKind,
-    fb: &'static mut [u8],
+    fb: Vec<u8>,
     info: FrameBufferInfo,
     x: usize,
     y: usize,
@@ -63,7 +63,7 @@ impl CompositingLayer {
         Self { 
             color: PixelColorKind::new(info, red, green, blue),
             // borrow checker throws a fit if I don't do this
-            fb: buffer.buffer_mut().iter().map(|i| i.clone()).collect::<Vec<_>>().leak(),
+            fb: buffer.buffer_mut().iter().map(|i| i.clone()).collect::<Vec<_>>(),
             info,
             x,
             y
