@@ -69,4 +69,11 @@ impl CompositingLayer {
             y
         }
     }
+    /// Writes finished render to an existing root framebuffer after computations
+    // future-proof
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    pub fn merge_down(&self, mut root_buffer: FrameBuffer) {
+        todo!()
+    }
 }
