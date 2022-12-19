@@ -2,7 +2,7 @@
 
 use alloc::vec::Vec;
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use embedded_graphics::{prelude::{PixelColor, RgbColor, GrayColor}, pixelcolor::{Rgb888, Bgr888, Gray8, raw::RawU32}};
+use embedded_graphics::{prelude::{PixelColor, RgbColor, GrayColor}, pixelcolor::{Rgb888, Bgr888, Gray8, raw::RawU8}};
 use embedded_graphics_core::prelude::RawData;
 use core::iter::zip;
 use embedded_graphics_core::geometry::Point;
@@ -62,7 +62,7 @@ impl Clone for PixelColorKind {
 impl Copy for PixelColorKind {}
 
 impl PixelColor for PixelColorKind {
-    type Raw = RawU32;
+    type Raw = RawU8; // framebuffer is based on a byte slice
 }
 
 // Idea is to eventually implement DrawTarget for this
