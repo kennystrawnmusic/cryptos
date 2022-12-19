@@ -70,7 +70,9 @@ impl CompositingLayer {
     }
     /// Writes finished render to an existing root framebuffer after computations
     // future-proof
-    pub fn merge_down(&self, _root_buffer: &mut FrameBuffer) {
-        todo!()
+    pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
+        for (index, byte) in self.fb.iter().enumerate() {
+            root_buffer.buffer_mut()[index] = byte.clone();
+        }
     }
 }
