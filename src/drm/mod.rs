@@ -67,6 +67,7 @@ impl PixelColor for PixelColorKind {
 
 // Idea is to eventually implement DrawTarget for this
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct CompositingLayer {
     color: PixelColorKind,
     fb: Vec<u8>,
@@ -78,13 +79,17 @@ pub struct CompositingLayer {
 impl CompositingLayer {
     pub fn new(mut buffer: FrameBuffer, red: u8, green: u8, blue: u8, x: usize, y: usize) -> Self {
         let info = buffer.info().clone();
-        Self { 
+        
+        let ret = Self { 
             color: PixelColorKind::new(info, red, green, blue),
             fb: buffer.buffer_mut().iter().map(|i| i.clone()).collect::<Vec<_>>(),
             info,
             x,
             y
-        }
+        };
+
+        COMPOSITING_TABLE.write().push(ret.clone());
+        ret
     }
     /// Writes finished render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
