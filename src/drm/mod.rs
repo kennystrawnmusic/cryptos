@@ -2,7 +2,8 @@
 
 use alloc::vec::Vec;
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use embedded_graphics::{prelude::PixelColor, pixelcolor::{Rgb888, Bgr888, Gray8}};
+use embedded_graphics::{prelude::{PixelColor, RgbColor, GrayColor}, pixelcolor::{Rgb888, Bgr888, Gray8, raw::RawU32}};
+use embedded_graphics_core::prelude::RawData;
 use core::iter::zip;
 use embedded_graphics_core::geometry::Point;
 use spin::RwLock;
@@ -29,6 +30,7 @@ pub fn render_points(points: impl Iterator<Item = Point>, mut buffer: FrameBuffe
     todo!()
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum PixelColorKind {
     Rgb(Rgb888),
     Bgr(Bgr888),
@@ -45,6 +47,22 @@ impl PixelColorKind {
             _ => panic!("Unknown pixel format")
         }
     }
+}
+
+impl Clone for PixelColorKind {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Bgr(bgr) => Self::Bgr(Bgr888::new(bgr.r(), bgr.g(), bgr.b())),
+            Self::Rgb(rgb) => Self::Rgb(Rgb888::new(rgb.r(), rgb.g(), rgb.b())),
+            Self::U8(g) => Self::U8(Gray8::new(g.luma())),
+        }
+    }
+}
+
+impl Copy for PixelColorKind {}
+
+impl PixelColor for PixelColorKind {
+    type Raw = RawU32;
 }
 
 // Idea is to eventually implement DrawTarget for this
