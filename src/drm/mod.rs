@@ -158,9 +158,9 @@ impl CompositingLayer {
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
                 if let PixelColorKind::Rgb(other_rgb) = other.color {
-                    let new_red = ((own_rgb.r() as f32) + (other_rgb.r() as f32) * (1.0 - alpha)) as u8;
-                    let new_green = ((own_rgb.g() as f32) + (other_rgb.g() as f32) * (1.0 - alpha)) as u8;
-                    let new_blue = ((own_rgb.b() as f32) + (other_rgb.b() as f32) * (1.0 - alpha)) as u8;
+                    let new_red = ((own_rgb.r() as f32) + ((other_rgb.r() as f32) * (1.0 - alpha))) as u8;
+                    let new_green = ((own_rgb.g() as f32) + ((other_rgb.g() as f32) * (1.0 - alpha))) as u8;
+                    let new_blue = ((own_rgb.b() as f32) + ((other_rgb.b() as f32) * (1.0 - alpha))) as u8;
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
                     unreachable!()
@@ -168,9 +168,9 @@ impl CompositingLayer {
             }
             PixelColorKind::Bgr(own_bgr) => {
                 if let PixelColorKind::Bgr(other_bgr) = other.color {
-                    let new_blue = ((own_bgr.b() as f32) + (other_bgr.b() as f32) * (1.0 - alpha)) as u8;
-                    let new_green = ((own_bgr.g() as f32) + (other_bgr.g() as f32) * (1.0 - alpha)) as u8;
-                    let new_red = ((own_bgr.r() as f32) + (other_bgr.r() as f32) * (1.0 - alpha)) as u8;
+                    let new_blue = ((own_bgr.b() as f32) + ((other_bgr.b() as f32) * (1.0 - alpha))) as u8;
+                    let new_green = ((own_bgr.g() as f32) + ((other_bgr.g() as f32) * (1.0 - alpha))) as u8;
+                    let new_red = ((own_bgr.r() as f32) + ((other_bgr.r() as f32) * (1.0 - alpha))) as u8;
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
                     unreachable!()
