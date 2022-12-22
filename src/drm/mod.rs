@@ -5,10 +5,9 @@ use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::iter::zip;
 use embedded_graphics::{
     pixelcolor::{raw::RawU8, Bgr888, Gray8, Rgb888},
-    prelude::{GrayColor, PixelColor, RgbColor},
+    prelude::{GrayColor, PixelColor, RgbColor, OriginDimensions, Size}, Pixel,
 };
-use embedded_graphics_core::geometry::Point;
-use embedded_graphics_core::prelude::RawData;
+use embedded_graphics_core::{geometry::Point, prelude::RawData, draw_target::DrawTarget};
 use spin::RwLock;
 
 use crate::FRAMEBUFFER_ADDR;
@@ -16,21 +15,9 @@ use crate::FRAMEBUFFER_ADDR;
 #[allow(dead_code)] // needed for later
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
-// Needed to allow rendering in multiple separate buffers — the very definition of compositing
-pub fn clone_buffer(old: FrameBuffer) -> FrameBuffer {
-    unsafe { FrameBuffer::new(FRAMEBUFFER_ADDR, old.info()) }
-}
-
-pub fn buffer_points(buffer: FrameBuffer) -> impl Iterator<Item = Point> {
+pub fn buffer_points(buffer: &'static mut FrameBuffer) -> impl Iterator<Item = Point> {
     (0..buffer.info().width)
         .flat_map(move |x| (0..buffer.info().height).map(move |y| Point::new(x as i32, y as i32)))
-}
-
-// future-proof
-#[allow(unused_variables)]
-#[allow(unused_mut)]
-pub fn render_points(points: impl Iterator<Item = Point>, mut buffer: FrameBuffer) {
-    todo!()
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -68,6 +55,11 @@ impl PixelColor for PixelColorKind {
     type Raw = RawU8; // framebuffer is based on a byte slice
 }
 
+pub fn buffer_pixels(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> impl Iterator<Item = Pixel<PixelColorKind>> {
+    let info = buffer.info().clone();
+    buffer_points(buffer).map(move |p| Pixel(p, PixelColorKind::new(info, red, green, blue)))
+}
+
 // Idea is to eventually implement DrawTarget for this
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -80,7 +72,7 @@ pub struct CompositingLayer {
 }
 
 impl CompositingLayer {
-    pub fn new(mut buffer: FrameBuffer, red: u8, green: u8, blue: u8, x: usize, y: usize) -> Self {
+    pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8, x: usize, y: usize) -> Self {
         let info = buffer.info().clone();
 
         Self {
@@ -104,5 +96,24 @@ impl CompositingLayer {
     /// Adds the given `CompositingLayer` to the compositing table
     pub fn register(self) {
         COMPOSITING_TABLE.write().push(self);
+    }
+}
+
+impl OriginDimensions for CompositingLayer {
+    fn size(&self) -> embedded_graphics::prelude::Size {
+        let horiz = self.info.width as u32;
+        let vert = self.info.height as u32;
+        Size::new(horiz, vert)
+    }
+}
+
+impl DrawTarget for CompositingLayer {
+    type Color = PixelColorKind;
+    type Error = !; //direct framebuffer writes never fail
+
+    fn draw_iter<I>(&mut self, _pixels: I) -> Result<(), Self::Error>
+        where
+            I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>> {
+        todo!();
     }
 }

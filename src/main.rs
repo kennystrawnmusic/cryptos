@@ -5,6 +5,7 @@
 #![feature(abi_x86_interrupt)]
 #![feature(maybe_uninit_slice)]
 #![feature(build_hasher_simple_hash_one)]
+#![feature(never_type)]
 #![allow(unused_imports)]
 
 extern crate alloc;
