@@ -91,13 +91,11 @@ fn panic(info: &PanicInfo) -> ! {
     }
 }
 
-const FRAMEBUFFER_ADDR: u64 = 0x8000_0000_0000;
-
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
     mappings.kernel_stack = Mapping::Dynamic;
     mappings.boot_info = Mapping::Dynamic;
-    mappings.framebuffer = Mapping::FixedAddress(FRAMEBUFFER_ADDR);
+    mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
     mappings.page_table_recursive = None;
     mappings.aslr = false;

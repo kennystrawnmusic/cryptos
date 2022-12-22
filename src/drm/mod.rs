@@ -11,8 +11,6 @@ use embedded_graphics::{
 use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
 use spin::RwLock;
 
-use crate::FRAMEBUFFER_ADDR;
-
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
