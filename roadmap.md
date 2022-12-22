@@ -19,7 +19,7 @@
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * NVMe — TODO (same as above)
 * Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
-* Graphics — TODO (idea is to rewrite the framebuffer structure provided by the `bootloader` crate as a new structure that implements both `Clone` as a compositor backend and `From` to convert from the bootloader's impl, then use the aforementioned `FrameBuffer + Clone + From` rewrite to actually bake a compositor into the kernel itself)
+* Graphics — [in progress](https://github.com/kennystrawnmusic/cryptos/blob/master/src/drm/mod.rs)
 * USB HID — TODO (can't have a GUI without a mouse and keyboard)
 * Userland — TODO (idea is to port the Redox init, Redox coreutils, and most of the non-mission-critical Redox user-mode drivers — like network drivers, for example — over, as well as use my own terminal emulator for running Ion in emulated mode only)
 * Use of `cfg` as a means of supporting additional CPU architectures — TODO
