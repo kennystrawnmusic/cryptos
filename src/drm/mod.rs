@@ -5,9 +5,10 @@ use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::iter::zip;
 use embedded_graphics::{
     pixelcolor::{raw::RawU8, Bgr888, Gray8, Rgb888},
-    prelude::{GrayColor, PixelColor, RgbColor, OriginDimensions, Size}, Pixel,
+    prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
+    Pixel,
 };
-use embedded_graphics_core::{geometry::Point, prelude::RawData, draw_target::DrawTarget};
+use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
 use spin::RwLock;
 
 use crate::FRAMEBUFFER_ADDR;
@@ -55,7 +56,12 @@ impl PixelColor for PixelColorKind {
     type Raw = RawU8; // framebuffer is based on a byte slice
 }
 
-pub fn buffer_pixels(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> impl Iterator<Item = Pixel<PixelColorKind>> {
+pub fn buffer_pixels(
+    buffer: &'static mut FrameBuffer,
+    red: u8,
+    green: u8,
+    blue: u8,
+) -> impl Iterator<Item = Pixel<PixelColorKind>> {
     let info = buffer.info().clone();
     buffer_points(buffer).map(move |p| Pixel(p, PixelColorKind::new(info, red, green, blue)))
 }
@@ -67,12 +73,10 @@ pub struct CompositingLayer {
     color: PixelColorKind,
     fb: Vec<u8>,
     info: FrameBufferInfo,
-    x: usize,
-    y: usize,
 }
 
 impl CompositingLayer {
-    pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8, x: usize, y: usize) -> Self {
+    pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> Self {
         let info = buffer.info().clone();
 
         Self {
@@ -83,8 +87,6 @@ impl CompositingLayer {
                 .map(|i| i.clone())
                 .collect::<Vec<_>>(),
             info,
-            x,
-            y,
         }
     }
     /// Writes finished render to an existing root framebuffer after computations
@@ -111,9 +113,28 @@ impl DrawTarget for CompositingLayer {
     type Color = PixelColorKind;
     type Error = !; //direct framebuffer writes never fail
 
-    fn draw_iter<I>(&mut self, _pixels: I) -> Result<(), Self::Error>
-        where
-            I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>> {
-        todo!();
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
+    {
+        let pixels = pixels.into_iter().collect::<Vec<_>>();
+        let colors = pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
+
+        for (index, point) in pixels.iter().map(|p| p.0).enumerate() {
+            let pixel_offset = point.y as usize * self.info.stride + point.x as usize;
+
+            let color = match colors[index] {
+                PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+            };
+
+            let pixel_bytes = self.info.bytes_per_pixel;
+            let byte_offset = pixel_offset * pixel_bytes;
+
+            self.fb[byte_offset..(byte_offset + pixel_bytes)]
+                .copy_from_slice(&color[..pixel_bytes]);
+        }
+        Ok(())
     }
 }
