@@ -64,28 +64,28 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
     let info = buffer.info().clone();
     match info.pixel_format {
         PixelFormat::Rgb => {
-            let red = buffer.buffer().iter().step_by(info.bytes_per_pixel);
-            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel);
-            let blue = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel);
+            let red = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|r| r.clone());
+            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel).map(|g| g.clone());
+            let blue = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel).map(|b| b.clone());
             Box::new(
                 red.zip(green).zip(blue).map(move |((r, g), b)| {
-                    PixelColorKind::new(info, r.clone(), g.clone(), b.clone())
+                    PixelColorKind::new(info, r, g, b)
                 }),
             )
         }
         PixelFormat::Bgr => {
-            let blue = buffer.buffer().iter().step_by(info.bytes_per_pixel);
-            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel);
-            let red = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel);
+            let blue = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|b| b.clone());
+            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel).map(|g| g.clone());
+            let red = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel).map(|r| r.clone());
             Box::new(
                 red.zip(green).zip(blue).map(move |((r, g), b)| {
-                    PixelColorKind::new(info, r.clone(), g.clone(), b.clone())
+                    PixelColorKind::new(info, r, g, b)
                 }),
             )
         }
         PixelFormat::U8 => {
-            let gray = buffer.buffer().iter().step_by(info.bytes_per_pixel);
-            Box::new(gray.map(move |g| PixelColorKind::new(info, g.clone(), g.clone(), g.clone())))
+            let gray = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|g| g.clone());
+            Box::new(gray.map(move |g| PixelColorKind::new(info, g, g, g)))
         }
         _ => panic!("Unknown pixel format"),
     }
