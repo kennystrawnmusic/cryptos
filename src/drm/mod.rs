@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use alloc::vec::Vec;
+use alloc::{vec::Vec, boxed::Box};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::iter::zip;
 use embedded_graphics::{
@@ -60,17 +60,34 @@ impl PixelColor for PixelColorKind {
     type Raw = RawU8; // FIXME: figure out how to auto-detect this
 }
 
+pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorKind> + '_> {
+    let info = buffer.info().clone();
+    match info.pixel_format {
+        PixelFormat::Rgb => {
+            let red = buffer.buffer().iter().step_by(4);
+            let green = buffer.buffer().iter().skip(1).step_by(4);
+            let blue = buffer.buffer().iter().skip(2).step_by(4);
+            Box::new(red.zip(green).zip(blue).map(move |((r, g), b)| PixelColorKind::new(info, r.clone(), g.clone(), b.clone())))
+        },
+        PixelFormat::Bgr => {
+            let blue = buffer.buffer().iter().step_by(4);
+            let green = buffer.buffer().iter().skip(1).step_by(4);
+            let red = buffer.buffer().iter().skip(2).step_by(4);
+            Box::new(red.zip(green).zip(blue).map(move |((r, g), b)| PixelColorKind::new(info, r.clone(), g.clone(), b.clone())))
+        },
+        PixelFormat::U8 => {
+            let gray = buffer.buffer().iter().step_by(4);
+            Box::new(gray.map(move |g| PixelColorKind::new(info, g.clone(), g.clone(), g.clone())))
+        }
+        _ => panic!("Unknown pixel format")
+    }
+}
+
 /// Converts a raw framebuffer byte stream into an iterator over pixels
-/// 
-/// Not quite finished; idea is to eventually extract color info from the pixels in question
 pub fn buffer_pixels(
     buffer: &mut FrameBuffer,
-    red: u8,
-    green: u8,
-    blue: u8,
-) -> impl Iterator<Item = Pixel<PixelColorKind>> {
-    let info = buffer.info().clone();
-    buffer_points(buffer).map(move |p| Pixel(p, PixelColorKind::new(info, red, green, blue)))
+) -> impl Iterator<Item = Pixel<PixelColorKind>> + '_ {
+    buffer_points(buffer).zip(buffer_color(buffer)).map(|(point, color)| Pixel(point, color))
 }
 
 /// Data structure for the `embedded-graphics` crate to draw to
