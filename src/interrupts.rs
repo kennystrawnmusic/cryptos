@@ -27,7 +27,7 @@ use {
 
 pub fn init() {
     crate::exceptions::init();
-    IDT_CLONE.load();
+    IDT.load();
 }
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
@@ -38,8 +38,7 @@ pub static INTC_IRQ: AtomicU64 = AtomicU64::new(0);
 pub static INTD_IRQ: AtomicU64 = AtomicU64::new(0);
 
 lazy_static! {
-    pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.lock().clone();
-    pub static ref IDT: Mutex<InterruptDescriptorTable> = {
+    pub static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         unsafe {
             idt.double_fault
@@ -81,7 +80,7 @@ lazy_static! {
         idt[139].set_handler_fn(dummy_ahci_1);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(dummy_ahci_2);
-        Mutex::new(idt)
+        idt
     };
 }
 
