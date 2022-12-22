@@ -62,27 +62,59 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
     let info = buffer.info().clone();
     match info.pixel_format {
         PixelFormat::Rgb => {
-            let red = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|r| r.clone());
-            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel).map(|g| g.clone());
-            let blue = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel).map(|b| b.clone());
+            let red = buffer
+                .buffer()
+                .iter()
+                .step_by(info.bytes_per_pixel)
+                .map(|r| r.clone());
+            let green = buffer
+                .buffer()
+                .iter()
+                .skip(1)
+                .step_by(info.bytes_per_pixel)
+                .map(|g| g.clone());
+            let blue = buffer
+                .buffer()
+                .iter()
+                .skip(2)
+                .step_by(info.bytes_per_pixel)
+                .map(|b| b.clone());
             Box::new(
-                red.zip(green).zip(blue).map(move |((r, g), b)| {
-                    PixelColorKind::new(info, r, g, b)
-                }),
+                red.zip(green)
+                    .zip(blue)
+                    .map(move |((r, g), b)| PixelColorKind::new(info, r, g, b)),
             )
         }
         PixelFormat::Bgr => {
-            let blue = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|b| b.clone());
-            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel).map(|g| g.clone());
-            let red = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel).map(|r| r.clone());
+            let blue = buffer
+                .buffer()
+                .iter()
+                .step_by(info.bytes_per_pixel)
+                .map(|b| b.clone());
+            let green = buffer
+                .buffer()
+                .iter()
+                .skip(1)
+                .step_by(info.bytes_per_pixel)
+                .map(|g| g.clone());
+            let red = buffer
+                .buffer()
+                .iter()
+                .skip(2)
+                .step_by(info.bytes_per_pixel)
+                .map(|r| r.clone());
             Box::new(
-                red.zip(green).zip(blue).map(move |((r, g), b)| {
-                    PixelColorKind::new(info, r, g, b)
-                }),
+                red.zip(green)
+                    .zip(blue)
+                    .map(move |((r, g), b)| PixelColorKind::new(info, r, g, b)),
             )
         }
         PixelFormat::U8 => {
-            let gray = buffer.buffer().iter().step_by(info.bytes_per_pixel).map(|g| g.clone());
+            let gray = buffer
+                .buffer()
+                .iter()
+                .step_by(info.bytes_per_pixel)
+                .map(|g| g.clone());
             Box::new(gray.map(move |g| PixelColorKind::new(info, g, g, g)))
         }
         _ => panic!("Unknown pixel format"),
@@ -111,7 +143,6 @@ impl CompositingLayer {
     /// Creates a new `CompositingLayer` using a provided `FrameBuffer` and color values
     pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> Self {
         let info = buffer.info().clone();
-
         Self {
             color: PixelColorKind::new(info, red, green, blue),
             fb: buffer
@@ -120,6 +151,32 @@ impl CompositingLayer {
                 .map(|i| i.clone())
                 .collect::<Vec<_>>(),
             info,
+        }
+    }
+    /// Computes alpha values relative to those associated with another layer
+    pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
+        match self.color {
+            PixelColorKind::Rgb(own_rgb) => {
+                if let PixelColorKind::Rgb(other_rgb) = other.color {
+                    let new_red = own_rgb.r() + other_rgb.r() * (1 - alpha as u8);
+                    let new_green = own_rgb.g() + other_rgb.g() * (1 - alpha as u8);
+                    let new_blue = own_rgb.b() + other_rgb.b() * (1 - alpha as u8);
+                    self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
+                } else {
+                    unreachable!()
+                }
+            }
+            PixelColorKind::Bgr(own_bgr) => {
+                if let PixelColorKind::Bgr(other_bgr) = other.color {
+                    let new_blue = own_bgr.b() + other_bgr.b() * (1 - alpha as u8);
+                    let new_green = own_bgr.g() + other_bgr.g() * (1 - alpha as u8);
+                    let new_red = own_bgr.r() + other_bgr.r() * (1 - alpha as u8);
+                    self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
+                } else {
+                    unreachable!()
+                }
+            }
+            PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
         }
     }
     /// Writes finished render to an existing root framebuffer after computations
