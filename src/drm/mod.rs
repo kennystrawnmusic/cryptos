@@ -60,6 +60,7 @@ impl PixelColor for PixelColorKind {
     type Raw = RawU8; // FIXME: figure out how to auto-detect this
 }
 
+/// Extracts color information from the framebuffer
 pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorKind> + '_> {
     let info = buffer.info().clone();
     match info.pixel_format {
