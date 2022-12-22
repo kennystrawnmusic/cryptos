@@ -23,6 +23,7 @@ pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
 }
 
 /// Enum for easy conversion of the framebuffer's `PixelFormat` structure to equivalent `PixelColor` implementors in the `embedded-graphics` crate
+/// 
 /// Implements `PixelColor` itself for easy drawing
 #[derive(Debug, PartialEq, Eq)]
 pub enum PixelColorKind {
@@ -60,6 +61,7 @@ impl PixelColor for PixelColorKind {
 }
 
 /// Converts a raw framebuffer byte stream into an iterator over pixels
+/// 
 /// Not quite finished; idea is to eventually extract color info from the pixels in question
 pub fn buffer_pixels(
     buffer: &mut FrameBuffer,
@@ -72,6 +74,7 @@ pub fn buffer_pixels(
 }
 
 /// Data structure for the `embedded-graphics` crate to draw to
+/// 
 /// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
 #[derive(Clone)]
