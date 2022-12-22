@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use alloc::{vec::Vec, boxed::Box};
+use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::iter::zip;
 use embedded_graphics::{
@@ -18,12 +18,11 @@ pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::n
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
 pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
     let info = buffer.info().clone();
-    (0..info.width)
-        .flat_map(move |x| (0..info.height).map(move |y| Point::new(x as i32, y as i32)))
+    (0..info.width).flat_map(move |x| (0..info.height).map(move |y| Point::new(x as i32, y as i32)))
 }
 
 /// Enum for easy conversion of the framebuffer's `PixelFormat` structure to equivalent `PixelColor` implementors in the `embedded-graphics` crate
-/// 
+///
 /// Implements `PixelColor` itself for easy drawing
 #[derive(Debug, PartialEq, Eq)]
 pub enum PixelColorKind {
@@ -68,31 +67,39 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
             let red = buffer.buffer().iter().step_by(4);
             let green = buffer.buffer().iter().skip(1).step_by(4);
             let blue = buffer.buffer().iter().skip(2).step_by(4);
-            Box::new(red.zip(green).zip(blue).map(move |((r, g), b)| PixelColorKind::new(info, r.clone(), g.clone(), b.clone())))
-        },
+            Box::new(
+                red.zip(green).zip(blue).map(move |((r, g), b)| {
+                    PixelColorKind::new(info, r.clone(), g.clone(), b.clone())
+                }),
+            )
+        }
         PixelFormat::Bgr => {
             let blue = buffer.buffer().iter().step_by(4);
             let green = buffer.buffer().iter().skip(1).step_by(4);
             let red = buffer.buffer().iter().skip(2).step_by(4);
-            Box::new(red.zip(green).zip(blue).map(move |((r, g), b)| PixelColorKind::new(info, r.clone(), g.clone(), b.clone())))
-        },
+            Box::new(
+                red.zip(green).zip(blue).map(move |((r, g), b)| {
+                    PixelColorKind::new(info, r.clone(), g.clone(), b.clone())
+                }),
+            )
+        }
         PixelFormat::U8 => {
             let gray = buffer.buffer().iter().step_by(4);
             Box::new(gray.map(move |g| PixelColorKind::new(info, g.clone(), g.clone(), g.clone())))
         }
-        _ => panic!("Unknown pixel format")
+        _ => panic!("Unknown pixel format"),
     }
 }
 
 /// Converts a raw framebuffer byte stream into an iterator over pixels
-pub fn buffer_pixels(
-    buffer: &mut FrameBuffer,
-) -> impl Iterator<Item = Pixel<PixelColorKind>> + '_ {
-    buffer_points(buffer).zip(buffer_color(buffer)).map(|(point, color)| Pixel(point, color))
+pub fn buffer_pixels(buffer: &mut FrameBuffer) -> impl Iterator<Item = Pixel<PixelColorKind>> + '_ {
+    buffer_points(buffer)
+        .zip(buffer_color(buffer))
+        .map(|(point, color)| Pixel(point, color))
 }
 
 /// Data structure for the `embedded-graphics` crate to draw to
-/// 
+///
 /// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
 #[derive(Clone)]
