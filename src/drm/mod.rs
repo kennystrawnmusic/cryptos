@@ -15,9 +15,10 @@ use crate::FRAMEBUFFER_ADDR;
 
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
-pub fn buffer_points(buffer: &'static mut FrameBuffer) -> impl Iterator<Item = Point> {
-    (0..buffer.info().width)
-        .flat_map(move |x| (0..buffer.info().height).map(move |y| Point::new(x as i32, y as i32)))
+pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
+    let info = buffer.info().clone();
+    (0..info.width)
+        .flat_map(move |x| (0..info.height).map(move |y| Point::new(x as i32, y as i32)))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -56,7 +57,7 @@ impl PixelColor for PixelColorKind {
 }
 
 pub fn buffer_pixels(
-    buffer: &'static mut FrameBuffer,
+    buffer: &mut FrameBuffer,
     red: u8,
     green: u8,
     blue: u8,
