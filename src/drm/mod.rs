@@ -15,12 +15,15 @@ use crate::FRAMEBUFFER_ADDR;
 
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
+/// Converts a raw framebuffer byte stream into an iterator of `Point` objects
 pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
     let info = buffer.info().clone();
     (0..info.width)
         .flat_map(move |x| (0..info.height).map(move |y| Point::new(x as i32, y as i32)))
 }
 
+/// Enum for easy conversion of the framebuffer's `PixelFormat` structure to equivalent `PixelColor` implementors in the `embedded-graphics` crate
+/// Implements `PixelColor` itself for easy drawing
 #[derive(Debug, PartialEq, Eq)]
 pub enum PixelColorKind {
     Rgb(Rgb888),
@@ -56,6 +59,8 @@ impl PixelColor for PixelColorKind {
     type Raw = RawU8; // FIXME: figure out how to auto-detect this
 }
 
+/// Converts a raw framebuffer byte stream into an iterator over pixels
+/// Not quite finished; idea is to eventually extract color info from the pixels in question
 pub fn buffer_pixels(
     buffer: &mut FrameBuffer,
     red: u8,
@@ -66,7 +71,8 @@ pub fn buffer_pixels(
     buffer_points(buffer).map(move |p| Pixel(p, PixelColorKind::new(info, red, green, blue)))
 }
 
-// Idea is to eventually implement DrawTarget for this
+/// Data structure for the `embedded-graphics` crate to draw to
+/// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct CompositingLayer {
@@ -76,6 +82,7 @@ pub struct CompositingLayer {
 }
 
 impl CompositingLayer {
+    /// Creates a new `CompositingLayer` using a provided `FrameBuffer` and color values
     pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> Self {
         let info = buffer.info().clone();
 
