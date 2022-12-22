@@ -13,7 +13,6 @@ use spin::RwLock;
 
 use crate::FRAMEBUFFER_ADDR;
 
-#[allow(dead_code)] // needed for later
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
 pub fn buffer_points(buffer: &'static mut FrameBuffer) -> impl Iterator<Item = Point> {
@@ -53,7 +52,7 @@ impl Clone for PixelColorKind {
 impl Copy for PixelColorKind {}
 
 impl PixelColor for PixelColorKind {
-    type Raw = RawU8; // framebuffer is based on a byte slice
+    type Raw = RawU8; // FIXME: figure out how to auto-detect this
 }
 
 pub fn buffer_pixels(
