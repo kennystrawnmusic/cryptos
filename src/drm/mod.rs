@@ -154,6 +154,7 @@ impl CompositingLayer {
         }
     }
     /// Computes alpha values relative to those associated with another layer
+    #[allow(unused_assignments)]
     pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
@@ -172,7 +173,12 @@ impl CompositingLayer {
                         .iter_mut()
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     let _ = self
                         .fb
@@ -180,7 +186,12 @@ impl CompositingLayer {
                         .skip(1)
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     let _ = self
                         .fb
@@ -188,7 +199,12 @@ impl CompositingLayer {
                         .skip(2)
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
@@ -212,7 +228,12 @@ impl CompositingLayer {
                         .skip(2)
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     let _ = self
                         .fb
@@ -220,14 +241,24 @@ impl CompositingLayer {
                         .skip(1)
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     let _ = self
                         .fb
                         .iter_mut()
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                        .map(|(_this, _other)| todo!());
+                        .map(|(mut this, other)| {
+                            let mut new = (((1.0 - alpha) * (this.clone() as f32))
+                                + (alpha * (other.clone() as f32)))
+                                as u8;
+                            this = &mut new;
+                        });
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
