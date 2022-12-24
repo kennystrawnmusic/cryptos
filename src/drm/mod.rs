@@ -158,9 +158,38 @@ impl CompositingLayer {
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
                 if let PixelColorKind::Rgb(other_rgb) = other.color {
-                    let new_red = (((1.0 - alpha) * (own_rgb.r() as f32)) + (alpha*(other_rgb.r() as f32))) as u8;
-                    let new_green = (((1.0 - alpha) * (own_rgb.g() as f32)) + (alpha*(other_rgb.g() as f32))) as u8;
-                    let new_blue = (((1.0 - alpha) * (own_rgb.b() as f32)) + (alpha*(other_rgb.b() as f32))) as u8;
+                    let new_red = (((1.0 - alpha) * (own_rgb.r() as f32))
+                        + (alpha * (other_rgb.r() as f32))) as u8;
+                    let new_green = (((1.0 - alpha) * (own_rgb.g() as f32))
+                        + (alpha * (other_rgb.g() as f32)))
+                        as u8;
+                    let new_blue = (((1.0 - alpha) * (own_rgb.b() as f32))
+                        + (alpha * (other_rgb.b() as f32)))
+                        as u8;
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .skip(1)
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .skip(2)
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
                     unreachable!()
@@ -168,9 +197,38 @@ impl CompositingLayer {
             }
             PixelColorKind::Bgr(own_bgr) => {
                 if let PixelColorKind::Bgr(other_bgr) = other.color {
-                    let new_blue = (((1.0 - alpha) * (own_bgr.b() as f32)) + (alpha*(other_bgr.b() as f32))) as u8;
-                    let new_green = (((1.0 - alpha) * (own_bgr.g() as f32)) + (alpha*(other_bgr.g() as f32))) as u8;
-                    let new_red = (((1.0 - alpha) * (own_bgr.r() as f32)) + (alpha*(other_bgr.r() as f32))) as u8;
+                    let new_blue = (((1.0 - alpha) * (own_bgr.b() as f32))
+                        + (alpha * (other_bgr.b() as f32)))
+                        as u8;
+                    let new_green = (((1.0 - alpha) * (own_bgr.g() as f32))
+                        + (alpha * (other_bgr.g() as f32)))
+                        as u8;
+                    let new_red = (((1.0 - alpha) * (own_bgr.r() as f32))
+                        + (alpha * (other_bgr.r() as f32))) as u8;
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .skip(2)
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .skip(1)
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
+                    let _ = self
+                        .fb
+                        .iter_mut()
+                        .step_by(self.info.bytes_per_pixel)
+                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
+                        .map(|(_this, _other)| todo!());
+
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
                     unreachable!()
