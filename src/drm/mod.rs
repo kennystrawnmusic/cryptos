@@ -168,6 +168,7 @@ impl CompositingLayer {
                         + (alpha * (other_rgb.b() as f32)))
                         as u8;
 
+                    // red
                     let _ = self
                         .fb
                         .iter_mut()
@@ -180,6 +181,7 @@ impl CompositingLayer {
                             this = &mut new;
                         });
 
+                    // green
                     let _ = self
                         .fb
                         .iter_mut()
@@ -193,6 +195,7 @@ impl CompositingLayer {
                             this = &mut new;
                         });
 
+                    // blue
                     let _ = self
                         .fb
                         .iter_mut()
@@ -222,6 +225,7 @@ impl CompositingLayer {
                     let new_red = (((1.0 - alpha) * (own_bgr.r() as f32))
                         + (alpha * (other_bgr.r() as f32))) as u8;
 
+                    // blue
                     let _ = self
                         .fb
                         .iter_mut()
@@ -235,6 +239,7 @@ impl CompositingLayer {
                             this = &mut new;
                         });
 
+                    // green
                     let _ = self
                         .fb
                         .iter_mut()
@@ -248,6 +253,7 @@ impl CompositingLayer {
                             this = &mut new;
                         });
 
+                    // red
                     let _ = self
                         .fb
                         .iter_mut()
