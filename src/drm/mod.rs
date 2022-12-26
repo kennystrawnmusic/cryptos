@@ -227,9 +227,8 @@ impl CompositingLayer {
                     let _ = self
                         .fb
                         .iter_mut()
-                        .skip(2)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
+                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
                         .map(|(mut this, other)| {
                             this = &mut (((alpha * (this.clone() as f32))
                             + ((1.0 - alpha) * (other.clone() as f32)))
@@ -253,8 +252,9 @@ impl CompositingLayer {
                     let _ = self
                         .fb
                         .iter_mut()
+                        .skip(2)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
+                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
                         .map(|(mut this, other)| {
                             this = &mut (((alpha * (this.clone() as f32))
                             + ((1.0 - alpha) * (other.clone() as f32)))
