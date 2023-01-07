@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
+
 use core::sync::atomic::Ordering;
 
 use acpi::AcpiTables;
@@ -17,8 +20,6 @@ use crate::{
     map_page, MAPPER, PHYS_OFFSET,
 };
 
-// SPDX-License-Identifier: GPL-3.0-or-later
-// Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
 pub mod util;
 
 use {
