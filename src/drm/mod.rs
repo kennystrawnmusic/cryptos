@@ -275,9 +275,9 @@ impl CompositingLayer {
     }
     /// Writes finished render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
-        self.fb.iter().enumerate().map(|(index, byte)| {
+        let _ = self.fb.iter().enumerate().map(|(index, byte)| {
             root_buffer.buffer_mut()[index] = byte.clone();
-        })
+        });
     }
     /// Adds the given `CompositingLayer` to the compositing table
     pub fn register(self) {
