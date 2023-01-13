@@ -13,6 +13,8 @@ use embedded_graphics::{
 use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
 use spin::RwLock;
 
+use self::avx_accel::avx_enable;
+
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
@@ -161,6 +163,9 @@ impl CompositingLayer {
         if alpha > 1.0 || alpha < 0.0 {
             panic!("Alpha value must be a value between 0 and 1");
         }
+
+        avx_enable(); // compositing is painfully slow without some parallel computation
+
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
                 if let PixelColorKind::Rgb(other_rgb) = other.color {
