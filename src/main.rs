@@ -24,7 +24,7 @@ use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::{PciDeviceHandle, PCI_TABLE},
+    pci_impl::{PciDeviceHandle, PCI_TABLE}, drm::avx_accel::avx_init,
 };
 use acpi::{
     fadt::Fadt,
@@ -384,6 +384,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     ahci_init();
     pci_impl::init(&mut tables);
+    avx_init();
 
     loop {
         unsafe {
