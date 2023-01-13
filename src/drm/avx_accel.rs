@@ -5,7 +5,7 @@ use core::arch::asm;
 use raw_cpuid::CpuId;
 use x86_64::registers::control::{Cr0, Cr0Flags, Cr4, Cr4Flags};
 
-pub fn sse_enable() {
+pub fn sse_init() {
     let info = CpuId::new().get_feature_info().expect("CPUID not present");
 
     if info.has_sse()
@@ -31,11 +31,11 @@ pub fn sse_enable() {
     }
 }
 
-pub fn avx_enable() {
+pub fn avx_init() {
     let info = CpuId::new().get_feature_info().expect("CPUID not present");
 
     if info.has_avx() {
-        sse_enable(); // should already support SSE if AVX is also supported
+        sse_init(); // should already support SSE if AVX is also supported
 
         // Reference: https://wiki.osdev.org/SSE#AVX_2
         unsafe {

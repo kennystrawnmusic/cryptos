@@ -13,7 +13,7 @@ use embedded_graphics::{
 use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
 use spin::RwLock;
 
-use self::avx_accel::avx_enable;
+use self::avx_accel::avx_init;
 
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
@@ -164,7 +164,7 @@ impl CompositingLayer {
             panic!("Alpha value must be a value between 0 and 1");
         }
 
-        avx_enable(); // compositing is painfully slow without some parallel computation
+        avx_init(); // compositing is painfully slow without some parallel computation
 
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
