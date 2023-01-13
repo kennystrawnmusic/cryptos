@@ -164,8 +164,6 @@ impl CompositingLayer {
             panic!("Alpha value must be a value between 0 and 1");
         }
 
-        avx_init(); // compositing is painfully slow without some parallel computation
-
         match self.color {
             PixelColorKind::Rgb(own_rgb) => {
                 if let PixelColorKind::Rgb(other_rgb) = other.color {
