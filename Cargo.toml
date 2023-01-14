@@ -39,6 +39,7 @@ strum = { version = "0.24.1", default-features = false }
 unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
 x2apic = "0.4.1"
 x86_64 = "0.14.10"
+xhci = "0.9.1"
 xmas-elf = "^0.9.0"
 
 [profile.dev]
