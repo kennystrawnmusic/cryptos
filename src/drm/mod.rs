@@ -6,7 +6,7 @@ use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::iter::zip;
 use embedded_graphics::{
-    pixelcolor::{raw::RawU8, Bgr888, Gray8, Rgb888},
+    pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
     Pixel,
 };
@@ -58,7 +58,7 @@ impl Clone for PixelColorKind {
 impl Copy for PixelColorKind {}
 
 impl PixelColor for PixelColorKind {
-    type Raw = RawU8; // FIXME: figure out how to auto-detect this
+    type Raw = RawU32; // always 4 bytes = 32 bits on UEFI systems
 }
 
 /// Extracts color information from the framebuffer
