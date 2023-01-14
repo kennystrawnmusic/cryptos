@@ -178,42 +178,42 @@ impl CompositingLayer {
                         as u8;
 
                     // red
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     // green
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .skip(1)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     // blue
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .skip(2)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
@@ -233,42 +233,42 @@ impl CompositingLayer {
                         as u8;
 
                     // blue
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .step_by(self.info.bytes_per_pixel)
                         .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     // green
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .skip(1)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .zip(other.fb.iter().skip(1).step_by(other.info.bytes_per_pixel))
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     // red
-                    for (mut this, other) in self
+                    let _ = self
                         .fb
                         .iter_mut()
                         .skip(2)
                         .step_by(self.info.bytes_per_pixel)
-                        .zip(other.fb.iter().step_by(other.info.bytes_per_pixel))
-                    {
-                        this = &mut (((alpha * (this.clone() as f32))
-                            + ((1.0 - alpha) * (other.clone() as f32)))
-                            as u8);
-                    }
+                        .zip(other.fb.iter().skip(2).step_by(other.info.bytes_per_pixel))
+                        .map(|(mut this, other)| {
+                            this = &mut (((alpha * (this.clone() as f32))
+                                + ((1.0 - alpha) * (other.clone() as f32)))
+                                as u8);
+                        });
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
                 } else {
@@ -280,9 +280,9 @@ impl CompositingLayer {
     }
     /// Writes finished render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
-        for (index, byte) in self.fb.iter().enumerate() {
+        let _ = self.fb.iter().enumerate().map(|(index, byte)| {
             root_buffer.buffer_mut()[index] = byte.clone();
-        }
+        });
     }
     /// Adds the given `CompositingLayer` to the compositing table
     pub fn register(self) {
