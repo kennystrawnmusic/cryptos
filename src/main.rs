@@ -23,8 +23,9 @@ pub mod pci_impl;
 use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
+    drm::avx_accel::avx_init,
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::{PciDeviceHandle, PCI_TABLE}, drm::avx_accel::avx_init,
+    pci_impl::{PciDeviceHandle, PCI_TABLE},
 };
 use acpi::{
     fadt::Fadt,
