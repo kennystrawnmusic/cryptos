@@ -293,3 +293,6 @@ impl DrawTarget for CompositingLayer {
         Ok(())
     }
 }
+
+unsafe impl Send for CompositingLayer {}
+unsafe impl Sync for CompositingLayer {}
