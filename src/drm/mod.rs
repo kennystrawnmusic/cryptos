@@ -187,12 +187,12 @@ impl CompositingLayer {
                         this[0] = ((alpha * (this[0].clone() as f32))
                             + ((1.0 - alpha) * (other[0].clone() as f32)))
                             as u8;
-
+                        
                         // green
                         this[1] = ((alpha * (this[1].clone() as f32))
                             + ((1.0 - alpha) * (other[1].clone() as f32)))
                             as u8;
-
+                        
                         // blue
                         this[2] = ((alpha * (this[2].clone() as f32))
                             + ((1.0 - alpha) * (other[2].clone() as f32)))
@@ -225,12 +225,12 @@ impl CompositingLayer {
                         this[0] = ((alpha * (this[0].clone() as f32))
                             + ((1.0 - alpha) * (other[0].clone() as f32)))
                             as u8;
-
+                        
                         // green
                         this[1] = ((alpha * (this[1].clone() as f32))
                             + ((1.0 - alpha) * (other[1].clone() as f32)))
                             as u8;
-
+                        
                         // red
                         this[2] = ((alpha * (this[2].clone() as f32))
                             + ((1.0 - alpha) * (other[2].clone() as f32)))
@@ -249,7 +249,7 @@ impl CompositingLayer {
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
         for (index, byte) in self.fb.iter().enumerate() {
             root_buffer.buffer_mut()[index] = byte.clone();
-        }
+        };
     }
     /// Adds the given `CompositingLayer` to the compositing table
     pub fn register(self) {

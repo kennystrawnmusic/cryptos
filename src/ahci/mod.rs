@@ -6,7 +6,6 @@ use core::sync::atomic::Ordering;
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::header::{HeaderType, InterruptPin};
-use spin::RwLock;
 use x86_64::{
     instructions::interrupts::without_interrupts, registers::control::Cr3,
     structures::paging::FrameAllocator,
@@ -146,7 +145,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    pub struct HbaPortIS: u32 {
+    struct HbaPortIS: u32 {
         const DHRS = 1 << 0; // Device to Host Register FIS Interrupt
         const PSS = 1 << 1; // PIO Setup FIS Interrupt
         const DSS = 1 << 2; // DMA Setup FIS Interrupt
@@ -410,7 +409,7 @@ impl AtaCommand {
 }
 
 #[repr(C)]
-pub struct HbaMemory {
+struct HbaMemory {
     host_capability: VolatileCell<HbaCapabilities>,
     global_host_control: VolatileCell<HbaHostCont>,
     interrupt_status: VolatileCell<u32>,
@@ -596,10 +595,10 @@ impl HbaSataStatus {
 }
 
 #[repr(C)]
-pub struct HbaPort {
+struct HbaPort {
     clb: VolatileCell<PhysAddr>,
     fb: VolatileCell<PhysAddr>,
-    pub is: VolatileCell<HbaPortIS>,
+    is: VolatileCell<HbaPortIS>,
     ie: VolatileCell<HbaPortIE>,
     cmd: VolatileCell<HbaPortCmd>,
     _reserved: u32,
@@ -819,12 +818,6 @@ impl HbaPort {
 }
 
 impl HbaMemory {
-    pub fn get_global_is(&self) -> u32 {
-        self.interrupt_status.get()
-    }
-    pub fn set_global_is(&mut self, val: u32) {
-        self.interrupt_status.set(val)
-    }
     fn port_mut(&mut self, port: usize) -> &mut HbaPort {
         unsafe { &mut *((self as *mut Self).offset(1) as *mut HbaPort).offset(port as isize) }
     }
@@ -837,19 +830,15 @@ struct AhciCommand {
 }
 
 #[derive(Debug)]
-pub struct AhciPortProtected {
+struct AhciPortProtected {
     address: VirtAddr,
     cmds: [Option<AhciCommand>; 32],
     free_cmds: usize,
 }
 
 impl AhciPortProtected {
-    pub fn hba_port_mut(&mut self) -> &mut HbaPort {
+    fn hba_port(&mut self) -> &mut HbaPort {
         unsafe { &mut *(self.address.as_mut_ptr::<HbaPort>()) }
-    }
-
-    pub fn hba_port(&self) -> &HbaPort {
-        unsafe { &*(self.address.as_ptr::<HbaPort>()) }
     }
 
     fn run_request(&mut self, request: Arc<DmaRequest>, mut offset: usize) -> usize {
@@ -864,7 +853,7 @@ impl AhciPortProtected {
                         .find_map(|(i, e)| if e.is_none() { Some(i) } else { None });
 
                 if let Some(i) = command {
-                    let hba = self.hba_port_mut();
+                    let hba = self.hba_port();
                     let count = core::cmp::min(remaining, 128);
 
                     hba.run_command(
@@ -896,8 +885,8 @@ impl AhciPortProtected {
 }
 
 #[derive(Debug)]
-pub struct AhciPort {
-    pub inner: RwLock<AhciPortProtected>,
+struct AhciPort {
+    inner: Mutex<AhciPortProtected>,
 }
 
 impl AhciPort {
@@ -906,7 +895,7 @@ impl AhciPort {
         const EMPTY: Option<AhciCommand> = None;
 
         Self {
-            inner: RwLock::new(AhciPortProtected {
+            inner: Mutex::new(AhciPortProtected {
                 address,
                 cmds: [EMPTY; 32],
                 free_cmds: 32,
@@ -919,7 +908,7 @@ impl AhciPort {
 
         // Run request and wait for it to complete.
         while offset < request.count {
-            offset = self.inner.write().run_request(request.clone(), offset);
+            offset = self.inner.lock().run_request(request.clone(), offset);
         }
 
         Some(request.count * 512)
@@ -939,28 +928,21 @@ impl AhciPort {
     }
 }
 
-pub struct AhciProtected {
+struct AhciProtected {
     ports: [Option<Arc<AhciPort>>; 32],
     hba: VirtAddr,
 }
 
 impl Clone for AhciProtected {
     fn clone(&self) -> Self {
-        Self {
-            ports: self.ports.clone(),
-            hba: self.hba.clone(),
-        }
+        Self { ports: self.ports.clone(), hba: self.hba.clone() }
     }
 }
 
 impl AhciProtected {
     #[inline]
-    pub fn hba_mem(&self) -> &mut HbaMemory {
+    fn hba_mem(&self) -> &mut HbaMemory {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
-    }
-
-    pub fn ports(&self) -> [Option<Arc<AhciPort>>; 32] {
-        self.ports.clone()
     }
 
     fn start_hba(&mut self, offset_table: &mut OffsetPageTable) {
@@ -1063,12 +1045,9 @@ impl AhciProtected {
     }
 }
 
-unsafe impl Send for AhciProtected {}
-unsafe impl Sync for AhciProtected {}
-
 /// Structure representing the ACHI driver.
 pub struct AhciDriver {
-    pub inner: RwLock<AhciProtected>,
+    inner: Mutex<AhciProtected>,
 }
 
 impl PciDeviceHandle for AhciDriver {
@@ -1081,19 +1060,22 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
-        info!("AHCI: Initializing");
+        debug!("AHCI: Initializing");
 
-        {
-            get_ahci().inner.write().start_driver(header, tables);
-        }
+        without_interrupts(|| {
+            get_ahci().inner.lock().start_driver(header, tables);
+        });
 
-        info!("Port 0: {:?}", get_ahci().inner.read().ports[0].clone());
+        debug!(
+            "Port 0: {:?}",
+            without_interrupts(|| get_ahci().inner.lock().ports[0].clone())
+        );
 
         // Temporary testing...
-        if let Some(port) = get_ahci().inner.read().ports[0].clone() {
+        if let Some(port) = without_interrupts(|| get_ahci().inner.lock().ports[0].clone()) {
             let buffer = &mut [0u8; 512];
             let _ = port.read(0, buffer).unwrap();
-            info!("Read sector 0: {:?}", buffer);
+            debug!("Read sector 0: {:?}", buffer);
         }
     }
 }
@@ -1111,7 +1093,7 @@ pub fn ahci_init() {
         const EMPTY: Option<Arc<AhciPort>> = None; // To satisfy the Copy trait bound when the AHCI creating data.
 
         Arc::new(AhciDriver {
-            inner: RwLock::new(AhciProtected {
+            inner: Mutex::new(AhciProtected {
                 ports: [EMPTY; 32],    // Initialize the AHCI ports to an empty slice.
                 hba: VirtAddr::zero(), // Initialize the AHCI HBA address to zero.
             }),

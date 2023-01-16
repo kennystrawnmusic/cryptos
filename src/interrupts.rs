@@ -1,6 +1,5 @@
 use core::convert::identity;
 
-use alloc::sync::Arc;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
     instructions::interrupts,
@@ -11,10 +10,7 @@ use x86_64::{
     structures::idt::{DescriptorTable, SelectorErrorCode},
 };
 
-use crate::{
-    ahci::{get_ahci, AhciPort},
-    PRINTK,
-};
+use crate::PRINTK;
 
 #[allow(unused_imports)]
 use {
@@ -308,13 +304,12 @@ pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
 
     // Read and write back global interrupt status
-    let global_is_read_guard = get_ahci().inner.read();
-    let global_is = global_is_read_guard.hba_mem().get_global_is();
-    drop(global_is_read_guard);
-
-    let global_is_write_guard = get_ahci().inner.write();
-    global_is_write_guard.hba_mem().set_global_is(global_is);
-    drop(global_is_write_guard);
+    let global_is = get_ahci().inner.read().hba_mem().get_global_is();
+    get_ahci()
+        .inner
+        .write()
+        .hba_mem()
+        .set_global_is(global_is);
 
     // Read and write back the interrupt status of all HBA ports
     for p in get_ahci()
@@ -325,13 +320,8 @@ pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
         .filter(|p| p.is_some())
         .map(|p| p.as_ref().unwrap())
     {
-        let is_read_guard = p.inner.read();
         let is = p.inner.read().hba_port().is.get();
-        drop(is_read_guard);
-
-        let mut is_write_guard = p.inner.write();
-        is_write_guard.hba_port_mut().is.set(is);
-        drop(is_write_guard);
+        p.inner.write().hba_port_mut().is.set(is);
     }
 
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
@@ -341,13 +331,12 @@ pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
 
     // Read and write back global interrupt status
-    let global_is_read_guard = get_ahci().inner.read();
-    let global_is = global_is_read_guard.hba_mem().get_global_is();
-    drop(global_is_read_guard);
-
-    let global_is_write_guard = get_ahci().inner.write();
-    global_is_write_guard.hba_mem().set_global_is(global_is);
-    drop(global_is_write_guard);
+    let global_is = get_ahci().inner.read().hba_mem().get_global_is();
+    get_ahci()
+        .inner
+        .write()
+        .hba_mem()
+        .set_global_is(global_is);
 
     // Read and write back the interrupt status of all HBA ports
     for p in get_ahci()
@@ -358,13 +347,8 @@ pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
         .filter(|p| p.is_some())
         .map(|p| p.as_ref().unwrap())
     {
-        let is_read_guard = p.inner.read();
         let is = p.inner.read().hba_port().is.get();
-        drop(is_read_guard);
-
-        let mut is_write_guard = p.inner.write();
-        is_write_guard.hba_port_mut().is.set(is);
-        drop(is_write_guard);
+        p.inner.write().hba_port_mut().is.set(is);
     }
 
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
