@@ -7,6 +7,7 @@
 #![feature(build_hasher_simple_hash_one)]
 #![feature(never_type)]
 #![feature(target_feature_11)]
+#![feature(portable_simd)]
 #![allow(unused_imports)]
 
 extern crate alloc;

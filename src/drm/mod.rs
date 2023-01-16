@@ -4,7 +4,7 @@ pub mod avx_accel;
 
 use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use core::iter::zip;
+use core::{iter::zip, simd::Simd};
 use embedded_graphics::{
     pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
@@ -183,6 +183,9 @@ impl CompositingLayer {
                         .chunks_exact_mut(self.info.bytes_per_pixel)
                         .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
                     {
+                        // bytes per pixel is always 4 in UEFI
+                        let mut this = Simd::<u8, 4>::from_slice(this);
+
                         // red
                         this[0] = ((alpha * (this[0].clone() as f32))
                             + ((1.0 - alpha) * (other[0].clone() as f32)))
@@ -221,6 +224,9 @@ impl CompositingLayer {
                         .chunks_exact_mut(self.info.bytes_per_pixel)
                         .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
                     {
+                        // bytes per pixel is always 4 in UEFI
+                        let mut this = Simd::<u8, 4>::from_slice(this);
+
                         // blue
                         this[0] = ((alpha * (this[0].clone() as f32))
                             + ((1.0 - alpha) * (other[0].clone() as f32)))
