@@ -946,7 +946,10 @@ pub struct AhciProtected {
 
 impl Clone for AhciProtected {
     fn clone(&self) -> Self {
-        Self { ports: self.ports.clone(), hba: self.hba.clone() }
+        Self {
+            ports: self.ports.clone(),
+            hba: self.hba.clone(),
+        }
     }
 }
 
