@@ -302,55 +302,11 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 
 pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
-
-    // Read and write back global interrupt status
-    let global_is = get_ahci().inner.read().hba_mem().get_global_is();
-    get_ahci()
-        .inner
-        .write()
-        .hba_mem()
-        .set_global_is(global_is);
-
-    // Read and write back the interrupt status of all HBA ports
-    for p in get_ahci()
-        .inner
-        .write()
-        .ports()
-        .iter()
-        .filter(|p| p.is_some())
-        .map(|p| p.as_ref().unwrap())
-    {
-        let is = p.inner.read().hba_port().is.get();
-        p.inner.write().hba_port_mut().is.set(is);
-    }
-
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
 pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
-
-    // Read and write back global interrupt status
-    let global_is = get_ahci().inner.read().hba_mem().get_global_is();
-    get_ahci()
-        .inner
-        .write()
-        .hba_mem()
-        .set_global_is(global_is);
-
-    // Read and write back the interrupt status of all HBA ports
-    for p in get_ahci()
-        .inner
-        .write()
-        .ports()
-        .iter()
-        .filter(|p| p.is_some())
-        .map(|p| p.as_ref().unwrap())
-    {
-        let is = p.inner.read().hba_port().is.get();
-        p.inner.write().hba_port_mut().is.set(is);
-    }
-
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 

@@ -1060,22 +1060,20 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
-        debug!("AHCI: Initializing");
+        info!("AHCI: Initializing");
 
-        without_interrupts(|| {
-            get_ahci().inner.lock().start_driver(header, tables);
-        });
+        let mut semaphore = get_ahci().inner.lock();
+        semaphore.start_driver(header, tables);
+        unsafe { get_ahci().inner.force_unlock() };
+        drop(semaphore);
 
-        debug!(
-            "Port 0: {:?}",
-            without_interrupts(|| get_ahci().inner.lock().ports[0].clone())
-        );
-
-        // Temporary testing...
-        if let Some(port) = without_interrupts(|| get_ahci().inner.lock().ports[0].clone()) {
+        // Test
+        if let Some(port) = &mut get_ahci().inner.lock().ports[0] {
             let buffer = &mut [0u8; 512];
             let _ = port.read(0, buffer).unwrap();
-            debug!("Read sector 0: {:?}", buffer);
+            info!("Read sector 0: {:?}", buffer);
+        } else {
+            panic!("Couldn't find any block devices");
         }
     }
 }
