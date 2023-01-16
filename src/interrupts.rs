@@ -77,9 +77,9 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
-        idt[139].set_handler_fn(dummy_ahci_1);
+        idt[139].set_handler_fn(ahci0);
         idt[0x82].set_handler_fn(spurious);
-        idt[151].set_handler_fn(dummy_ahci_2);
+        idt[151].set_handler_fn(ahci1);
         idt
     };
 }
@@ -300,13 +300,13 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn dummy_ahci_1(_frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt");
+pub extern "x86-interrupt" fn ahci0(_frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt: {:#?}", &_frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn dummy_ahci_2(_frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt");
+pub extern "x86-interrupt" fn ahci1(_frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt: {:#?}", &_frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
