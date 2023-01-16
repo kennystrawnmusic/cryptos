@@ -159,6 +159,7 @@ impl CompositingLayer {
     }
     /// Computes alpha values relative to those associated with another layer
     #[allow(unused_assignments)]
+    #[target_feature(enable = "avx")]
     pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
         if alpha > 1.0 || alpha < 0.0 {
             panic!("Alpha value must be a value between 0 and 1");

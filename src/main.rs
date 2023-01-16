@@ -6,6 +6,7 @@
 #![feature(maybe_uninit_slice)]
 #![feature(build_hasher_simple_hash_one)]
 #![feature(never_type)]
+#![feature(target_feature_11)]
 #![allow(unused_imports)]
 
 extern crate alloc;
