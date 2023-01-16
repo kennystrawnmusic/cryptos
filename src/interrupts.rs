@@ -139,7 +139,7 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
-    info!("Reached breakpoint; waiting for debugger to give the all-clear");
+    debug!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
         let int3_ip = read_rip().as_u64();
         let ret_ip = frame.instruction_pointer.as_u64();
@@ -300,13 +300,13 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn ahci0(_frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt: {:#?}", &_frame);
+pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt: {:#?}", &frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn ahci1(_frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt: {:#?}", &_frame);
+pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
+    debug!("Received AHCI interrupt: {:#?}", &frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
