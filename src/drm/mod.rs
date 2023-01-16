@@ -4,7 +4,7 @@ pub mod avx_accel;
 
 use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use core::{iter::zip, simd::Simd};
+use core::{iter::zip, simd::{Simd, f32x4, u8x4}};
 use embedded_graphics::{
     pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
@@ -185,21 +185,12 @@ impl CompositingLayer {
                     {
                         // bytes per pixel is always 4 in UEFI
                         let mut this = Simd::<u8, 4>::from_slice(this);
+                        let other = Simd::<u8, 4>::from_slice(other);
+                        let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
 
-                        // red
-                        this[0] = ((alpha * (this[0].clone() as f32))
-                            + ((1.0 - alpha) * (other[0].clone() as f32)))
-                            as u8;
-                        
-                        // green
-                        this[1] = ((alpha * (this[1].clone() as f32))
-                            + ((1.0 - alpha) * (other[1].clone() as f32)))
-                            as u8;
-                        
-                        // blue
-                        this[2] = ((alpha * (this[2].clone() as f32))
-                            + ((1.0 - alpha) * (other[2].clone() as f32)))
-                            as u8;
+                        this = ((alpha * (this.clone().cast::<f32>()))
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha) * (other.clone().cast::<f32>())))
+                            .cast::<u8>();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
@@ -226,21 +217,12 @@ impl CompositingLayer {
                     {
                         // bytes per pixel is always 4 in UEFI
                         let mut this = Simd::<u8, 4>::from_slice(this);
+                        let other = Simd::<u8, 4>::from_slice(other);
+                        let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
 
-                        // blue
-                        this[0] = ((alpha * (this[0].clone() as f32))
-                            + ((1.0 - alpha) * (other[0].clone() as f32)))
-                            as u8;
-                        
-                        // green
-                        this[1] = ((alpha * (this[1].clone() as f32))
-                            + ((1.0 - alpha) * (other[1].clone() as f32)))
-                            as u8;
-                        
-                        // red
-                        this[2] = ((alpha * (this[2].clone() as f32))
-                            + ((1.0 - alpha) * (other[2].clone() as f32)))
-                            as u8;
+                        this = ((alpha * (this.clone().cast::<f32>()))
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha) * (other.clone().cast::<f32>())))
+                            .cast::<u8>();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
