@@ -181,20 +181,22 @@ impl CompositingLayer {
                         + ((1.0 - alpha) * (other_rgb.b() as f32)))
                         as u8;
 
-                    for (this, other) in self
+                    for (mut this, other) in self
                         .fb
                         .chunks_exact_mut(self.info.bytes_per_pixel)
                         .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
                     {
                         // bytes per pixel is always 4 in UEFI
-                        let mut this = Simd::<u8, 4>::from_slice(this);
-                        let other = Simd::<u8, 4>::from_slice(other);
-                        let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
+                        let mut this_simd = Simd::<u8, 4>::from_slice(this);
+                        let other_simd = Simd::<u8, 4>::from_slice(other);
+                        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
 
-                        this = ((alpha * (this.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha)
-                                * (other.clone().cast::<f32>())))
+                        this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
+                                * (other_simd.clone().cast::<f32>())))
                         .cast::<u8>();
+
+                        this = &mut this_simd.to_array();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
@@ -214,20 +216,22 @@ impl CompositingLayer {
                         + ((1.0 - alpha) * (other_bgr.r() as f32)))
                         as u8;
 
-                    for (this, other) in self
+                    for (mut this, other) in self
                         .fb
                         .chunks_exact_mut(self.info.bytes_per_pixel)
                         .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
                     {
                         // bytes per pixel is always 4 in UEFI
-                        let mut this = Simd::<u8, 4>::from_slice(this);
-                        let other = Simd::<u8, 4>::from_slice(other);
-                        let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
+                        let mut this_simd = Simd::<u8, 4>::from_slice(this);
+                        let other_simd = Simd::<u8, 4>::from_slice(other);
+                        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
 
-                        this = ((alpha * (this.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha)
-                                * (other.clone().cast::<f32>())))
+                        this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
+                                * (other_simd.clone().cast::<f32>())))
                         .cast::<u8>();
+
+                        this = &mut this_simd.to_array();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
