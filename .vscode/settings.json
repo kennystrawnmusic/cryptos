@@ -5,4 +5,7 @@
     "rust-analyzer.checkOnSave.extraArgs": [
         "--bins"
     ],
+    "rust-analyzer.server.extraEnv": {
+        "PATH": "/opt/rust/bin:$PATH"
+    }
 }
