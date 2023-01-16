@@ -4,7 +4,10 @@ pub mod avx_accel;
 
 use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use core::{iter::zip, simd::{Simd, f32x4, u8x4}};
+use core::{
+    iter::zip,
+    simd::{f32x4, u8x4, Simd},
+};
 use embedded_graphics::{
     pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
@@ -189,8 +192,9 @@ impl CompositingLayer {
                         let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
 
                         this = ((alpha * (this.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha) * (other.clone().cast::<f32>())))
-                            .cast::<u8>();
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha)
+                                * (other.clone().cast::<f32>())))
+                        .cast::<u8>();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
@@ -221,8 +225,9 @@ impl CompositingLayer {
                         let alpha = Simd::<f32, 4>::from_array([alpha; 4]);
 
                         this = ((alpha * (this.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha) * (other.clone().cast::<f32>())))
-                            .cast::<u8>();
+                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha)
+                                * (other.clone().cast::<f32>())))
+                        .cast::<u8>();
                     }
 
                     self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
@@ -237,7 +242,7 @@ impl CompositingLayer {
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
         for (index, byte) in self.fb.iter().enumerate() {
             root_buffer.buffer_mut()[index] = byte.clone();
-        };
+        }
     }
     /// Adds the given `CompositingLayer` to the compositing table
     pub fn register(self) {
