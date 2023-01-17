@@ -319,6 +319,9 @@ dependencies = [
  "spinning_top",
  "strum",
  "unix_path",
+ "usb_hid_item",
+ "usb_hid_usage",
+ "usb_request",
  "x2apic",
  "x86_64",
  "xhci",
@@ -1189,6 +1192,21 @@ name = "unix_str"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ace0b4755d0a2959962769239d56267f8a024fef2d9b32666b3dcd0946b0906"
+
+[[package]]
+name = "usb_hid_item"
+version = "0.1.0"
+source = "git+https://github.com/rust-osdev/usb#75e219179df7e0961aa42e18774beb8878765341"
+
+[[package]]
+name = "usb_hid_usage"
+version = "0.1.0"
+source = "git+https://github.com/rust-osdev/usb#75e219179df7e0961aa42e18774beb8878765341"
+
+[[package]]
+name = "usb_request"
+version = "0.1.0"
+source = "git+https://github.com/rust-osdev/usb#75e219179df7e0961aa42e18774beb8878765341"
 
 [[package]]
 name = "usize_conversions"

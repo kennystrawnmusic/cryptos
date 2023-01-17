@@ -37,6 +37,9 @@ spin = "0.9.4"
 spinning_top = "0.2.4"
 strum = { version = "0.24.1", default-features = false }
 unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
+usb_hid_item = { git = "https://github.com/rust-osdev/usb", version = "0.1.0" }
+usb_hid_usage = { git = "https://github.com/rust-osdev/usb", version = "0.1.0" }
+usb_request = { git = "https://github.com/rust-osdev/usb", version = "0.1.0" }
 x2apic = "0.4.1"
 x86_64 = "0.14.10"
 xhci = "0.9.1"
