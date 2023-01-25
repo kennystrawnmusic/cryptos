@@ -1,6 +1,6 @@
 [package]
 name = "runner"
-version.workspace = true
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 cryptos = { path = "..", artifact = "bin", target = "x86_64-unknown-none" }
 bootloader = "^0.11.0"
-cryptoboot = { version = "0.1.1-alpha", path = "../cryptoboot", artifact = "bin", target = "x86_64-unknown-uefi" }
+bootloader-x86_64-uefi = { version = "^0.11.0", artifact = "bin", target = "x86_64-unknown-uefi" }

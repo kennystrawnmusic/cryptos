@@ -142,9 +142,10 @@ dependencies = [
 [[package]]
 name = "bootloader-x86_64-common"
 version = "0.11.0"
-source = "git+https://github.com/rust-osdev/bootloader#c73786d894c4f32c12835c4ed1c02b412e3a668d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f956ccf8487ce15b49f1c1dccad7c4123743d5cd548c56cfd15d4bcea77e984b"
 dependencies = [
- "bootloader_api 0.11.0 (git+https://github.com/rust-osdev/bootloader)",
+ "bootloader_api",
  "conquer-once",
  "log",
  "noto-sans-mono-bitmap",
@@ -152,10 +153,22 @@ dependencies = [
  "rand_hc 0.3.1",
  "raw-cpuid",
  "spinning_top",
- "uart_16550",
  "usize_conversions",
  "x86_64",
  "xmas-elf 0.8.0",
+]
+
+[[package]]
+name = "bootloader-x86_64-uefi"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1427cf1345a68b7988e9b9a94d487350a3bb3beb4bd387bda13a09ebcedd51db"
+dependencies = [
+ "bootloader-x86_64-common",
+ "bootloader_api",
+ "log",
+ "uefi",
+ "x86_64",
 ]
 
 [[package]]
@@ -163,11 +176,6 @@ name = "bootloader_api"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "babfb07dea4565842980315ad530a023aa348db43d03dfa104a70fdaca97d48e"
-
-[[package]]
-name = "bootloader_api"
-version = "0.11.0"
-source = "git+https://github.com/rust-osdev/bootloader#c73786d894c4f32c12835c4ed1c02b412e3a668d"
 
 [[package]]
 name = "buddy_system_allocator"
@@ -283,17 +291,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cryptoboot"
-version = "0.1.1-alpha"
-dependencies = [
- "bootloader-x86_64-common",
- "bootloader_api 0.11.0 (git+https://github.com/rust-osdev/bootloader)",
- "log",
- "uefi",
- "x86_64",
-]
-
-[[package]]
 name = "cryptos"
 version = "0.1.1-alpha"
 dependencies = [
@@ -302,7 +299,7 @@ dependencies = [
  "bit",
  "bit_field",
  "bitflags",
- "bootloader_api 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bootloader_api",
  "byteorder",
  "conquer-once",
  "embedded-graphics",
@@ -310,7 +307,7 @@ dependencies = [
  "hashbrown",
  "lazy_static",
  "log",
- "nalgebra 0.32.1",
+ "nalgebra 0.31.4",
  "noto-sans-mono-bitmap",
  "pcics",
  "printk",
@@ -643,15 +640,15 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.32.1"
+version = "0.31.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6515c882ebfddccaa73ead7320ca28036c4bc84c9bcca3cc0cbba8efe89223a"
+checksum = "20bd243ab3dbb395b39ee730402d2e5405e448c75133ec49cc977762c4cba3d1"
 dependencies = [
  "approx 0.5.1",
  "num-complex 0.4.2",
  "num-rational 0.4.1",
  "num-traits",
- "simba 0.8.0",
+ "simba 0.7.3",
  "typenum",
 ]
 
@@ -765,7 +762,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52d05ab2c669649728e65bab930f73294aeb2ba37f5cbb51e213993525864483"
 dependencies = [
- "bootloader_api 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bootloader_api",
  "conquer-once",
  "log",
  "noto-sans-mono-bitmap",
@@ -780,26 +777,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "ptr_meta"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcada80daa06c42ed5f48c9a043865edea5dc44cbf9ac009fda3b89526e28607"
-dependencies = [
- "ptr_meta_derive",
-]
-
-[[package]]
-name = "ptr_meta_derive"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bca9224df2e20e7c5548aeb5f110a0f3b77ef05f8585139b7148b59056168ed2"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -924,10 +901,10 @@ dependencies = [
 
 [[package]]
 name = "runner"
-version = "0.1.1-alpha"
+version = "0.1.0"
 dependencies = [
  "bootloader",
- "cryptoboot",
+ "bootloader-x86_64-uefi",
  "cryptos",
 ]
 
@@ -1002,9 +979,9 @@ dependencies = [
 
 [[package]]
 name = "simba"
-version = "0.8.0"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50582927ed6f77e4ac020c057f37a268fc6aebc29225050365aacbb9deeeddc4"
+checksum = "2f3fd720c48c53cace224ae62bef1bbff363a70c68c4802a78b5cc6159618176"
 dependencies = [
  "approx 0.5.1",
  "num-complex 0.4.2",
@@ -1158,17 +1135,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 
 [[package]]
-name = "uart_16550"
-version = "0.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b074eb9300ad949edd74c529c0e8d451625af71bb948e6b65fe69f72dc1363d9"
-dependencies = [
- "bitflags",
- "rustversion",
- "x86_64",
-]
-
-[[package]]
 name = "ucs2"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1179,22 +1145,21 @@ dependencies = [
 
 [[package]]
 name = "uefi"
-version = "0.19.0"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8a976b434b258f69eb485357e8c35ede7ef4fc1e33300b0062acad12ae54757"
+checksum = "6e69e94934e3a8fb9d652408385a1ce5199bbe31df2baba1973bcd1ba2c973fd"
 dependencies = [
  "bitflags",
  "log",
- "ptr_meta",
  "ucs2",
  "uefi-macros",
 ]
 
 [[package]]
 name = "uefi-macros"
-version = "0.10.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8099684193f2d99f7f130951f4054a1591ff7da370e2b33d7a71f0434920499"
+checksum = "f618e22256b6ecc841fe2f24b5978fa47221b5006712da01236b5407c8474866"
 dependencies = [
  "proc-macro2",
  "quote",
