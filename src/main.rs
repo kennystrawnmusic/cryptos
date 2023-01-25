@@ -18,7 +18,7 @@ pub mod apic_impl;
 pub mod cralloc;
 pub mod drm;
 pub mod exceptions;
-pub mod hmfs;
+pub mod fs;
 pub mod interrupts;
 pub mod pci_impl;
 
