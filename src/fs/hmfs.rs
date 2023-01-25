@@ -11,7 +11,7 @@ use unix_path::PathBuf;
 
 // return the first 64 bits of a 512-bit hash
 pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
-    u64::from_ne_bytes(slice.split_at_mut(8).0.try_into().unwrap())
+    u64::from_be_bytes(slice.split_at_mut(8).0.try_into().unwrap())
 }
 
 // need something far more secure than AHash here to pave the way for things like per-directory encryption
