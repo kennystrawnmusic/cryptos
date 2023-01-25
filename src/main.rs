@@ -42,7 +42,7 @@ use aml::{
     AmlContext, AmlName, AmlValue, LevelType,
 };
 use bootloader_api::{
-    config::{FrameBuffer, Mapping, Mappings, LoggerStatus},
+    config::{FrameBuffer, LoggerStatus, Mapping, Mappings},
     info::{FrameBufferInfo, MemoryRegions},
     *,
 };
@@ -110,7 +110,7 @@ const MAPPINGS: Mappings = {
 const CONFIG: BootloaderConfig = {
     let mut fb = FrameBuffer::new_default();
     fb.minimum_framebuffer_width = Some(1366);
-    fb.minimum_framebuffer_height =  Some(768);
+    fb.minimum_framebuffer_height = Some(768);
 
     let mut config = BootloaderConfig::new_default();
     config.mappings = MAPPINGS;
@@ -306,7 +306,9 @@ pub fn aml_init(
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
-    let p = PRINTK.get_or_init(move || LockedLogger::new(buffer, info, LoggerStatus::Enable, LoggerStatus::Disable));
+    let p = PRINTK.get_or_init(move || {
+        LockedLogger::new(buffer, info, LoggerStatus::Enable, LoggerStatus::Disable)
+    });
     log::set_logger(p).expect("Logger has already been set!");
 
     // Don't flood users with excessive messages if compiled with "--release"
