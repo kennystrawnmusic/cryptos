@@ -42,10 +42,11 @@ use aml::{
     AmlContext, AmlName, AmlValue, LevelType,
 };
 use bootloader_api::{
-    config::{FrameBuffer, Mapping, Mappings},
+    config::{FrameBuffer, Mapping, Mappings, LoggerStatus},
     info::{FrameBufferInfo, MemoryRegions},
     *,
 };
+use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
@@ -71,7 +72,6 @@ use pcics::{
     capabilities::pci_express::Device,
     header::{Header, HeaderType, InterruptPin},
 };
-use printk::LockedPrintk;
 use raw_cpuid::CpuId;
 use spin::{Mutex, RwLock};
 use x86_64::{
@@ -124,7 +124,7 @@ pub fn page_align(size: u64, addr: u64) -> usize {
     (((size as usize) - 1) / test_size + 1) * test_size
 }
 
-pub static PRINTK: OnceCell<LockedPrintk> = OnceCell::uninit();
+pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
 // override compiler's pickiness about raw pointers not implementing Send
 pub struct SendRawPointer<T>(*mut T);
@@ -302,7 +302,7 @@ pub fn aml_init(
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
-    let p = PRINTK.get_or_init(move || LockedPrintk::new(buffer, info));
+    let p = PRINTK.get_or_init(move || LockedLogger::new(buffer, info, LoggerStatus::Enable, LoggerStatus::Disable));
     log::set_logger(p).expect("Logger has already been set!");
 
     // Don't flood users with excessive messages if compiled with "--release"
