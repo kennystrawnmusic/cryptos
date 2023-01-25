@@ -9,7 +9,11 @@ forced-target = "x86_64-unknown-none"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = [ "runner" ]
+package.version = "0.1.1-alpha"
+members = [
+    "runner",
+    "cryptoboot"
+]
 
 [dependencies]
 acpi = "4.1.1"
@@ -25,7 +29,7 @@ embedded-graphics-core = { version = "0.3.3", features = ["nalgebra_support"] }
 hashbrown = { version = "0.13.1", default-features = false, features = ["inline-more"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
-nalgebra = { version = "0.31.4", default-features = false }
+nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
 pcics = "0.3.1"
 printk = "0.3.0-beta"
