@@ -16,7 +16,7 @@ use embedded_graphics::{
 use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
 use spin::RwLock;
 
-use self::avx_accel::avx_init;
+use self::avx_accel::{enable_avx, with_avx};
 
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
@@ -160,10 +160,10 @@ impl CompositingLayer {
             info,
         }
     }
-    /// Computes alpha values relative to those associated with another layer
+
     #[allow(unused_assignments)]
     #[target_feature(enable = "avx")]
-    pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
+    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CompositingLayer) {
         if alpha > 1.0 || alpha < 0.0 {
             panic!("Alpha value must be a value between 0 and 1");
         }
@@ -241,6 +241,10 @@ impl CompositingLayer {
             }
             PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
         }
+    }
+    /// Computes alpha values relative to those associated with another layer
+    pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
+        with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
     }
     /// Writes finished render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
