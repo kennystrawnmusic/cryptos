@@ -8,12 +8,12 @@ use std::{
 fn main() {
     let kernel_path = Path::new(env!("CARGO_BIN_FILE_CRYPTOS_cryptos"));
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-    let out_str = format!("{}/cryptos.img", &kdir.display());
-    let out_path = Path::new(&out_str);
+    let out_path = kdir.join("cryptos.img");
 
     let uefi = UefiBoot::new(&kernel_path);
     if let Err(e) = uefi.create_disk_image(&out_path) {
         eprintln!("{:#?}", &e);
+        exit(1)
     };
 
     println!("Created bootable UEFI disk image at {:#?}", &out_path);
