@@ -301,12 +301,12 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt: {:#?}", &frame);
+    debug!("Received AHCI0 interrupt: {:#?}", &frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
 pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt: {:#?}", &frame);
+    debug!("Received AHCI1 interrupt: {:#?}", &frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 

@@ -396,7 +396,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     loop {
         unsafe {
-            core::arch::asm!("cli");
             core::arch::asm!("hlt");
         };
     }
