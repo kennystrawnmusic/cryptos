@@ -42,7 +42,7 @@ use aml::{
     AmlContext, AmlName, AmlValue, LevelType,
 };
 use bootloader_api::{
-    config::{FrameBuffer, LoggerStatus, Mapping, Mappings},
+    config::{FrameBuffer, Mapping, Mappings},
     info::{FrameBufferInfo, MemoryRegions},
     *,
 };
@@ -107,6 +107,7 @@ const MAPPINGS: Mappings = {
     mappings
 };
 
+#[allow(deprecated)] // will fix this later when `BootConfig` is properly documented
 const CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings = MAPPINGS;
@@ -303,7 +304,7 @@ pub fn aml_init(
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     let p = PRINTK.get_or_init(move || {
-        LockedLogger::new(buffer, info, LoggerStatus::Enable, LoggerStatus::Disable)
+        LockedLogger::new(buffer, info, true, false)
     });
     log::set_logger(p).expect("Logger has already been set!");
 
