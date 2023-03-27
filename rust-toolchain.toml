@@ -2,11 +2,11 @@
 channel = "nightly"
 components = [
     "clippy",
-    "llvm-tools-preview",
+    "llvm-tools",
     "rust-src",
     "rustc-dev",
     "rustfmt",
-    "rust-analyzer-preview"
+    "rust-analyzer"
 ]
 targets = [
     "x86_64-unknown-none",
