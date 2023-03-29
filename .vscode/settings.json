@@ -10,6 +10,5 @@
     "rust-analyzer.server.extraEnv": {
         "RUSTUP_HOME": "/opt/rust",
         "CARGO_HOME": "/opt/rust",
-        "PATH": "/opt/rust/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
     }
 }

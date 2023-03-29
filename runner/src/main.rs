@@ -39,7 +39,7 @@ fn main() {
 
 fn download_ovmf() {
     let mut url_cmd = Command::new("bash");
-    url_cmd.arg("-c").arg("curl -s https://github.com/rust-osdev/ovmf-prebuilt/releases/ | grep \"href\" | grep \"OVMF-pure-efi.fd\" | cut -d\\\" -f2");
+    url_cmd.arg("-c").arg("\"curl -s https://github.com/rust-osdev/ovmf-prebuilt/releases/ | grep \"href\" | grep \"OVMF-pure-efi.fd\" | cut -d\\\" -f2\"");
 
     let url_fragment = url_cmd.output().unwrap_or_else(|e| {
         panic!(
