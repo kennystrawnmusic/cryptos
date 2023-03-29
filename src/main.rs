@@ -303,9 +303,7 @@ pub fn aml_init(
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
-    let p = PRINTK.get_or_init(move || {
-        LockedLogger::new(buffer, info, true, false)
-    });
+    let p = PRINTK.get_or_init(move || LockedLogger::new(buffer, info, true, false));
     log::set_logger(p).expect("Logger has already been set!");
 
     // Don't flood users with excessive messages if compiled with "--release"
