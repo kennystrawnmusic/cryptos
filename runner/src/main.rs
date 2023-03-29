@@ -1,4 +1,5 @@
-use bootloader::UefiBoot;
+use bootloader::{UefiBoot, BootConfig};
+use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
     env::args,
     path::Path,
@@ -10,7 +11,18 @@ fn main() {
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
 
-    let uefi = UefiBoot::new(&kernel_path);
+    let mut c = BootConfig::default();
+    c.frame_buffer = FrameBuffer::default();
+
+    if cfg!(debug_assertions) {
+        c.log_level = LevelFilter::Trace;
+    } else {
+        c.log_level = LevelFilter::Info;
+    }
+
+    let mut uefi = UefiBoot::new(&kernel_path);
+    uefi.set_boot_config(&c);
+
     if let Err(e) = uefi.create_disk_image(&out_path) {
         eprintln!("{:#?}", &e);
         exit(1)

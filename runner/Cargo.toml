@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 cryptos = { path = "..", artifact = "bin", target = "x86_64-unknown-none" }
 bootloader = { git = "https://github.com/kennystrawnmusic/bootloader", version = "0.11.4" }
+bootloader-boot-config = { git = "https://github.com/kennystrawnmusic/bootloader", version = "0.11.4" }
