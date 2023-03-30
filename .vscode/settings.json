@@ -2,13 +2,16 @@
     "rust-analyzer.check.allTargets": false,
     "rust-analyzer.check.targets": ["x86_64-unknown-none"],
     "rust-analyzer.restartServerOnConfigChange": true,
-    "rust-analyzer.check.extraArgs": [
-        "-Zbuild-std=core,alloc",
-        "-Zbuild-std-features=compiler-builtins-mem",
-        "--bins"
+    "rust-analyzer.check.overrideCommand": [
+        "cargo",
+        "run",
+        "--release",
+        "--package",
+        "runner"
     ],
     "rust-analyzer.server.extraEnv": {
         "RUSTUP_HOME": "/opt/rust",
         "CARGO_HOME": "/opt/rust",
+        "PATH": "/opt/rust/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl"
     }
 }
