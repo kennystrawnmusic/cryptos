@@ -117,6 +117,7 @@ pub fn disable_sse() {
     }
 }
 
+/// Function that takes a closure allowing for temporary enabling of SSE/AVX to run a subroutine, disabling after
 pub fn with_avx<F, R>(f: F) -> R
 where
     F: FnOnce() -> R,
