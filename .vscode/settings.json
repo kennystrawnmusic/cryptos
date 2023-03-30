@@ -4,7 +4,8 @@
     "rust-analyzer.restartServerOnConfigChange": true,
     "rust-analyzer.check.overrideCommand": [
         "cargo",
-        "run",
+        "check",
+        "--message-format=json",
         "--release",
         "--package",
         "runner"
