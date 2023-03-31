@@ -14,10 +14,10 @@ fn main() {
     let mut c = BootConfig::default();
     c.frame_buffer = FrameBuffer::default();
 
-    if cfg!(debug_assertions) {
+    if cfg!(opt_level = "0") {
         c.log_level = LevelFilter::Trace;
     } else {
-        c.log_level = LevelFilter::Info;
+        c.log_level = LevelFilter::Error;
     }
 
     let mut uefi = UefiBoot::new(&kernel_path);
