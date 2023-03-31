@@ -313,6 +313,8 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     info!("CryptOS v. 0.1.1-alpha");
 }
 
+pub static TLS_TEMPLATE: OnceCell<TlsTemplate> = OnceCell::uninit();
+
 entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
@@ -343,7 +345,12 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         mem_size: 4096,
     };
 
-    boot_info.tls_template = Optional::Some(tls);
+    boot_info.tls_template = Optional::Some(tls.clone());
+
+    TLS_TEMPLATE.get_or_init(move || tls);
+
+    // back up the TLS template for easy future access
+
 
     // clone the physical memory offset into a static ASAP
     // so it doesn't need to be hardcoded everywhere it's needed
