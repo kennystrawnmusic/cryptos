@@ -43,7 +43,7 @@ use aml::{
 };
 use bootloader_api::{
     config::{FrameBuffer, Mapping, Mappings},
-    info::{FrameBufferInfo, MemoryRegions},
+    info::{FrameBufferInfo, MemoryRegions, TlsTemplate, Optional},
     *,
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
@@ -336,6 +336,15 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     )
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 
+    // map the TLS template onto the heap to ensure proper memory safety
+    let tls = TlsTemplate {
+        start_addr: Box::into_raw(Box::new(0)) as usize as u64,
+        file_size: 4096,
+        mem_size: 4096,
+    };
+
+    boot_info.tls_template = Optional::Some(tls);
+
     // clone the physical memory offset into a static ASAP
     // so it doesn't need to be hardcoded everywhere it's needed
     let cloned_offset = boot_info
@@ -381,7 +390,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-    debug!("TLS template: {:#?}", boot_info.tls_template);
+    info!("TLS template: {:#?}", boot_info.tls_template);
     debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
 
     ahci_init();
