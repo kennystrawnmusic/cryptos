@@ -43,7 +43,7 @@ use aml::{
 };
 use bootloader_api::{
     config::{FrameBuffer, Mapping, Mappings},
-    info::{FrameBufferInfo, MemoryRegions, TlsTemplate, Optional},
+    info::{FrameBufferInfo, MemoryRegions, Optional, TlsTemplate},
     *,
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
@@ -345,12 +345,10 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         mem_size: 4096,
     };
 
+    // back up the TLS template for easy future access
     boot_info.tls_template = Optional::Some(tls.clone());
 
     TLS_TEMPLATE.get_or_init(move || tls);
-
-    // back up the TLS template for easy future access
-
 
     // clone the physical memory offset into a static ASAP
     // so it doesn't need to be hardcoded everywhere it's needed

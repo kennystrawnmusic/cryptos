@@ -1,4 +1,4 @@
-use bootloader::{UefiBoot, BootConfig};
+use bootloader::{BootConfig, UefiBoot};
 use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
     env::args,
