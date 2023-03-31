@@ -347,7 +347,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     // back up the TLS template for easy future access
     boot_info.tls_template = Optional::Some(tls.clone());
-
     TLS_TEMPLATE.get_or_init(move || tls);
 
     // clone the physical memory offset into a static ASAP
