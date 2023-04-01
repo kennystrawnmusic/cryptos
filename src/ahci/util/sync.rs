@@ -2,9 +2,11 @@
 // Partial copy of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/utils/sync.rs
 // Refactored to work standalone without dependency on a foreign kernel
 
+#[allow(unused_imports)]
 use {
     crate::interrupts,
     alloc::{sync::Arc, vec::Vec},
+    spin::relax::RelaxStrategy,
 };
 
 // Note: port the BlockQueue later, but not now — can wait until we have a working userland
@@ -36,6 +38,15 @@ impl Drop for IrqGuard {
         if self.locked {
             unsafe { interrupts::enable_interrupts() }
         }
+    }
+}
+
+/// An IRQ-based relax strategy that works by temporarily disabling interrupts instead of spinlooping
+pub struct IrqStrategy;
+
+impl RelaxStrategy for IrqStrategy {
+    fn relax() {
+        todo!();
     }
 }
 
