@@ -48,6 +48,7 @@ use bootloader_api::{
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
+use sha3::digest::typenum::U654;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -65,7 +66,7 @@ use core::{
 };
 use cralloc::{
     frames::{map_memory, Falloc},
-    heap_init,
+    heap_init, BEGIN_HEAP,
 };
 use log::{debug, error, info};
 use pcics::{
@@ -94,10 +95,13 @@ fn panic(info: &PanicInfo) -> ! {
     }
 }
 
+// needed to allow access outside main.rs
+pub const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 2) as u64;
+
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
     mappings.kernel_stack = Mapping::Dynamic;
-    mappings.boot_info = Mapping::Dynamic;
+    mappings.boot_info = Mapping::FixedAddress(BOOT_INFO_ADDR);
     mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
     mappings.page_table_recursive = None;
