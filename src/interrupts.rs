@@ -307,6 +307,7 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
     debug!("Received AHCI0 interrupt: {:#?}", &frame);
 
+    // Test
     for port in get_ahci().lock().ports.iter().filter(|p| p.is_some()) {
         if let Some(port) = port {
             let buffer = &mut [0u8; 512];
@@ -323,6 +324,7 @@ pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
 pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
     debug!("Received AHCI1 interrupt: {:#?}", &frame);
 
+    // Test
     for port in get_ahci().lock().ports.iter().filter(|p| p.is_some()) {
         if let Some(port) = port {
             let buffer = &mut [0u8; 512];
