@@ -650,7 +650,7 @@ impl HbaPort {
         let page_addr = unsafe { get_phys_offset() } + frame_addr.as_u64();
 
         for size in (0..0x2000u64).step_by(0x1000) {
-            unsafe {
+            without_interrupts(|| unsafe {
                 let res = offset_table.map_to(
                     Page::<Size4KiB>::containing_address(VirtAddr::new(page_addr + size)),
                     PhysFrame::<Size4KiB>::containing_address(frame_addr + size),
@@ -679,7 +679,7 @@ impl HbaPort {
                 if let Some(flush) = flush {
                     flush.flush();
                 }
-            }
+            });
         }
 
         for i in 0..32 {
