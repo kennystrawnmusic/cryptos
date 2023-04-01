@@ -72,34 +72,34 @@ macro_rules! map_page {
 
         x86_64::instructions::interrupts::without_interrupts(|| {
             // suppress warnings if this macro is called from an unsafe fn
-        #[allow(unused_unsafe)]
-        let res = unsafe {
-            crate::MAPPER.get().unwrap().lock().map_to(
-                page,
-                frame,
-                $flags,
-                &mut *crate::FRAME_ALLOCATOR.get().unwrap().lock(),
-            )
-        };
+            #[allow(unused_unsafe)]
+            let res = unsafe {
+                crate::MAPPER.get().unwrap().lock().map_to(
+                    page,
+                    frame,
+                    $flags,
+                    &mut *crate::FRAME_ALLOCATOR.get().unwrap().lock(),
+                )
+            };
 
-        let flush = match res{
-            Ok(flush) => Some(flush),
-            Err(e) => match e {
-                x86_64::structures::paging::mapper::MapToError::FrameAllocationFailed => panic!("Out of memory"),
-                x86_64::structures::paging::mapper::MapToError::PageAlreadyMapped(_) => {
-                    log::debug!("Already have a page here; skipping mapping");
-                    None
-                }
-                x86_64::structures::paging::mapper::MapToError::ParentEntryHugePage => {
-                    log::debug!("Already have a huge page here; skipping mapping");
-                    None
-                }
-            },
-        };
+            let flush = match res{
+               Ok(flush) => Some(flush),
+                Err(e) => match e {
+                    x86_64::structures::paging::mapper::MapToError::FrameAllocationFailed => panic!("Out of memory"),
+                    x86_64::structures::paging::mapper::MapToError::PageAlreadyMapped(_) => {
+                        log::debug!("Already have a page here; skipping mapping");
+                        None
+                    }
+                    x86_64::structures::paging::mapper::MapToError::ParentEntryHugePage => {
+                        log::debug!("Already have a huge page here; skipping mapping");
+                        None
+                    }
+                },
+            };
 
-        if let Some(flush) = flush {
-            flush.flush();
-        }
+            if let Some(flush) = flush {
+                flush.flush();
+            }
         });
     };
 }
