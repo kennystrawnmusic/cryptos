@@ -352,7 +352,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     let tls = TlsTemplate {
         start_addr: TLS_TEMPLATE_ADDR.load(Ordering::SeqCst),
-        file_size: TLS_TEMPLATE_SIZE,
+        file_size: 0,
         mem_size: TLS_TEMPLATE_SIZE,
     };
 
