@@ -314,7 +314,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 }
 
 pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
-pub const TLS_TEMPLATE_SIZE: u64 = 4096;
+pub const TLS_TEMPLATE_SIZE: u64 = 0x4000_0000;
 
 entry_point!(maink, config = &CONFIG);
 
