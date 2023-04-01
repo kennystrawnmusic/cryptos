@@ -960,17 +960,17 @@ impl AhciProtected {
 
                     let port = Arc::new(AhciPort::new(address));
 
-                    // Test
-                    let buffer = &mut [0u8; 512];
-                    let _ = port.read(0, buffer).unwrap();
-                    info!("Read sector 0: {:?}", buffer);
-
                     // Add the port to the ports array.
                     self.ports[i] = Some(port);
 
                     // Workaround to get access to the HBA and still satify the
                     // borrow checker.
                     hba = self.hba_mem();
+
+                    // Test
+                    let buffer = &mut [0u8; 512];
+                    let _ = self.ports[i].as_ref().unwrap().read(0, buffer).unwrap();
+                    info!("Read sector 0: {:?}", buffer);
                 }
             }
         }
