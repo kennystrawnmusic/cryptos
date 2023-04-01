@@ -1067,8 +1067,6 @@ impl PciDeviceHandle for AhciDriver {
 
         let mut semaphore = get_ahci().inner.lock();
         semaphore.start_driver(header, tables);
-        // unsafe { get_ahci().inner.force_unlock() };
-        // drop(semaphore);
 
         // Test
         without_interrupts(|| {
