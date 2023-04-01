@@ -99,7 +99,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 // needed to allow access outside main.rs
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 2) as u64;
-const PHYS_OFFSET: u64 = BOOT_INFO_ADDR / 16;
+const PHYS_OFFSET: u64 = BOOT_INFO_ADDR / 2048;
 
 pub fn get_boot_info() -> &'static mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
