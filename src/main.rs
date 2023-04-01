@@ -314,7 +314,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 }
 
 pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
-pub static TLS_TEMPLATE_SIZE: AtomicU64 = AtomicU64::new(4096);
+pub const TLS_TEMPLATE_SIZE: u64 = 4096;
 
 entry_point!(maink, config = &CONFIG);
 
@@ -344,8 +344,8 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     let tls = TlsTemplate {
         start_addr: TLS_TEMPLATE_ADDR.load(Ordering::SeqCst),
-        file_size: TLS_TEMPLATE_SIZE.load(Ordering::SeqCst),
-        mem_size: TLS_TEMPLATE_SIZE.load(Ordering::SeqCst),
+        file_size: TLS_TEMPLATE_SIZE,
+        mem_size: TLS_TEMPLATE_SIZE,
     };
 
     boot_info.tls_template = Optional::Some(tls);
