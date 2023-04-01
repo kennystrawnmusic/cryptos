@@ -46,7 +46,7 @@ pub struct IrqStrategy;
 
 impl RelaxStrategy for IrqStrategy {
     fn relax() {
-        x86_64::instructions::interrupts::enable();
+        x86_64::instructions::interrupts::disable();
     }
 }
 
