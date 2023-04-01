@@ -1071,23 +1071,24 @@ impl PciDeviceHandle for AhciDriver {
         // drop(semaphore);
 
         // Test
-        for port in semaphore
-            .ports
-            .iter()
-            .filter(|p| p.is_some())
-        {
-            if let Some(port) = port {
-                let buffer = &mut [0u8; 512];
-                let status = port.read(0, buffer).unwrap();
-                if status == 0 {
-                    info!("Read sector 0: {:?}", buffer);
+        without_interrupts(|| {
+            for port in semaphore.ports.iter().filter(|p| p.is_some()) {
+                if let Some(port) = port {
+                    let buffer = &mut [0u8; 512];
+                    let status = port.read(0, buffer).unwrap();
+                    if status == 0 {
+                        info!("Read sector 0: {:?}", buffer);
+                    } else {
+                        panic!(
+                            "Failure to read data from disk: received error code {:#?}",
+                            &status
+                        )
+                    }
                 } else {
-                    panic!("Failure to read data from disk: received error code {:#?}", &status)
+                    unreachable!();
                 }
-            } else {
-                unreachable!();
             }
-        }
+        });
     }
 }
 
