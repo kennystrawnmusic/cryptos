@@ -958,7 +958,7 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        debug!(
+        info!(
             "AHCI: controller version {}.{}",
             major_version, minor_version
         );
@@ -1067,16 +1067,22 @@ impl PciDeviceHandle for AhciDriver {
 
         let mut semaphore = get_ahci().inner.lock();
         semaphore.start_driver(header, tables);
-        unsafe { get_ahci().inner.force_unlock() };
-        drop(semaphore);
+        // unsafe { get_ahci().inner.force_unlock() };
+        // drop(semaphore);
 
         // Test
-        if let Some(port) = &mut get_ahci().inner.lock().ports[0] {
-            let buffer = &mut [0u8; 512];
-            let _ = port.read(0, buffer).unwrap();
-            info!("Read sector 0: {:?}", buffer);
-        } else {
-            panic!("Couldn't find any block devices");
+        for port in semaphore
+            .ports
+            .iter()
+            .filter(|p| p.is_some())
+        {
+            if let Some(port) = port {
+                let buffer = &mut [0u8; 512];
+                let _ = port.read(0, buffer).unwrap();
+                info!("Read sector 0: {:?}", buffer);
+            } else {
+                unreachable!();
+            }
         }
     }
 }

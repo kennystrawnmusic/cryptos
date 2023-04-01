@@ -48,7 +48,6 @@ use bootloader_api::{
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
-use sha3::digest::typenum::U654;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -62,7 +61,7 @@ use core::{
     },
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
-    sync::atomic::{Ordering, AtomicU64},
+    sync::atomic::{AtomicU64, Ordering},
 };
 use cralloc::{
     frames::{map_memory, Falloc},
@@ -74,6 +73,7 @@ use pcics::{
     header::{Header, HeaderType, InterruptPin},
 };
 use raw_cpuid::CpuId;
+use sha3::digest::typenum::U654;
 use spin::{Mutex, RwLock};
 use x86_64::{
     structures::paging::{

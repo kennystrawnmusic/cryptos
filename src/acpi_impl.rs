@@ -1,9 +1,13 @@
 use core::sync::atomic::Ordering;
 
 use acpi::{fadt::Fadt, sdt::SdtHeader};
-use aml::{AmlName, pci_routing::{PciRoutingTable, Pin}, AmlValue, value::Args};
+use aml::{
+    pci_routing::{PciRoutingTable, Pin},
+    value::Args,
+    AmlName, AmlValue,
+};
 use log::debug;
-use pcics::{Header, header::InterruptPin};
+use pcics::{header::InterruptPin, Header};
 use x86_64::instructions::port::Port;
 
 use crate::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
