@@ -61,7 +61,7 @@ use core::{
     },
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
-    sync::atomic::Ordering,
+    sync::atomic::{Ordering, AtomicU64},
 };
 use cralloc::{
     frames::{map_memory, Falloc},
@@ -313,7 +313,8 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     info!("CryptOS v. 0.1.1-alpha");
 }
 
-pub static TLS_TEMPLATE: OnceCell<TlsTemplate> = OnceCell::uninit();
+pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
+pub static TLS_TEMPLATE_SIZE: AtomicU64 = AtomicU64::new(4096);
 
 entry_point!(maink, config = &CONFIG);
 
@@ -339,15 +340,15 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 
     // map the TLS template onto the heap to ensure proper memory safety
+    TLS_TEMPLATE_ADDR.store(Box::into_raw(Box::new(0)) as usize as u64, Ordering::SeqCst);
+
     let tls = TlsTemplate {
-        start_addr: Box::into_raw(Box::new(0)) as usize as u64,
-        file_size: 4096,
-        mem_size: 4096,
+        start_addr: TLS_TEMPLATE_ADDR.load(Ordering::SeqCst),
+        file_size: TLS_TEMPLATE_SIZE.load(Ordering::SeqCst),
+        mem_size: TLS_TEMPLATE_SIZE.load(Ordering::SeqCst),
     };
 
-    // back up the TLS template for easy future access
-    boot_info.tls_template = Optional::Some(tls.clone());
-    TLS_TEMPLATE.get_or_init(move || tls);
+    boot_info.tls_template = Optional::Some(tls);
 
     // clone the physical memory offset into a static ASAP
     // so it doesn't need to be hardcoded everywhere it's needed
