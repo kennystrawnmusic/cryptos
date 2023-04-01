@@ -84,6 +84,8 @@ use x86_64::{
 };
 use xmas_elf::ElfFile;
 
+pub use acpi_impl::aml_init;
+
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     error!("Kernel panic -- not syncing: {info}");
@@ -197,115 +199,6 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = Option<u64>> {
         },
         None => None,
     })
-}
-
-pub fn aml_init(
-    tables: &mut AcpiTables<KernelAcpi>,
-    header: &mut Header,
-) -> Option<[(u32, InterruptPin); 4]> {
-    debug!("Parsing AML");
-    let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
-
-    let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
-
-    // Properly reintroduce the size/length of the header
-    let dsdt_addr = fadt.dsdt_address().unwrap();
-    debug!("DSDT address: {:#x}", dsdt_addr.clone());
-    let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
-
-    let aml_test_page =
-        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
-    let aml_virt = aml_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
-
-    map_page!(
-        dsdt_addr,
-        aml_virt,
-        Size4KiB,
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
-    );
-
-    let raw_table = unsafe {
-        core::slice::from_raw_parts_mut(
-            aml_virt as *mut u8,
-            dsdt_len.clone() + core::mem::size_of::<SdtHeader>(),
-        )
-    };
-
-    if let Ok(()) = aml_ctx.initialize_objects() {
-        if let Ok(()) =
-            aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
-        {
-            // Make sure AML knows that the APIC, not the legacy PIC, is what's being used
-            let _ = aml_ctx.invoke_method(
-                &AmlName::from_str("\\_PIC").unwrap(),
-                Args([
-                    Some(AmlValue::Integer(1)),
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                ]),
-            );
-
-            if let Ok(prt) = PciRoutingTable::from_prt_path(
-                &AmlName::from_str("\\_SB.PCI0._PRT").unwrap(),
-                &mut aml_ctx,
-            ) {
-                let mut a: [(u32, InterruptPin); 4] = [
-                    (0, InterruptPin::IntA),
-                    (0, InterruptPin::IntB),
-                    (0, InterruptPin::IntC),
-                    (0, InterruptPin::IntD),
-                ];
-                if let Ok(desc) = prt.route(
-                    header.class_code.base as u16,
-                    header.class_code.base as u16,
-                    Pin::IntA,
-                    &mut aml_ctx,
-                ) {
-                    debug!("IntA IRQ number: {:#?}", desc.irq.clone());
-                    INTA_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
-                    a[0] = (desc.irq, InterruptPin::IntA);
-                }
-                if let Ok(desc) = prt.route(
-                    header.class_code.base as u16,
-                    header.class_code.base as u16,
-                    Pin::IntB,
-                    &mut aml_ctx,
-                ) {
-                    debug!("IntB IRQ number: {:#?}", desc.irq.clone());
-                    INTB_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
-                    a[1] = (desc.irq, InterruptPin::IntB);
-                }
-                if let Ok(desc) = prt.route(
-                    header.class_code.base as u16,
-                    header.class_code.base as u16,
-                    Pin::IntC,
-                    &mut aml_ctx,
-                ) {
-                    debug!("IntC IRQ number: {:#?}", desc.irq.clone());
-                    INTC_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
-                    a[2] = (desc.irq, InterruptPin::IntC);
-                }
-                if let Ok(desc) = prt.route(
-                    header.class_code.base as u16,
-                    header.class_code.base as u16,
-                    Pin::IntD,
-                    &mut aml_ctx,
-                ) {
-                    debug!("IntD IRQ number: {:#?}", desc.irq.clone());
-                    INTD_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
-                    a[3] = (desc.irq, InterruptPin::IntD);
-                }
-                return Some(a);
-            }
-            return None;
-        }
-        return None;
-    }
-    None
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
