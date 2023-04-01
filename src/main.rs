@@ -96,7 +96,11 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 // needed to allow access outside main.rs
-pub const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 2) as u64;
+const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 2) as u64;
+
+pub fn get_boot_info() -> &'static mut BootInfo {
+    unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
+}
 
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
