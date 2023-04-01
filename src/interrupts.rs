@@ -338,48 +338,6 @@ pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-// #[allow(dead_code)]
-// pub extern "x86-interrupt" fn ahci(_frame: InterruptStackFrame) {
-//     // Spinloop until all statics are initialized
-//     while !ALL_DISKS.is_initialized() && GLOBAL_IS.read().is_none() {
-//         core::hint::spin_loop();
-//     }
-
-//     // Reference: https://wiki.osdev.org/AHCI#IRQ_handler
-
-//     // Checklist item 1
-//     // TODO: listen for changes to this static and write them to the global IS itself
-//     let global_interrupt = *GLOBAL_IS.read();
-//     *GLOBAL_IS.write() = global_interrupt;
-
-//     // Checklist item 2
-//     for disk in ALL_DISKS.get().unwrap().write().iter_mut() {
-//         let status = disk.read_interrupt_status();
-
-//         if EIO_STATUS.read().is_none() {
-//             disk.write_interrupt_status(status)
-//         } else {
-//             // Checklist item 3
-//             match EIO_STATUS.read().as_ref().unwrap() {
-//                 InterruptError::TaskFile => error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read()),
-//                 InterruptError::HostBusFatal => {
-//                     error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
-//                 }
-//                 InterruptError::HostBusData => {
-//                     error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
-//                 }
-//                 InterruptError::InterfaceFatal => {
-//                     error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
-//                 }
-//                 InterruptError::InvalidSlot => {
-//                     error!("{:#?}", crate::ahci_old::hba::EIO_DEBUG.read())
-//                 }
-//             }
-//         }
-//     }
-//     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
-// }
-
 #[inline(always)]
 pub fn is_enabled() -> bool {
     rflags::read().contains(RFlags::INTERRUPT_FLAG)

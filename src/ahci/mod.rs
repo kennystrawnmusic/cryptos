@@ -411,10 +411,10 @@ impl AtaCommand {
 }
 
 #[repr(C)]
-struct HbaMemory {
+pub struct HbaMemory {
     host_capability: VolatileCell<HbaCapabilities>,
     global_host_control: VolatileCell<HbaHostCont>,
-    interrupt_status: VolatileCell<u32>,
+    pub interrupt_status: VolatileCell<u32>,
     ports_implemented: VolatileCell<u32>,
     version: VolatileCell<u32>,
     ccc_control: VolatileCell<u32>,
@@ -708,7 +708,7 @@ impl HbaPort {
         // Check if the port is active and is present. If thats the case
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
-            trace!("ahci: enabling port {}", port);
+            info!("AHCI: enabling port {}", port);
 
             self.start();
             true
@@ -925,7 +925,7 @@ impl Clone for AhciProtected {
 
 impl AhciProtected {
     #[inline]
-    fn hba_mem(&self) -> &mut HbaMemory {
+    pub fn hba_mem(&self) -> &mut HbaMemory {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
     }
 
