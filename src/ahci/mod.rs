@@ -953,11 +953,17 @@ impl AhciProtected {
                 if port.probe(i) {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
+                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
 
                     drop(port); // Drop the reference to the port.
                     drop(hba); // Drop the reference to the HBA.
 
                     let port = Arc::new(AhciPort::new(address));
+
+                    // Test
+                    let buffer = &mut [0u8; 512];
+                    let _ = port.read(0, buffer).unwrap();
+                    info!("Read sector 0: {:?}", buffer);
 
                     // Add the port to the ports array.
                     self.ports[i] = Some(port);
@@ -1004,7 +1010,7 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            debug!("ABAR: {:#x}", &abar);
+            info!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
@@ -1051,9 +1057,7 @@ impl PciDeviceHandle for AhciDriver {
 
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
-
-        let mut semaphore = get_ahci().lock();
-        semaphore.start_driver(header, tables);
+        get_ahci().lock().start_driver(header, tables);
     }
 }
 

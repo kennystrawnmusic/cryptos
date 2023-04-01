@@ -296,7 +296,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-    info!("TLS template: {:#?}", boot_info.tls_template);
+    info!("TLS template: {:#x?}", boot_info.tls_template);
     debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
 
     ahci_init();
