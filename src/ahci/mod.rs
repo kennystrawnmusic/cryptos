@@ -1078,8 +1078,12 @@ impl PciDeviceHandle for AhciDriver {
         {
             if let Some(port) = port {
                 let buffer = &mut [0u8; 512];
-                let _ = port.read(0, buffer).unwrap();
-                info!("Read sector 0: {:?}", buffer);
+                let status = port.read(0, buffer).unwrap();
+                if status == 0 {
+                    info!("Read sector 0: {:?}", buffer);
+                } else {
+                    panic!("Failure to read data from disk: received error code {:#?}", &status)
+                }
             } else {
                 unreachable!();
             }
