@@ -322,7 +322,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 }
 
 pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
-pub const TLS_TEMPLATE_SIZE: u64 = 0x4000_0000;
+pub const TLS_TEMPLATE_SIZE: u64 = 0x400_0000; //100MB; increasing later as app size increases
 
 entry_point!(maink, config = &CONFIG);
 
