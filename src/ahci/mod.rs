@@ -20,6 +20,8 @@ use crate::{
     map_page, MAPPER, PHYS_OFFSET,
 };
 
+use self::util::sync::MutexGuard;
+
 pub mod util;
 
 use {
@@ -654,7 +656,10 @@ impl HbaPort {
                 VirtAddr::new(page_addr + size).as_u64(),
                 (frame_addr + size).as_u64(),
                 Size4KiB,
-                PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::WRITE_THROUGH | PageTableFlags::NO_CACHE
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::WRITE_THROUGH
+                    | PageTableFlags::NO_CACHE
             );
         }
 
@@ -861,7 +866,7 @@ impl AhciPortProtected {
 }
 
 #[derive(Debug)]
-struct AhciPort {
+pub struct AhciPort {
     inner: Mutex<AhciPortProtected>,
 }
 
@@ -890,7 +895,7 @@ impl AhciPort {
         Some(request.count * 512)
     }
 
-    fn read(&self, sector: usize, buffer: &mut [u8]) -> Option<usize> {
+    pub fn read(&self, sector: usize, buffer: &mut [u8]) -> Option<usize> {
         let count = (buffer.len() + 512 - 1) / 512;
         let request = Arc::new(DmaRequest::new(sector, count));
 
@@ -904,8 +909,8 @@ impl AhciPort {
     }
 }
 
-struct AhciProtected {
-    ports: [Option<Arc<AhciPort>>; 32],
+pub struct AhciProtected {
+    pub ports: [Option<Arc<AhciPort>>; 32],
     hba: VirtAddr,
 }
 
@@ -1029,6 +1034,12 @@ pub struct AhciDriver {
     inner: Mutex<AhciProtected>,
 }
 
+impl AhciDriver {
+    pub fn lock(&self) -> MutexGuard<AhciProtected> {
+        self.inner.lock()
+    }
+}
+
 impl PciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool {
         match (vendor_id, device_id) {
@@ -1041,28 +1052,8 @@ impl PciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
 
-        let mut semaphore = get_ahci().inner.lock();
+        let mut semaphore = get_ahci().lock();
         semaphore.start_driver(header, tables);
-
-        // Test
-        without_interrupts(|| {
-            for port in semaphore.ports.iter().filter(|p| p.is_some()) {
-                if let Some(port) = port {
-                    let buffer = &mut [0u8; 512];
-                    let status = port.read(0, buffer).unwrap();
-                    if status == 0 {
-                        info!("Read sector 0: {:?}", buffer);
-                    } else {
-                        panic!(
-                            "Failure to read data from disk: received error code {:#?}",
-                            &status
-                        )
-                    }
-                } else {
-                    unreachable!();
-                }
-            }
-        });
     }
 }
 

@@ -10,7 +10,11 @@ use x86_64::{
     structures::idt::{DescriptorTable, SelectorErrorCode},
 };
 
-use crate::PRINTK;
+use crate::{
+    ahci::get_ahci,
+    pci_impl::{DeviceType, Vendor, PCI_TABLE},
+    PRINTK,
+};
 
 #[allow(unused_imports)]
 use {
@@ -302,11 +306,33 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 
 pub extern "x86-interrupt" fn ahci0(frame: InterruptStackFrame) {
     debug!("Received AHCI0 interrupt: {:#?}", &frame);
+
+    for port in get_ahci().lock().ports.iter().filter(|p| p.is_some()) {
+        if let Some(port) = port {
+            let buffer = &mut [0u8; 512];
+            let _ = port.read(0, buffer).unwrap();
+            info!("Read sector 0: {:?}", buffer);
+        } else {
+            unreachable!();
+        }
+    }
+
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
 pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
     debug!("Received AHCI1 interrupt: {:#?}", &frame);
+
+    for port in get_ahci().lock().ports.iter().filter(|p| p.is_some()) {
+        if let Some(port) = port {
+            let buffer = &mut [0u8; 512];
+            let _ = port.read(0, buffer).unwrap();
+            info!("Read sector 0: {:?}", buffer);
+        } else {
+            unreachable!();
+        }
+    }
+
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
