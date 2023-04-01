@@ -968,9 +968,9 @@ impl AhciProtected {
                     hba = self.hba_mem();
 
                     // Test
-                    let buffer = &mut [0u8; 512];
-                    let _ = self.ports[i].as_ref().unwrap().read(0, buffer).unwrap();
-                    info!("Read sector 0: {:?}", buffer);
+                    // let buffer = &mut [0u8; 512];
+                    // let _ = self.ports[i].as_ref().unwrap().read(0, buffer).unwrap();
+                    // info!("Read sector 0: {:?}", buffer);
                 }
             }
         }
@@ -1058,6 +1058,15 @@ impl PciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
         info!("AHCI: Initializing");
         get_ahci().lock().start_driver(header, tables);
+
+        // Test
+        for port in get_ahci().lock().ports.iter().filter(|p| p.is_some()) {
+            if let Some(port) = port {
+                let buffer = &mut [0u8; 512];
+                let _ = port.read(0, buffer);
+                info!("Read sector 0: {:#?}", buffer)
+            }
+        }
     }
 }
 

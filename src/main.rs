@@ -99,6 +99,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 // needed to allow access outside main.rs
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 2) as u64;
+const PHYS_OFFSET: u64 = BOOT_INFO_ADDR / 16;
 
 pub fn get_boot_info() -> &'static mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
@@ -109,7 +110,7 @@ const MAPPINGS: Mappings = {
     mappings.kernel_stack = Mapping::Dynamic;
     mappings.boot_info = Mapping::FixedAddress(BOOT_INFO_ADDR);
     mappings.framebuffer = Mapping::Dynamic;
-    mappings.physical_memory = Some(Mapping::Dynamic);
+    mappings.physical_memory = Some(Mapping::FixedAddress(PHYS_OFFSET));
     mappings.page_table_recursive = None;
     mappings.aslr = false;
     mappings.dynamic_range_start = Some(0);
@@ -167,13 +168,9 @@ pub fn get_next_usable_frame() -> PhysFrame {
         .clone()
 }
 
-pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
-
 /// Convenient wrapper for getting the physical memory offset
-///
-/// Safety: only call this if you know that the OnceCell holding the physical memory offset has been initialized
 pub unsafe fn get_phys_offset() -> u64 {
-    PHYS_OFFSET.get().clone().unwrap().clone()
+    PHYS_OFFSET.clone()
 }
 
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
@@ -229,7 +226,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
             .unwrap(),
     );
     let map = unsafe { map_memory(offset) };
-    let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
+    let falloc = unsafe { Falloc::new() };
 
     MAPPER.get_or_init(move || Mutex::new(map));
     FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
@@ -250,15 +247,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     };
 
     boot_info.tls_template = Optional::Some(tls);
-
-    // clone the physical memory offset into a static ASAP
-    // so it doesn't need to be hardcoded everywhere it's needed
-    let cloned_offset = boot_info
-        .physical_memory_offset
-        .clone()
-        .into_option()
-        .unwrap();
-    PHYS_OFFSET.get_or_init(move || cloned_offset);
 
     let buffer_optional = &mut boot_info.framebuffer;
     let buffer_option = buffer_optional.as_mut();

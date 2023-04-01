@@ -1,3 +1,9 @@
+use x86_64::structures::paging::OffsetPageTable;
+
+use crate::{get_phys_offset, PHYS_OFFSET};
+
+use self::frames::{map_memory, Falloc};
+
 pub mod frames;
 
 #[allow(unused_imports)] //future-proof
@@ -42,4 +48,29 @@ pub fn heap_init(
     }
 
     Ok(())
+}
+
+// needed to avoid mapper/frame-allocator deadlocks after heap is initialized
+const MAPPER_ADDR: u64 = PHYS_OFFSET * 2;
+const FRAME_ALLOC_ADDR: u64 = MAPPER_ADDR * 2;
+
+pub fn get_mapper() -> &'static mut OffsetPageTable<'static> {
+    unsafe { &mut *(MAPPER_ADDR as *mut OffsetPageTable) }
+}
+
+pub fn get_frame_alloc() -> &'static mut Falloc {
+    unsafe { &mut *(FRAME_ALLOC_ADDR as *mut Falloc) }
+}
+
+pub fn heap_init_shorthand() {
+    let map = unsafe { map_memory(VirtAddr::new(get_phys_offset())) };
+    let frame_alloc = unsafe { Falloc::new() };
+
+    unsafe {
+        *(MAPPER_ADDR as *mut OffsetPageTable) = map;
+        *(FRAME_ALLOC_ADDR as *mut Falloc) = frame_alloc;
+    }
+
+    heap_init(get_mapper(), get_frame_alloc())
+        .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
