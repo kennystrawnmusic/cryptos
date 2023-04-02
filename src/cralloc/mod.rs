@@ -67,7 +67,6 @@ pub fn heap_init_shorthand() {
     let frame_alloc = unsafe { Falloc::new() };
 
     unsafe {
-        // TODO: identity-map pages
         *(MAPPER_ADDR as *mut OffsetPageTable) = map;
         *(FRAME_ALLOC_ADDR as *mut Falloc) = frame_alloc;
     }
