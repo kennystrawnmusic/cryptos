@@ -88,7 +88,7 @@ impl<A: Allocator> Bitmap<A> {
         }
     }
 
-    /// Same as `empty` but uses the global allocator instead
+    /// Same as `empty_in` but uses the global allocator instead
     pub fn empty() -> Self {
         Self::empty_in(Global)
     }
