@@ -724,7 +724,6 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             {
                 continue; // don't print unknown devices
             } else {
-                let _ = aml_route(&mut header);
                 info!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
                     header.vendor_id,
