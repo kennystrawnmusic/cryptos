@@ -1,5 +1,4 @@
-use log::debug;
-use x86_64::{structures::paging::{OffsetPageTable, PhysFrame}, PhysAddr};
+use x86_64::structures::paging::OffsetPageTable;
 
 use crate::{get_phys_offset, PHYS_OFFSET};
 
@@ -64,58 +63,11 @@ pub fn get_frame_alloc() -> &'static mut Falloc {
 }
 
 pub fn heap_init_shorthand() {
-    let mut map = unsafe { map_memory(VirtAddr::new(get_phys_offset())) };
-    let mut frame_alloc = unsafe { Falloc::new() };
+    let map = unsafe { map_memory(VirtAddr::new(get_phys_offset())) };
+    let frame_alloc = unsafe { Falloc::new() };
 
     unsafe {
-        let map_addr_frame = PhysFrame::<Size4KiB>::containing_address(PhysAddr::new(MAPPER_ADDR));
-        let map_addr_page = Page::<Size4KiB>::containing_address(VirtAddr::new(MAPPER_ADDR));
-
-        let map_addr_res = map.map_to(map_addr_page, map_addr_frame, PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH, &mut frame_alloc);
-
-        let map_addr_flush = match map_addr_res {
-            Ok(flush) => Some(flush),
-            Err(e) => match e {
-                MapToError::FrameAllocationFailed => panic!("Out of memory"),
-                MapToError::PageAlreadyMapped(_) => {
-                    debug!("Already have a page here; skipping mapping");
-                    None
-                },
-                MapToError::ParentEntryHugePage => {
-                    debug!("Already have a huge page here; skipping mapping");
-                    None
-                },
-            }
-        };
-
-        if let Some(flush) = map_addr_flush {
-            flush.flush();
-        }
-
-        let frame_alloc_addr_frame = PhysFrame::<Size4KiB>::containing_address(PhysAddr::new(FRAME_ALLOC_ADDR));
-        let frame_alloc_addr_page = Page::<Size4KiB>::containing_address(VirtAddr::new(FRAME_ALLOC_ADDR));
-
-        let frame_alloc_addr_res = map.map_to(frame_alloc_addr_page, frame_alloc_addr_frame, PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH, &mut frame_alloc);
-
-        let frame_alloc_addr_flush = match frame_alloc_addr_res {
-            Ok(flush) => Some(flush),
-            Err(e) => match e {
-                MapToError::FrameAllocationFailed => panic!("Out of memory"),
-                MapToError::PageAlreadyMapped(_) => {
-                    debug!("Already have a page here; skipping mapping");
-                    None
-                },
-                MapToError::ParentEntryHugePage => {
-                    debug!("Already have a huge page here; skipping mapping");
-                    None
-                },
-            }
-        };
-
-        if let Some(flush) = frame_alloc_addr_flush {
-            flush.flush();
-        }
-
+        // TODO: identity-map pages
         *(MAPPER_ADDR as *mut OffsetPageTable) = map;
         *(FRAME_ALLOC_ADDR as *mut Falloc) = frame_alloc;
     }
