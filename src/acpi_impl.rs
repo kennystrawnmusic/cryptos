@@ -432,6 +432,45 @@ unsafe impl Sync for KernelAcpi {}
 pub static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uninit();
 pub static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
 
+pub fn aml_init_new(tables: &mut AcpiTables<KernelAcpi>) {
+    debug!("Parsing AML");
+    let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
+
+    let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
+
+    // Properly reintroduce the size/length of the header
+    let dsdt_addr = fadt.dsdt_address().unwrap();
+    debug!("DSDT address: {:#x}", dsdt_addr.clone());
+    let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
+
+    let aml_test_page =
+        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
+    let aml_virt = aml_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+
+    map_page!(
+        dsdt_addr,
+        aml_virt,
+        Size4KiB,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+    );
+
+    let raw_table = unsafe {
+        core::slice::from_raw_parts_mut(
+            aml_virt as *mut u8,
+            dsdt_len.clone() + core::mem::size_of::<SdtHeader>(),
+        )
+    };
+
+    if let Ok(()) = aml_ctx.initialize_objects() {
+        if let Ok(()) =
+            aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
+        {
+            AML_CONTEXT.get_or_init(move || Arc::new(RwLock::new(aml_ctx)));
+            DSDT_MAPPED.store(aml_virt, Ordering::SeqCst);
+        }
+    }
+}
+
 pub fn aml_init(
     tables: &mut AcpiTables<KernelAcpi>,
     header: &mut Header,
