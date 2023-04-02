@@ -1026,6 +1026,7 @@ impl AhciProtected {
 
             without_interrupts(|| {
                 self.start_hba();
+                self.enable_interrupts(header);
 
                 for port in self.ports.iter().filter(|p| p.is_some()) {
                     if let Some(port) = port {
@@ -1037,8 +1038,6 @@ impl AhciProtected {
                     }
                 }
             });
-
-            self.enable_interrupts(header);
         } else {
             panic!("AHCI: Not a normal header")
         }
