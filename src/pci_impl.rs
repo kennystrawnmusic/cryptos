@@ -72,7 +72,7 @@ impl<A: Allocator> Bitmap<A> {
 
     /// Constructs a new bitmap using the default allocator
     pub fn new(size: usize) -> Self {
-        Self::new_in(Global)
+        Self::new_in(Global, size)
     }
 
     /// Constructs a new, empty bitmap. This function does *not* perform
