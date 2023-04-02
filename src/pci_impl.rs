@@ -70,6 +70,11 @@ impl<A: Allocator> Bitmap<A> {
         Self { bitmap }
     }
 
+    /// Constructs a new bitmap using the default allocator
+    pub fn new(size: usize) -> Self {
+        Self::new_in(Global)
+    }
+
     /// Constructs a new, empty bitmap. This function does *not* perform
     /// any allocations.
     ///
