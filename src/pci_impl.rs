@@ -11,8 +11,7 @@ use x86_64::{
 };
 
 use crate::{
-    acpi_impl::KernelAcpi,
-    aml_init,
+    acpi_impl::{KernelAcpi, aml_init, aml_route},
     apic_impl::LOCAL_APIC,
     get_mcfg,
     interrupts::{self, IDT},
@@ -666,7 +665,7 @@ impl DeviceType {
 
 pub trait PciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
-    fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>);
+    fn start(&self, header: &mut pcics::Header);
 }
 
 pub struct PciDevice {
@@ -692,6 +691,8 @@ pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
 pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
+        // Initialize AML table only once, not multiple times
+        aml_init(tables);
         /*
          * Use the brute force method to go through each possible bus,
          * device, function ID and check if we have a driver for it. If a driver
@@ -723,7 +724,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             {
                 continue; // don't print unknown devices
             } else {
-                let _ = aml_init(tables, &mut header);
+                let _ = aml_route(&mut header);
                 info!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
                     header.vendor_id,
@@ -743,7 +744,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
                 let pcics_vendor = Vendor::new(header.vendor_id as u32);
 
                 if driver.handle.handles(pcics_vendor, pcics_dev_type) {
-                    driver.handle.start(&mut header, tables)
+                    driver.handle.start(&mut header)
                 }
             }
         }

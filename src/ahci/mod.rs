@@ -12,8 +12,7 @@ use x86_64::{
 };
 
 use crate::{
-    acpi_impl::KernelAcpi,
-    aml_init,
+    acpi_impl::{KernelAcpi, aml_route},
     cralloc::frames::safe_active_pml4,
     get_phys_offset,
     interrupts::{self, IDT},
@@ -980,8 +979,8 @@ impl AhciProtected {
     }
 
     /// This function is responsible for initializing and starting the AHCI driver.
-    fn start_driver(&mut self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
-        let arr = aml_init(tables, header);
+    fn start_driver(&mut self, header: &mut pcics::Header) {
+        let arr = aml_route(header);
 
         // GDT will #GP if an IDT-load is attempted more than once
         if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
@@ -1063,9 +1062,9 @@ impl PciDeviceHandle for AhciDriver {
         }
     }
 
-    fn start(&self, header: &mut pcics::Header, tables: &mut AcpiTables<KernelAcpi>) {
+    fn start(&self, header: &mut pcics::Header) {
         info!("AHCI: Initializing");
-        get_ahci().lock().start_driver(header, tables);
+        get_ahci().lock().start_driver(header);
     }
 }
 
