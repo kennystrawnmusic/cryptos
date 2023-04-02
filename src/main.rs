@@ -84,7 +84,7 @@ use x86_64::{
 };
 use xmas_elf::ElfFile;
 
-pub use acpi_impl::aml_init;
+pub use acpi_impl::aml_init; //compatibility
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
