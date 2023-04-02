@@ -1,5 +1,3 @@
-use core::sync::atomic::Ordering;
-
 use acpi::{fadt::Fadt, sdt::SdtHeader};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},

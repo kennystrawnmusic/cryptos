@@ -70,11 +70,6 @@ impl<A: Allocator> Bitmap<A> {
         Self { bitmap }
     }
 
-    /// Constructs a new bitmap using the default allocator
-    pub fn new(size: usize) -> Self {
-        Self::new_in(Global, size)
-    }
-
     /// Constructs a new, empty bitmap. This function does *not* perform
     /// any allocations.
     ///
@@ -86,11 +81,6 @@ impl<A: Allocator> Bitmap<A> {
         Self {
             bitmap: Vec::new_in(alloc),
         }
-    }
-
-    /// Same as `empty_in` but uses the global allocator instead
-    pub fn empty() -> Self {
-        Self::empty_in(Global)
     }
 
     /// Sets the bit at the provided `bit_idx` to `yes` (`true` or `false`).
