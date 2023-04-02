@@ -83,7 +83,7 @@ lazy_static! {
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
-        idt[151].set_handler_fn(ahci1);
+        idt[151].set_handler_fn(ahci);
         idt
     };
 }
@@ -309,7 +309,7 @@ pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-pub extern "x86-interrupt" fn ahci1(frame: InterruptStackFrame) {
+pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
