@@ -12,7 +12,7 @@ use x86_64::{
 };
 
 use crate::{
-    acpi_impl::{KernelAcpi, aml_route},
+    acpi_impl::{aml_route, KernelAcpi},
     cralloc::frames::safe_active_pml4,
     get_phys_offset,
     interrupts::{self, IDT},
@@ -982,18 +982,21 @@ impl AhciProtected {
     fn start_driver(&mut self, header: &mut pcics::Header) {
         let arr = aml_route(header);
 
-        // GDT will #GP if an IDT-load is attempted more than once
-        if arr.is_some() && PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
+        if arr.is_some() {
             match header.interrupt_pin {
                 InterruptPin::IntA
                 | InterruptPin::IntB
                 | InterruptPin::IntC
                 | InterruptPin::IntD => {
-                    info!("Loading descriptor tables...");
-                    crate::interrupts::init();
+                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
+                        // GDT will #GP if an IDT-load is attempted more than once
 
-                    info!("Setting up interrupts...");
-                    crate::apic_impl::init_all_available_apics();
+                        info!("Loading descriptor tables...");
+                        crate::interrupts::init();
+
+                        info!("Setting up interrupts...");
+                        crate::apic_impl::init_all_available_apics();
+                    }
                 }
                 InterruptPin::Unused => {} // ignore unused interrupt pins
                 InterruptPin::Reserved(err) => {

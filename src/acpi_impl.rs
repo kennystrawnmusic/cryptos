@@ -21,7 +21,11 @@ use {
     alloc::vec::Vec,
     aml::AmlContext,
     conquer_once::spin::OnceCell,
-    core::{arch::asm, ptr::NonNull, sync::atomic::{AtomicU64, Ordering}},
+    core::{
+        arch::asm,
+        ptr::NonNull,
+        sync::atomic::{AtomicU64, Ordering},
+    },
     spin::RwLock,
     x86_64::{
         structures::paging::{
@@ -488,10 +492,9 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
 pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
     let mut aml_ctx = AML_CONTEXT.get().clone().unwrap().write();
 
-    if let Ok(prt) = PciRoutingTable::from_prt_path(
-        &AmlName::from_str("\\_SB.PCI0._PRT").unwrap(),
-        &mut aml_ctx,
-    ) {
+    if let Ok(prt) =
+        PciRoutingTable::from_prt_path(&AmlName::from_str("\\_SB.PCI0._PRT").unwrap(), &mut aml_ctx)
+    {
         let mut a: [(u32, InterruptPin); 4] = [
             (0, InterruptPin::IntA),
             (0, InterruptPin::IntB),
