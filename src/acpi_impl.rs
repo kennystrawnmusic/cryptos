@@ -465,6 +465,20 @@ pub fn aml_init_new(tables: &mut AcpiTables<KernelAcpi>) {
         if let Ok(()) =
             aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
         {
+            // Make sure AML knows that the APIC, not the legacy PIC, is what's being used
+            let _ = aml_ctx.invoke_method(
+                &AmlName::from_str("\\_PIC").unwrap(),
+                Args([
+                    Some(AmlValue::Integer(1)),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ]),
+            );
+
             AML_CONTEXT.get_or_init(move || Arc::new(RwLock::new(aml_ctx)));
             DSDT_MAPPED.store(aml_virt, Ordering::SeqCst);
         }
