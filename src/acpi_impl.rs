@@ -22,7 +22,9 @@ use {
     alloc::sync::Arc,
     alloc::vec::Vec,
     aml::AmlContext,
-    core::{arch::asm, ptr::NonNull},
+    conquer_once::spin::OnceCell,
+    core::{arch::asm, ptr::NonNull, sync::atomic::{AtomicU64, Ordering}},
+    spin::RwLock,
     x86_64::{
         structures::paging::{
             mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size4KiB,
@@ -428,6 +430,9 @@ impl aml::Handler for KernelAcpi {
 
 unsafe impl Send for KernelAcpi {}
 unsafe impl Sync for KernelAcpi {}
+
+pub static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uninit();
+pub static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
 
 pub fn aml_init(
     tables: &mut AcpiTables<KernelAcpi>,
