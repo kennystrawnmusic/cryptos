@@ -82,10 +82,15 @@ impl<A: Allocator> Bitmap<A> {
     /// ```rust
     /// let bitmap = Bitmap::new();
     /// ```
-    pub fn empty(alloc: A) -> Self {
+    pub fn empty_in(alloc: A) -> Self {
         Self {
             bitmap: Vec::new_in(alloc),
         }
+    }
+
+    /// Same as `empty` but uses the global allocator instead
+    pub fn empty() -> Self {
+        Self::empty_in(Global)
     }
 
     /// Sets the bit at the provided `bit_idx` to `yes` (`true` or `false`).
