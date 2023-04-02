@@ -966,11 +966,6 @@ impl AhciProtected {
                     // Workaround to get access to the HBA and still satify the
                     // borrow checker.
                     hba = self.hba_mem();
-
-                    // Test
-                    let buffer = &mut [0u8; 512];
-                    let _ = self.ports[i].as_ref().unwrap().read(0, buffer).unwrap();
-                    info!("Read sector 0: {:?}", buffer);
                 }
             }
         }
@@ -1027,7 +1022,20 @@ impl AhciProtected {
 
             self.hba = VirtAddr::new(abar_virt);
 
-            without_interrupts(|| self.start_hba());
+            without_interrupts(|| {
+                self.start_hba();
+
+                for port in self.ports.iter().filter(|p| p.is_some()) {
+                    if let Some(port) = port {
+                        let buffer = &mut [0u8; 512];
+                        let _ = port.read(0, buffer).unwrap();
+                        info!("Read sector 0: {:?}", buffer);
+                    } else {
+                        unreachable!()
+                    }
+                }
+            });
+
             self.enable_interrupts(header);
         } else {
             panic!("AHCI: Not a normal header")
