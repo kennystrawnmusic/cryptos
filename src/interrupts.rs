@@ -146,19 +146,18 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
 
         if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
             // find the next LAPIC ID after the current one
+            let id = lapic_iter.next().unwrap();
 
-            if let Some(&id) = lapic_iter.next() {
-                // update active LAPIC ID to match the next one
-                ACTIVE_LAPIC_ID.store(id, Ordering::Relaxed);
+            // update active LAPIC ID to match the next one
+            ACTIVE_LAPIC_ID.store(*id, Ordering::Relaxed);
 
-                // send the very IPI that this handler handles to the next available CPU core on the system
-                unsafe {
-                    LOCAL_APIC
-                        .lock()
-                        .as_mut()
-                        .unwrap()
-                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
-                };
+            // send the very IPI that this handler handles to the next available CPU core on the system
+            unsafe {
+                LOCAL_APIC
+                    .lock()
+                    .as_mut()
+                    .unwrap()
+                    .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
             };
         } else {
             unreachable!()
