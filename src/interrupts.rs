@@ -140,18 +140,18 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
             // find the next LAPIC ID after the current one
 
             if let Some(&id) = lapic_iter.next() {
-                // send the very IPI that this handler handles to the next available CPU core on the system
-                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
-
                 // update active LAPIC ID to match the next one
                 ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
-            } else {
-                // same as above but sent to Core 0 instead, since `None` means we've reached the end of the vector
-                let first = *LAPIC_IDS.get().unwrap().first().unwrap();
-                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
 
-                // same as above
+                // send the very IPI that this handler handles to the next available CPU core on the system
+                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
+            } else {
+                // same as above but sent to Core 0 instead, 
+                // since `None` means we've reached the end of the vector
+                let first = *LAPIC_IDS.get().unwrap().first().unwrap();
                 ACTIVE_LAPIC_ID.store(first, Ordering::SeqCst);
+                
+                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
             }
         } else {
             unreachable!()
