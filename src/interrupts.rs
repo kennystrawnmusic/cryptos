@@ -1,4 +1,4 @@
-use core::{convert::identity, sync::atomic::AtomicU32, ops::SubAssign};
+use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
@@ -7,7 +7,8 @@ use x86_64::{
         read_rip,
         rflags::{self, RFlags},
     },
-    structures::idt::{DescriptorTable, SelectorErrorCode}, VirtAddr,
+    structures::idt::{DescriptorTable, SelectorErrorCode},
+    VirtAddr,
 };
 
 use crate::{
@@ -127,7 +128,12 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
         (*(frame.instruction_pointer.as_ptr::<fn() -> ()>()))();
 
         // stack grows downwards, so decrement the IP by 1
-        frame.as_mut().extract_inner().instruction_pointer.as_u64().sub_assign(1);
+        frame
+            .as_mut()
+            .extract_inner()
+            .instruction_pointer
+            .as_u64()
+            .sub_assign(1);
     }
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
@@ -148,12 +154,17 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
                 // send the very IPI that this handler handles to the next available CPU core on the system
                 unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
             } else {
-                // same as above but sent to Core 0 instead, 
+                // same as above but sent to Core 0 instead,
                 // since `None` means we've reached the end of the vector
-                let first = LAPIC_IDS.get().unwrap()[0];
-                ACTIVE_LAPIC_ID.store(first, Ordering::SeqCst);
-                
-                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
+                ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::SeqCst);
+
+                unsafe {
+                    LOCAL_APIC
+                        .lock()
+                        .as_mut()
+                        .unwrap()
+                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::SeqCst))
+                };
             }
         } else {
             unreachable!()
