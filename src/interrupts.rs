@@ -151,6 +151,7 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
             unreachable!()
         }
     }
+    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() };
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
