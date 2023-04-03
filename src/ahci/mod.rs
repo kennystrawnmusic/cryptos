@@ -994,7 +994,9 @@ impl AhciProtected {
                     // Workaround to get access to the HBA and still satify the
                     // borrow checker.
                     hba = self.hba_mem();
-                    self.hba_mem().bios_handoff_ctrl_sts.set(HbaBohc::OOC|HbaBohc::OOS)
+                    self.hba_mem()
+                        .bios_handoff_ctrl_sts
+                        .set(HbaBohc::OOC | HbaBohc::OOS)
                 }
             }
         }

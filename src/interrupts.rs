@@ -12,8 +12,9 @@ use x86_64::{
 
 use crate::{
     ahci::get_ahci,
+    apic_impl::LAPIC_IDS,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    PRINTK, apic_impl::LAPIC_IDS,
+    PRINTK,
 };
 
 #[allow(unused_imports)]
@@ -151,7 +152,7 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
         }
     }
 
-    unsafe { 
+    unsafe {
         // now, execute the instruction that the IP points to
         (*(read_rip().as_ptr::<fn() -> ()>()))();
     }
