@@ -121,11 +121,15 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
+extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
+    let rip = frame.instruction_pointer.as_u64();
+
     unsafe {
         // execute the instruction that the IP points to
-        // IP changes to `frame.instruction_pointer` on EOI, so no need to update it
-        (*(read_rip().as_ptr::<fn() -> ()>()))();
+        (*(rip as *const fn() -> ()))();
+
+        // stack grows downwards, so decrement the IP by 1
+        frame.as_mut().extract_inner().instruction_pointer.align_down(1u64);
     }
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
