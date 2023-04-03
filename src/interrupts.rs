@@ -150,7 +150,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
             } else {
                 // same as above but sent to Core 0 instead, 
                 // since `None` means we've reached the end of the vector
-                let first = *LAPIC_IDS.get().unwrap().first().unwrap();
+                let first = LAPIC_IDS.get().unwrap()[0];
                 ACTIVE_LAPIC_ID.store(first, Ordering::SeqCst);
                 
                 unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
