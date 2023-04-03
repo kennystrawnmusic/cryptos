@@ -11,8 +11,12 @@ fn main() {
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
 
+    let mut fb = FrameBuffer::default();
+    fb.minimum_framebuffer_height = Some(1920);
+    fb.minimum_framebuffer_width = Some(1080);
+
     let mut c = BootConfig::default();
-    c.frame_buffer = FrameBuffer::default();
+    c.frame_buffer = fb;
 
     if cfg!(opt_level = "0") {
         c.log_level = LevelFilter::Trace;

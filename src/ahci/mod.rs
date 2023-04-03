@@ -674,8 +674,30 @@ impl HbaPort {
             ));
         }
 
+        // Read and write back command list base
+        let clb = self.clb.get();
+        self.clb.set(clb);
+
+        // Read and write back FIS Base
+        let fb = self.fb.get();
+        self.fb.set(fb);
+
+        // Read and write back interrupt status
+        let is = self.is.get();
+        self.is.set(is);
+
+        // Enable interrupts
         self.ie.set(HbaPortIE::all());
-        self.start_cmd(); // Start the command engine...
+
+        // Disable power management (for now)
+        let sctl = self.sctl.get();
+        self.sctl.set(sctl | 7 << 8);
+
+        // Power on and spin up
+        self.cmd.set(HbaPortCmd::POD | HbaPortCmd::SUD);
+
+        // Start the command engine
+        self.start_cmd();
     }
 
     fn start_cmd(&mut self) {
@@ -965,6 +987,7 @@ impl AhciProtected {
                     // Workaround to get access to the HBA and still satify the
                     // borrow checker.
                     hba = self.hba_mem();
+                    self.hba_mem().bios_handoff_ctrl_sts.set(HbaBohc::OOC|HbaBohc::OOS)
                 }
             }
         }
@@ -988,7 +1011,7 @@ impl AhciProtected {
                 | InterruptPin::IntB
                 | InterruptPin::IntC
                 | InterruptPin::IntD => {
-                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
+                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
                         // GDT will #GP if an IDT-load is attempted more than once
 
                         info!("Loading descriptor tables...");
@@ -1027,17 +1050,18 @@ impl AhciProtected {
             without_interrupts(|| {
                 self.start_hba();
                 self.enable_interrupts(header);
-
-                for port in self.ports.iter().filter(|p| p.is_some()) {
-                    if let Some(port) = port {
-                        let buffer = &mut [0u8; 512];
-                        let _ = port.read(0, buffer).unwrap();
-                        info!("Read sector 0: {:?}", buffer);
-                    } else {
-                        unreachable!()
-                    }
-                }
             });
+
+            // Test code
+            // for port in self.ports.iter().filter(|p| p.is_some()) {
+            //     if let Some(port) = port {
+            //         let buffer = &mut [0u8; 512];
+            //         let _ = port.read(0, buffer).unwrap();
+            //         info!("Read sector 0: {:?}", buffer);
+            //     } else {
+            //         unreachable!()
+            //     }
+            // }
         } else {
             panic!("AHCI: Not a normal header")
         }
