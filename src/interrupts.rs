@@ -152,7 +152,13 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
                 ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
 
                 // send the very IPI that this handler handles to the next available CPU core on the system
-                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
+                unsafe {
+                    LOCAL_APIC
+                        .lock()
+                        .as_mut()
+                        .unwrap()
+                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::SeqCst))
+                };
             } else {
                 // same as above but sent to Core 0 instead,
                 // since `None` means we've reached the end of the vector
