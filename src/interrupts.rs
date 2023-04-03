@@ -83,7 +83,7 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
-        idt[100].set_handler_fn(wake_ipi);
+        idt[132].set_handler_fn(wake_ipi);
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
