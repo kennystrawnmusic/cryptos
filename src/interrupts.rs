@@ -139,17 +139,17 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
         // initialize with first LAPIC ID
 
-        ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::SeqCst);
+        ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
     } else {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = LAPIC_IDS.get().unwrap().iter();
 
-        if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
+        if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
             // find the next LAPIC ID after the current one
 
             if let Some(&id) = lapic_iter.next() {
                 // update active LAPIC ID to match the next one
-                ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
+                ACTIVE_LAPIC_ID.store(id, Ordering::Relaxed);
 
                 // send the very IPI that this handler handles to the next available CPU core on the system
                 unsafe {
@@ -157,12 +157,12 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
                         .lock()
                         .as_mut()
                         .unwrap()
-                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::SeqCst))
+                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
                 };
             } else {
                 // same as above but sent to Core 0 instead,
                 // since `None` means we've reached the end of the vector
-                ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::SeqCst);
+                ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
 
                 unsafe {
                     LOCAL_APIC
