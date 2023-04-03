@@ -1,4 +1,4 @@
-use core::convert::identity;
+use core::{convert::identity, sync::atomic::AtomicU32};
 
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
@@ -13,7 +13,7 @@ use x86_64::{
 use crate::{
     ahci::get_ahci,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    PRINTK,
+    PRINTK, apic_impl::LAPIC_IDS,
 };
 
 #[allow(unused_imports)]
@@ -81,6 +81,7 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
+        idt[100].set_handler_fn(wake_ipi);
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
@@ -89,7 +90,7 @@ lazy_static! {
 }
 
 pub static TICK_COUNT: AtomicU64 = AtomicU64::new(0);
-pub static PID: AtomicU64 = AtomicU64::new(0);
+pub static ACTIVE_LAPIC_ID: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
@@ -119,10 +120,37 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
-#[allow(dead_code)]
 extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
-    PID.fetch_add(1, Ordering::SeqCst);
-    todo!("use a loop here as the process scheduler");
+    unsafe { 
+        // execute the instruction that the IP points to
+        (*(read_rip().as_ptr::<fn() -> ()>()))();
+    }
+    
+    if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
+        // initialize with first LAPIC ID
+
+        ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::SeqCst);
+    } else {
+        let mut lapic_iter = LAPIC_IDS.get().unwrap().iter();
+        if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
+            // find the next LAPIC ID after the current one
+
+            if let Some(&id) = lapic_iter.next() {
+                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
+
+                // update active LAPIC ID to match the next one
+                ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
+            } else {
+                let first = *LAPIC_IDS.get().unwrap().first().unwrap();
+                unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
+
+                // same as above
+                ACTIVE_LAPIC_ID.store(first, Ordering::SeqCst);
+            }
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
