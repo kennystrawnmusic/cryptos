@@ -142,7 +142,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
         ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
     } else {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
-        let mut lapic_iter = LAPIC_IDS.get().unwrap().iter();
+        let mut lapic_iter = LAPIC_IDS.get().unwrap().iter().cycle();
 
         if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
             // find the next LAPIC ID after the current one
@@ -159,19 +159,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
                         .unwrap()
                         .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
                 };
-            } else {
-                // same as above but sent to Core 0 instead,
-                // since `None` means we've reached the end of the vector
-                ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
-
-                unsafe {
-                    LOCAL_APIC
-                        .lock()
-                        .as_mut()
-                        .unwrap()
-                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
-                };
-            }
+            };
         } else {
             unreachable!()
         }
