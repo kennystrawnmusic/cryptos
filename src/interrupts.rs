@@ -136,7 +136,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
             .sub_assign(1);
     }
 
-    if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
+    if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
 
         ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
@@ -169,7 +169,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
                         .lock()
                         .as_mut()
                         .unwrap()
-                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::SeqCst))
+                        .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
                 };
             }
         } else {
