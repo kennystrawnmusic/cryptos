@@ -124,7 +124,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
     unsafe {
         // execute the instruction that the IP points to
-        (*(frame.as_mut().extract_inner().instruction_pointer.as_ptr::<fn() -> ()>()))();
+        (*(frame.instruction_pointer.as_ptr::<fn() -> ()>()))();
 
         // stack grows downwards, so decrement the IP by 1
         frame.as_mut().extract_inner().instruction_pointer.as_u64().sub_assign(1);
