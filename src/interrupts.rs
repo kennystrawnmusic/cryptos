@@ -1,4 +1,4 @@
-use core::{convert::identity, sync::atomic::AtomicU32};
+use core::{convert::identity, sync::atomic::AtomicU32, ops::SubAssign};
 
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
@@ -7,7 +7,7 @@ use x86_64::{
         read_rip,
         rflags::{self, RFlags},
     },
-    structures::idt::{DescriptorTable, SelectorErrorCode},
+    structures::idt::{DescriptorTable, SelectorErrorCode}, VirtAddr,
 };
 
 use crate::{
@@ -122,14 +122,12 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
-    let rip = frame.instruction_pointer.as_u64();
-
     unsafe {
         // execute the instruction that the IP points to
-        (*(rip as *const fn() -> ()))();
+        (*(frame.as_mut().extract_inner().instruction_pointer.as_ptr::<fn() -> ()>()))();
 
         // stack grows downwards, so decrement the IP by 1
-        frame.as_mut().extract_inner().instruction_pointer.align_down(1u64);
+        frame.as_mut().extract_inner().instruction_pointer.as_u64().sub_assign(1);
     }
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
