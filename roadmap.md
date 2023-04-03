@@ -18,7 +18,7 @@
   * Design goal: do what Microsoft tried and failed to do with WinFS, except at the block level instead of the service level because it's far easier to accomplish in the former case
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * NVMe — TODO (same as above)
-* Task scheduler — TODO (need to be able to load executables from disk first in order to run and schedule them)
+* Task scheduler — [in progress](https://github.com/kennystrawnmusic/cryptos/blob/cc49a4b2b8586fb64d777587120ccde0feccbbdc/src/interrupts.rs#L123) — using an IPI to force all available CPU cores to play a game of "hot potato" with the instruction pointer; idea behind this is to take advantage of all available CPU resources at the scheduler level as opposed to the thread level
 * Graphics — [in progress](https://github.com/kennystrawnmusic/cryptos/blob/master/src/drm/mod.rs)
 * USB HID — TODO (can't have a GUI without a mouse and keyboard)
 * Userland — TODO (idea is to port the Redox init, Redox coreutils, and most of the non-mission-critical Redox user-mode drivers — like network drivers, for example — over, as well as use my own terminal emulator for running Ion in emulated mode only)
