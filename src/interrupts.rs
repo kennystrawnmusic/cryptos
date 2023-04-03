@@ -121,26 +121,25 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
-    unsafe { 
-        // execute the instruction that the IP points to
-        (*(read_rip().as_ptr::<fn() -> ()>()))();
-    }
-    
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
         // initialize with first LAPIC ID
 
         ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::SeqCst);
     } else {
+        // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = LAPIC_IDS.get().unwrap().iter();
+
         if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
             // find the next LAPIC ID after the current one
 
             if let Some(&id) = lapic_iter.next() {
+                // send the very IPI that this handler handles to the next available CPU core on the system
                 unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, id) };
 
                 // update active LAPIC ID to match the next one
                 ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
             } else {
+                // same as above but sent to Core 0 instead
                 let first = *LAPIC_IDS.get().unwrap().first().unwrap();
                 unsafe { LOCAL_APIC.lock().as_mut().unwrap().send_ipi(100, first) };
 
@@ -150,6 +149,11 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
         } else {
             unreachable!()
         }
+    }
+
+    unsafe { 
+        // now, execute the instruction that the IP points to
+        (*(read_rip().as_ptr::<fn() -> ()>()))();
     }
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() };
 }
