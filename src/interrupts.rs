@@ -154,6 +154,7 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
 
     unsafe {
         // now, execute the instruction that the IP points to
+        // IP changes to `frame.instruction_pointer` on EOI, so no need to update it
         (*(read_rip().as_ptr::<fn() -> ()>()))();
     }
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() };
