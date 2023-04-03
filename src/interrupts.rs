@@ -127,7 +127,7 @@ extern "x86-interrupt" fn wake_ipi(_frame: InterruptStackFrame) {
         // IP changes to `frame.instruction_pointer` on EOI, so no need to update it
         (*(read_rip().as_ptr::<fn() -> ()>()))();
     }
-    
+
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
         // initialize with first LAPIC ID
 
