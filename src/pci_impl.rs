@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{sync::atomic::{AtomicUsize, Ordering}, iter::Map};
 
 use acpi::AcpiTables;
 use pcics::header::{ClassCode, InterruptPin};
@@ -31,6 +31,7 @@ use {
 };
 
 use log::*;
+use itertools::Itertools;
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
@@ -699,8 +700,6 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
          * for the PCI device is found then initialize it.
          */
         for dev in mcfg_brute_force()
-            .filter(|i| i.is_some())
-            .map(|i| i.unwrap())
         {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 

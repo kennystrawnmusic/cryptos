@@ -24,7 +24,7 @@ use self::util::sync::MutexGuard;
 pub mod util;
 
 use {
-    crate::{mcfg_brute_force, pci_impl::*, FRAME_ALLOCATOR},
+    crate::{pci_impl::*, FRAME_ALLOCATOR},
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
     log::*,
