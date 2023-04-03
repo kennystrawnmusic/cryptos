@@ -104,9 +104,12 @@ pub fn get_boot_info() -> &'static mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
 }
 
+// high half
+const KERNEL_STACK_ADDR: u64 = 0xffff_0000_0000;
+
 const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
-    mappings.kernel_stack = Mapping::Dynamic;
+    mappings.kernel_stack = Mapping::FixedAddress(KERNEL_STACK_ADDR);
     mappings.boot_info = Mapping::FixedAddress(BOOT_INFO_ADDR);
     mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
