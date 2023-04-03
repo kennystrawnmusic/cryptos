@@ -729,7 +729,9 @@ impl HbaPort {
         // Check if the port is active and is present. If thats the case
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
-            info!("AHCI: enabling port {}", port);
+            if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
+                info!("AHCI: enabling port {}", port);
+            }
 
             self.start();
             true
@@ -960,10 +962,12 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        info!(
-            "AHCI: controller version {}.{}",
-            major_version, minor_version
-        );
+        if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+            info!(
+                "AHCI: controller version {}.{}",
+                major_version, minor_version
+            );
+        }
 
         let pi = hba.ports_implemented.get();
 
@@ -974,7 +978,10 @@ impl AhciProtected {
                 if port.probe(i) {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
-                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
+
+                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+                        info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
+                    }
 
                     drop(port); // Drop the reference to the port.
                     drop(hba); // Drop the reference to the HBA.
@@ -1030,7 +1037,9 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            info!("ABAR: {:#x}", &abar);
+            if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+                info!("ABAR: {:#x}", &abar);
+            }
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
@@ -1089,7 +1098,9 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header) {
-        info!("AHCI: Initializing");
+        if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+            info!("AHCI: Initializing");
+        }
         get_ahci().lock().start_driver(header);
     }
 }

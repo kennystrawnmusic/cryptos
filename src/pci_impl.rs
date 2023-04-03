@@ -684,7 +684,7 @@ impl PciTable {
 
 pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
     PCI_TABLE.lock().inner.push(PciDevice { handle });
-    PCI_DRIVER_COUNT.store(PCI_TABLE.lock().inner.len(), Ordering::SeqCst);
+    PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
 }
 
 /// Lookup and initialize all PCI devices.
@@ -724,7 +724,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             {
                 continue; // don't print unknown devices
             } else {
-                info!(
+                debug!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
                     header.vendor_id,
                     header.device_id,
