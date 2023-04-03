@@ -24,6 +24,7 @@ conquer-once = { version = "0.3.2", default-features = false }
 embedded-graphics = { version = "0.7.1", features = ["nalgebra_support"] }
 embedded-graphics-core = { version = "0.3.3", features = ["nalgebra_support"] }
 hashbrown = { version = "0.13.1", default-features = false, features = ["inline-more"] }
+itertools = { version = "0.10.5", default-features = false, features = ["use_alloc"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
 nalgebra = { version = "0.32.1", default-features = false }
