@@ -18,6 +18,7 @@ use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};
 
+/// Vector of compositing layers for the rendering loop to merge down as it iterates
 pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects

@@ -71,7 +71,7 @@ pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
             apic.local_apic_address.clone(),
             lapic_virt,
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
         );
 
         let first_lapic = LocalApicBuilder::new()
