@@ -738,11 +738,10 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             for driver in &mut PCI_TABLE.lock().inner {
                 // can't declare these earlier than this without pissing off the borrow checker
 
-                let pcics_dev_type =
-                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32);
-                let pcics_vendor = Vendor::new(header.vendor_id as u32);
-
-                if driver.handle.handles(pcics_vendor, pcics_dev_type) {
+                if driver.handle.handles(
+                    Vendor::new(header.vendor_id as u32),
+                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32),
+                ) {
                     driver.handle.start(&mut header)
                 }
             }
