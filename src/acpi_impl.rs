@@ -84,7 +84,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u8) }
@@ -98,7 +98,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u16) }
@@ -112,7 +112,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u32) }
@@ -126,7 +126,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile((address + get_phys_offset() as usize) as *const u64) }
@@ -140,7 +140,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -156,7 +156,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -172,7 +172,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -187,7 +187,7 @@ impl aml::Handler for KernelAcpi {
             address,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -258,7 +258,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile(((rebuilt + get_phys_offset()) as usize) as *const u8) }
@@ -285,7 +285,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile(((rebuilt + get_phys_offset()) as usize) as *const u16) }
@@ -312,7 +312,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe { core::ptr::read_volatile(((rebuilt + get_phys_offset()) as usize) as *const u32) }
@@ -347,7 +347,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -384,7 +384,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -421,7 +421,7 @@ impl aml::Handler for KernelAcpi {
             rebuilt,
             test_start + unsafe { get_phys_offset() } + test.size(),
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         unsafe {
@@ -455,7 +455,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
         dsdt_addr,
         aml_virt,
         Size4KiB,
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
     );
 
     let raw_table = unsafe {
@@ -490,7 +490,11 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
 }
 
 pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
-    let mut aml_ctx = AML_CONTEXT.get().clone().unwrap().write();
+    let mut aml_ctx = AML_CONTEXT
+        .get()
+        .clone()
+        .expect("AML context failed to initialize")
+        .write();
 
     if let Ok(prt) =
         PciRoutingTable::from_prt_path(&AmlName::from_str("\\_SB.PCI0._PRT").unwrap(), &mut aml_ctx)
