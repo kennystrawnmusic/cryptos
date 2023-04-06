@@ -1,6 +1,7 @@
 use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 
 use alloc::sync::Arc;
+use log::warn;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
     instructions::interrupts,
@@ -13,7 +14,7 @@ use x86_64::{
 };
 
 use crate::{
-    ahci::{get_ahci, get_hba},
+    ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::LAPIC_IDS,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
@@ -355,6 +356,8 @@ pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
 pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
 
+    // Source: https://wiki.osdev.org/AHCI#IRQ_handler
+
     // Read and write back global HBA interrupt status
     let status = get_hba().interrupt_status.get();
     get_hba().interrupt_status.set(status);
@@ -363,6 +366,18 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     for port in get_ahci().lock().ports.as_mut() {
         if let Some(port) = port {
             let port_status = port.inner.lock().hba_port().is.get();
+
+            // Check error bit and debug if set
+            if port_status.contains(HbaPortIS::HBDS) {
+                warn!("AHCI: Host bus data error");
+            } else if port_status.contains(HbaPortIS::HBFS) {
+                warn!("AHCI: Host bus file error");
+            } else if port_status.contains(HbaPortIS::TFES) {
+                warn!("AHCI: Task file error");
+            } else if port_status.contains(HbaPortIS::CPDS) {
+                warn!("AHCI: Cold port detected");
+            }
+
             port.inner.lock().hba_port().is.set(port_status);
         }
     }
