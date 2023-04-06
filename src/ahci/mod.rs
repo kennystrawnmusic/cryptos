@@ -952,7 +952,7 @@ impl Clone for AhciProtected {
 
 impl AhciProtected {
     #[inline]
-    pub(crate) fn hba_mem(&self) -> &'static mut HbaMemory {
+    pub(crate) fn hba_mem<'a>(&self) -> &'a mut HbaMemory {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
     }
 
