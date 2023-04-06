@@ -102,7 +102,7 @@ fn panic(info: &PanicInfo) -> ! {
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 32) as u64;
 const FB_ADDR: u64 = BOOT_INFO_ADDR * 2;
 
-pub fn get_boot_info() -> &'static mut BootInfo {
+pub fn get_boot_info<'a>() -> &'a mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
 }
 
