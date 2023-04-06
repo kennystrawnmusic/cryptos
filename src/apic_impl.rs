@@ -128,7 +128,6 @@ pub fn init_all_available_apics() {
     let (lapic, ioapics) = build_all_available_apics().expect("Legacy 8259 PIC not supported");
 
     unsafe {
-
         for mut ioapic in ioapics.into_iter() {
             ioapic.init(32);
 
@@ -149,4 +148,11 @@ pub fn raw_apic_eoi() {
         let base_addr = xapic_base() + get_phys_offset() + 0xb0;
         *(base_addr as *mut u32) = 0;
     }
+}
+
+/// Workaround for getting a reference to the local APIC without needing to lock it
+/// Uses raw pointer but is abstracted behind the scenes
+#[inline(always)]
+pub fn get_active_lapic<'a>() -> &'a mut LocalApic {
+    unsafe { &mut *((xapic_base() + get_phys_offset()) as *mut LocalApic) }
 }

@@ -48,7 +48,6 @@ use bootloader_api::{
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
-use itertools::Itertools;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -68,6 +67,7 @@ use cralloc::{
     frames::{map_memory, Falloc},
     heap_init, BEGIN_HEAP,
 };
+use itertools::Itertools;
 use log::{debug, error, info};
 use pcics::{
     capabilities::pci_express::Device,
@@ -206,7 +206,10 @@ pub fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
 }
 
 pub fn mcfg_brute_force() -> impl Itertools<Item = u64> {
-    mcfg_brute_force_inner().filter(|i| i.is_some()).map(|i| i.unwrap()).dedup()
+    mcfg_brute_force_inner()
+        .filter(|i| i.is_some())
+        .map(|i| i.unwrap())
+        .dedup()
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {

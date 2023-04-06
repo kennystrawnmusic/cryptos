@@ -1111,12 +1111,12 @@ impl PciDeviceHandle for AhciDriver {
     }
 }
 
-pub(crate) fn get_hba() -> &'static mut HbaMemory {
+pub(crate) fn get_hba<'a>() -> &'a mut HbaMemory {
     get_ahci().lock().hba_mem()
 }
 
 /// Returns a reference-counting pointer to the AHCI driver.
-pub fn get_ahci() -> &'static Arc<AhciDriver> {
+pub fn get_ahci<'a>() -> &'a Arc<AhciDriver> {
     DRIVER
         .get()
         .expect("Attempted to get the AHCI driver before it was initialized")

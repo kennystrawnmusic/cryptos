@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
-use core::{sync::atomic::{AtomicUsize, Ordering}, iter::Map};
+use core::{
+    iter::Map,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use acpi::AcpiTables;
 use pcics::header::{ClassCode, InterruptPin};
@@ -29,8 +32,8 @@ use {
     x86_64::structures::paging::{OffsetPageTable, PageTableFlags},
 };
 
-use log::*;
 use itertools::Itertools;
+use log::*;
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
@@ -698,8 +701,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
          * device, function ID and check if we have a driver for it. If a driver
          * for the PCI device is found then initialize it.
          */
-        for dev in mcfg_brute_force()
-        {
+        for dev in mcfg_brute_force() {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 
             let virt = test_page.start_address().as_u64() + unsafe { crate::get_phys_offset() };

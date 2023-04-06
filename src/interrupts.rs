@@ -16,9 +16,10 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::{LAPIC_IDS, raw_apic_eoi},
+    apic_impl::{get_active_lapic, raw_apic_eoi, LAPIC_IDS},
+    get_phys_offset,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    PRINTK, get_phys_offset,
+    PRINTK,
 };
 
 #[allow(unused_imports)]
@@ -154,10 +155,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
             ACTIVE_LAPIC_ID.store(*id, Ordering::Relaxed);
 
             // send the very IPI that this handler handles to the next available CPU core on the system
-            unsafe {
-                let lapic = &mut *((xapic_base() + get_phys_offset()) as *mut LocalApic);
-                lapic.send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
-            };
+            unsafe { get_active_lapic().send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) };
         } else {
             unreachable!()
         }
