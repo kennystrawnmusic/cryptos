@@ -112,17 +112,17 @@ pub enum IrqIndex {
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
     TICK_COUNT.fetch_add(1, Ordering::Relaxed);
     debug!("{:#?}", &TICK_COUNT.load(Ordering::Relaxed));
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 extern "x86-interrupt" fn spurious(_frame: InterruptStackFrame) {
     debug!("Received spurious interrupt");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     error!("Local APIC error; check the status for details");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
@@ -161,7 +161,7 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
         }
     }
 
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
@@ -325,27 +325,27 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
 
 pub extern "x86-interrupt" fn pin_inta(_frame: InterruptStackFrame) {
     info!("Received IntA interrupt");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 pub extern "x86-interrupt" fn pin_intb(_frame: InterruptStackFrame) {
     info!("Received IntB interrupt");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 pub extern "x86-interrupt" fn pin_intc(_frame: InterruptStackFrame) {
     info!("Received IntC interrupt");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
     info!("Received IntD interrupt");
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
     debug!("Received PCI interrupt: {:#?}", &frame);
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
@@ -377,7 +377,7 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
         }
     }
 
-    raw_apic_eoi();
+    unsafe { get_active_lapic().end_of_interrupt() };
 }
 
 #[inline(always)]
