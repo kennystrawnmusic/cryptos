@@ -140,16 +140,6 @@ pub fn init_all_available_apics() {
     }
 }
 
-/// Writes a zero through a raw pointer to the EOI register
-/// Workaround to avoid needing to lock the Local APIC every time an attempt to signal EOI is necessary
-#[inline(always)]
-pub fn raw_apic_eoi() {
-    unsafe {
-        let base_addr = xapic_base() + get_phys_offset() + 0xb0;
-        *(base_addr as *mut u32) = 0;
-    }
-}
-
 /// Workaround for getting a reference to the local APIC without needing to lock it
 /// Uses raw pointer but is abstracted behind the scenes
 #[inline(always)]

@@ -16,7 +16,7 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::{get_active_lapic, raw_apic_eoi, LAPIC_IDS},
+    apic_impl::{get_active_lapic, LAPIC_IDS},
     get_phys_offset,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
