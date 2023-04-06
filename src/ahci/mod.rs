@@ -146,7 +146,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    struct HbaPortIS: u32 {
+    pub struct HbaPortIS: u32 {
         const DHRS = 1 << 0; // Device to Host Register FIS Interrupt
         const PSS = 1 << 1; // PIO Setup FIS Interrupt
         const DSS = 1 << 2; // DMA Setup FIS Interrupt
@@ -599,7 +599,7 @@ impl HbaSataStatus {
 struct HbaPort {
     clb: VolatileCell<PhysAddr>,
     fb: VolatileCell<PhysAddr>,
-    is: VolatileCell<HbaPortIS>,
+    pub is: VolatileCell<HbaPortIS>,
     ie: VolatileCell<HbaPortIE>,
     cmd: VolatileCell<HbaPortCmd>,
     _reserved: u32,
