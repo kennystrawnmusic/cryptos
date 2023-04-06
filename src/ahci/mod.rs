@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
 
+#![allow(unused)]
+
 use core::sync::atomic::Ordering;
 
 use acpi::AcpiTables;
@@ -324,7 +326,7 @@ impl DmaRequest {
         }
     }
 
-    pub fn into_command(&self) -> AtaCommand {
+    pub(crate) fn into_command(&self) -> AtaCommand {
         let lba48 = self.sector > 0x0FFF_FFFF;
 
         match self.command {
@@ -346,7 +348,7 @@ impl DmaRequest {
 #[allow(unused)]
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
-pub enum AtaCommand {
+pub(crate) enum AtaCommand {
     AtaCommandWriteDma = 0xCA,
     AtaCommandWriteDmaQueued = 0xCC,
     AtaCommandWriteMultiple = 0xC5,
@@ -394,14 +396,16 @@ pub enum AtaCommand {
 }
 
 impl AtaCommand {
-    pub fn is_lba48(&self) -> bool {
+    #[allow(dead_code)] // will use this function later
+    pub(crate) fn is_lba48(&self) -> bool {
         match self {
             AtaCommand::AtaCommandReadDmaExt | AtaCommand::AtaCommandWriteDmaExt => true,
             _ => false,
         }
     }
 
-    pub fn is_write(&self) -> bool {
+    #[allow(dead_code)] // will use this function later
+    pub(crate) fn is_write(&self) -> bool {
         match self {
             AtaCommand::AtaCommandWriteDmaExt | AtaCommand::AtaCommandWriteDma => true,
             _ => false,
@@ -410,10 +414,10 @@ impl AtaCommand {
 }
 
 #[repr(C)]
-pub struct HbaMemory {
+pub(crate) struct HbaMemory {
     host_capability: VolatileCell<HbaCapabilities>,
     global_host_control: VolatileCell<HbaHostCont>,
-    pub interrupt_status: VolatileCell<u32>,
+    pub(crate) interrupt_status: VolatileCell<u32>,
     ports_implemented: VolatileCell<u32>,
     version: VolatileCell<u32>,
     ccc_control: VolatileCell<u32>,
@@ -596,7 +600,7 @@ impl HbaSataStatus {
 }
 
 #[repr(C)]
-struct HbaPort {
+pub(crate) struct HbaPort {
     clb: VolatileCell<PhysAddr>,
     fb: VolatileCell<PhysAddr>,
     pub is: VolatileCell<HbaPortIS>,
@@ -822,7 +826,7 @@ impl HbaPort {
 }
 
 impl HbaMemory {
-    fn port_mut(&mut self, port: usize) -> &mut HbaPort {
+    pub(crate) fn port_mut(&mut self, port: usize) -> &mut HbaPort {
         unsafe { &mut *((self as *mut Self).offset(1) as *mut HbaPort).offset(port as isize) }
     }
 }
@@ -834,14 +838,14 @@ struct AhciCommand {
 }
 
 #[derive(Debug)]
-struct AhciPortProtected {
+pub(crate) struct AhciPortProtected {
     address: VirtAddr,
     cmds: [Option<AhciCommand>; 32],
     free_cmds: usize,
 }
 
 impl AhciPortProtected {
-    fn hba_port(&mut self) -> &mut HbaPort {
+    pub(crate) fn hba_port(&mut self) -> &mut HbaPort {
         unsafe { &mut *(self.address.as_mut_ptr::<HbaPort>()) }
     }
 
@@ -889,8 +893,8 @@ impl AhciPortProtected {
 }
 
 #[derive(Debug)]
-pub struct AhciPort {
-    inner: Mutex<AhciPortProtected>,
+pub(crate) struct AhciPort {
+    pub(crate) inner: Mutex<AhciPortProtected>,
 }
 
 impl AhciPort {
@@ -918,7 +922,7 @@ impl AhciPort {
         Some(request.count * 512)
     }
 
-    pub fn read(&self, sector: usize, buffer: &mut [u8]) -> Option<usize> {
+    pub(crate) fn read(&self, sector: usize, buffer: &mut [u8]) -> Option<usize> {
         let count = (buffer.len() + 512 - 1) / 512;
         let request = Arc::new(DmaRequest::new(sector, count));
 
@@ -932,8 +936,8 @@ impl AhciPort {
     }
 }
 
-pub struct AhciProtected {
-    pub ports: [Option<Arc<AhciPort>>; 32],
+pub(crate) struct AhciProtected {
+    pub(crate) ports: [Option<Arc<AhciPort>>; 32],
     hba: VirtAddr,
 }
 
@@ -948,7 +952,7 @@ impl Clone for AhciProtected {
 
 impl AhciProtected {
     #[inline]
-    pub fn hba_mem(&self) -> &mut HbaMemory {
+    pub(crate) fn hba_mem(&self) -> &'static mut HbaMemory {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
     }
 
@@ -1085,7 +1089,7 @@ pub struct AhciDriver {
 }
 
 impl AhciDriver {
-    pub fn lock(&self) -> MutexGuard<AhciProtected> {
+    pub(crate) fn lock(&self) -> MutexGuard<AhciProtected> {
         self.inner.lock()
     }
 }
@@ -1105,6 +1109,10 @@ impl PciDeviceHandle for AhciDriver {
         }
         get_ahci().lock().start_driver(header);
     }
+}
+
+pub(crate) fn get_hba() -> &'static mut HbaMemory {
+    get_ahci().lock().hba_mem()
 }
 
 /// Returns a reference-counting pointer to the AHCI driver.

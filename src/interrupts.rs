@@ -1,5 +1,6 @@
 use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 
+use alloc::sync::Arc;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
 use x86_64::{
     instructions::interrupts,
@@ -12,7 +13,7 @@ use x86_64::{
 };
 
 use crate::{
-    ahci::get_ahci,
+    ahci::{get_ahci, get_hba},
     apic_impl::LAPIC_IDS,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
@@ -353,6 +354,19 @@ pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
 
 pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     debug!("Received AHCI interrupt: {:#?}", &frame);
+
+    // Read and write back global HBA interrupt status
+    let status = get_hba().interrupt_status.get();
+    get_hba().interrupt_status.set(status);
+
+    // Read and write back port interrupt status
+    for port in get_ahci().lock().ports.as_mut() {
+        if let Some(port) = port {
+            let port_status = port.inner.lock().hba_port().is.get();
+            port.inner.lock().hba_port().is.set(port_status);
+        }
+    }
+
     unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
 }
 
