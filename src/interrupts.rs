@@ -3,6 +3,7 @@ use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 use alloc::sync::Arc;
 use log::warn;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
+use x2apic::lapic::{xapic_base, LocalApic};
 use x86_64::{
     instructions::interrupts,
     registers::{
@@ -15,14 +16,13 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::LAPIC_IDS,
+    apic_impl::{LAPIC_IDS, raw_apic_eoi},
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    PRINTK,
+    PRINTK, get_phys_offset,
 };
 
 #[allow(unused_imports)]
 use {
-    crate::apic_impl::LOCAL_APIC,
     core::sync::atomic::{AtomicU64, Ordering},
     lazy_static::lazy_static,
     log::{debug, error, info},
@@ -111,17 +111,17 @@ pub enum IrqIndex {
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
     TICK_COUNT.fetch_add(1, Ordering::Relaxed);
     debug!("{:#?}", &TICK_COUNT.load(Ordering::Relaxed));
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 extern "x86-interrupt" fn spurious(_frame: InterruptStackFrame) {
     debug!("Received spurious interrupt");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     error!("Local APIC error; check the status for details");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
@@ -155,18 +155,15 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
 
             // send the very IPI that this handler handles to the next available CPU core on the system
             unsafe {
-                LOCAL_APIC
-                    .lock()
-                    .as_mut()
-                    .unwrap()
-                    .send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
+                let lapic = &mut *((xapic_base() + get_phys_offset()) as *mut LocalApic);
+                lapic.send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed))
             };
         } else {
             unreachable!()
         }
     }
 
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() };
+    raw_apic_eoi();
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
@@ -330,27 +327,27 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
 
 pub extern "x86-interrupt" fn pin_inta(_frame: InterruptStackFrame) {
     info!("Received IntA interrupt");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 pub extern "x86-interrupt" fn pin_intb(_frame: InterruptStackFrame) {
     info!("Received IntB interrupt");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 pub extern "x86-interrupt" fn pin_intc(_frame: InterruptStackFrame) {
     info!("Received IntC interrupt");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
     info!("Received IntD interrupt");
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
     debug!("Received PCI interrupt: {:#?}", &frame);
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
@@ -382,7 +379,7 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
         }
     }
 
-    unsafe { LOCAL_APIC.lock().as_mut().unwrap().end_of_interrupt() }
+    raw_apic_eoi();
 }
 
 #[inline(always)]

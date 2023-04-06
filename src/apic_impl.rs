@@ -1,4 +1,7 @@
+use x2apic::lapic::xapic_base;
 use x86_64::structures::paging::PageTableFlags;
+
+use crate::get_phys_offset;
 
 use {
     crate::{interrupts::IrqIndex, map_page, INTERRUPT_MODEL},
@@ -21,8 +24,6 @@ pub static LAPIC_IDS: OnceCell<Vec<u32>> = OnceCell::uninit();
 pub fn get_lapic_ids() -> impl Iterator<Item = u32> {
     LAPIC_IDS.get().unwrap().iter().map(|id| id.clone())
 }
-
-pub static LOCAL_APIC: Mutex<Option<LocalApic>> = Mutex::new(None);
 
 pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
     unsafe {
@@ -127,17 +128,25 @@ pub fn init_all_available_apics() {
     let (lapic, ioapics) = build_all_available_apics().expect("Legacy 8259 PIC not supported");
 
     unsafe {
-        *LOCAL_APIC.lock() = Some(lapic);
-        LOCAL_APIC.lock().as_mut().unwrap().enable();
 
         for mut ioapic in ioapics.into_iter() {
             ioapic.init(32);
 
             for i in 0..(255 - 32) {
-                ioapic_irq!(ioapic, i, LOCAL_APIC.lock().as_ref().unwrap().id().clone());
+                ioapic_irq!(ioapic, i, lapic.id());
             }
         }
 
         x86_64::instructions::interrupts::enable();
+    }
+}
+
+/// Writes a zero through a raw pointer to the EOI register
+/// Workaround to avoid needing to lock the Local APIC every time an attempt to signal EOI is necessary
+#[inline(always)]
+pub fn raw_apic_eoi() {
+    unsafe {
+        let base_addr = xapic_base() + get_phys_offset() + 0xb0;
+        *(base_addr as *mut u32) = 0;
     }
 }
