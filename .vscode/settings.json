@@ -10,9 +10,4 @@
         "--package",
         "runner"
     ],
-    "rust-analyzer.server.extraEnv": {
-        "RUSTUP_HOME": "/opt/rust",
-        "CARGO_HOME": "/opt/rust",
-        "PATH": "/opt/rust/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl"
-    }
 }
