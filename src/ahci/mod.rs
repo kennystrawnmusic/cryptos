@@ -966,12 +966,10 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
-            info!(
-                "AHCI: controller version {}.{}",
-                major_version, minor_version
-            );
-        }
+        info!(
+            "AHCI: controller version {}.{}",
+            major_version, minor_version
+        );
 
         let pi = hba.ports_implemented.get();
 
@@ -1071,8 +1069,11 @@ impl AhciProtected {
             for port in self.ports.iter().filter(|p| p.is_some()) {
                 if let Some(port) = port {
                     let buffer = &mut [0u8; 512];
-                    let _ = port.read(0, buffer).unwrap();
-                    info!("Read sector 0: {:?}", buffer);
+                    if let Some(_) = port.read(0, buffer) {
+                        info!("Read sector 0: {:?}", buffer);
+                    } else {
+                        warn!("Couldn't read any data")
+                    }
                 } else {
                     unreachable!()
                 }
@@ -1104,6 +1105,7 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header) {
+        // keeps restarting endlessly if I don't put this check in here
         if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
             info!("AHCI: Initializing");
             get_ahci().lock().start_driver(header);
