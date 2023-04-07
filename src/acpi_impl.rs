@@ -4,7 +4,7 @@ use aml::{
     value::Args,
     AmlName, AmlValue,
 };
-use log::debug;
+use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
 use x86_64::instructions::port::Port;
 
@@ -479,14 +479,14 @@ pub static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uninit();
 pub static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
 
 pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
-    debug!("Parsing AML");
+    info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
     let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
 
     // Properly reintroduce the size/length of the header
     let dsdt_addr = fadt.dsdt_address().unwrap();
-    debug!("DSDT address: {:#x}", dsdt_addr.clone());
+    info!("DSDT address: {:#x}", dsdt_addr.clone());
     let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
 
     let aml_test_page =
@@ -535,11 +535,8 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
 }
 
 pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
-    let mut aml_ctx = AML_CONTEXT
-        .get()
-        .clone()
-        .expect("AML context failed to initialize")
-        .write();
+    let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
+    let mut aml_ctx = aml_clone.write();
 
     if let Ok(prt) =
         PciRoutingTable::from_prt_path(&AmlName::from_str("\\_SB.PCI0._PRT").unwrap(), &mut aml_ctx)
