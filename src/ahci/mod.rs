@@ -577,7 +577,7 @@ enum HbaPortIpm {
 struct HbaSataStatus(u64);
 
 impl HbaSataStatus {
-    fn device_detection(&self) -> HbaPortDd {
+    pub(crate) fn device_detection(&self) -> HbaPortDd {
         match self.0.get_bits(0..=3) {
             0 => HbaPortDd::None,
             1 => HbaPortDd::PresentNotE,
