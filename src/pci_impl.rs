@@ -687,7 +687,6 @@ impl PciTable {
 
 pub fn register_device_driver(handle: Arc<dyn PciDeviceHandle>) {
     PCI_TABLE.lock().inner.push(PciDevice { handle });
-    PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
 }
 
 /// Lookup and initialize all PCI devices.
@@ -742,7 +741,8 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
                     Vendor::new(header.vendor_id as u32),
                     DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32),
                 ) {
-                    driver.handle.start(&mut header)
+                    driver.handle.start(&mut header);
+                    PCI_DRIVER_COUNT.fetch_add(1, Ordering::Relaxed);
                 }
             }
         }

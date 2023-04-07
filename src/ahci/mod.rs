@@ -1068,15 +1068,15 @@ impl AhciProtected {
             });
 
             // Test code
-            // for port in self.ports.iter().filter(|p| p.is_some()) {
-            //     if let Some(port) = port {
-            //         let buffer = &mut [0u8; 512];
-            //         let _ = port.read(0, buffer).unwrap();
-            //         info!("Read sector 0: {:?}", buffer);
-            //     } else {
-            //         unreachable!()
-            //     }
-            // }
+            for port in self.ports.iter().filter(|p| p.is_some()) {
+                if let Some(port) = port {
+                    let buffer = &mut [0u8; 512];
+                    let _ = port.read(0, buffer).unwrap();
+                    info!("Read sector 0: {:?}", buffer);
+                } else {
+                    unreachable!()
+                }
+            }
         } else {
             panic!("AHCI: Not a normal header")
         }
@@ -1104,10 +1104,10 @@ impl PciDeviceHandle for AhciDriver {
     }
 
     fn start(&self, header: &mut pcics::Header) {
-        if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+        if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
             info!("AHCI: Initializing");
+            get_ahci().lock().start_driver(header);
         }
-        get_ahci().lock().start_driver(header);
     }
 }
 
@@ -1116,13 +1116,13 @@ pub(crate) fn get_hba<'a>() -> &'a mut HbaMemory {
 }
 
 /// Returns a reference-counting pointer to the AHCI driver.
-pub fn get_ahci<'a>() -> &'a Arc<AhciDriver> {
+pub(crate) fn get_ahci<'a>() -> &'a Arc<AhciDriver> {
     DRIVER
         .get()
         .expect("Attempted to get the AHCI driver before it was initialized")
 }
 
-pub fn ahci_init() {
+pub(crate) fn ahci_init() {
     // Initialize the AHCI driver instance.
     DRIVER.call_once(|| {
         const EMPTY: Option<Arc<AhciPort>> = None; // To satisfy the Copy trait bound when the AHCI creating data.

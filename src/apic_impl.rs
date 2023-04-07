@@ -141,6 +141,7 @@ pub fn init_all_available_apics() {
 }
 
 /// Workaround for getting a reference to the local APIC without needing to lock it
+/// 
 /// Uses raw pointer but is abstracted behind the scenes
 #[inline(always)]
 pub fn get_active_lapic<'a>() -> &'a mut LocalApic {

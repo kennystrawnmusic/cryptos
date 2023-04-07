@@ -493,6 +493,8 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
         Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
     let aml_virt = aml_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
 
+    info!("Virtual DSDT address: {:#x}", &aml_virt);
+
     map_page!(
         dsdt_addr,
         aml_virt,

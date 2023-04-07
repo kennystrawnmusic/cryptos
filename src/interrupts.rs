@@ -349,7 +349,7 @@ pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
-    debug!("Received AHCI interrupt: {:#?}", &frame);
+    info!("Received AHCI interrupt: {:#?}", &frame);
 
     // Source: https://wiki.osdev.org/AHCI#IRQ_handler
 
