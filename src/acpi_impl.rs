@@ -6,7 +6,7 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
-use x86_64::instructions::port::Port;
+use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
 
 use crate::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
 
@@ -54,7 +54,6 @@ impl AcpiHandler for KernelAcpi {
         size: usize,
     ) -> PhysicalMapping<Self, T> {
         let virt = physical_address + get_phys_offset() as usize;
-
         // now that we handle the PageAlreadyMapped and ParentEntryHugePage errors properly, i.e. without panicking
         map_page!(
             physical_address,

@@ -1,5 +1,5 @@
 use x2apic::lapic::xapic_base;
-use x86_64::structures::paging::PageTableFlags;
+use x86_64::structures::paging::{PageTableFlags, FrameAllocator};
 
 use crate::get_phys_offset;
 

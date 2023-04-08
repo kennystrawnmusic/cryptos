@@ -67,7 +67,7 @@ unsafe impl FrameAllocator<Size4KiB> for Falloc {
 macro_rules! map_page {
     ($phys:expr, $virt:expr, $size:ty, $flags:expr) => {
         // macros expect everything to be imported each time they're used in a new file, so best to hardcode paths
-        let frame = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys as u64));
+        let frame = $crate::FRAME_ALLOCATOR.get().unwrap().lock().allocate_frame().expect("Out of memory");
         let page = x86_64::structures::paging::Page::<$size>::containing_address(x86_64::VirtAddr::new($virt as u64));
 
         x86_64::instructions::interrupts::without_interrupts(|| {
