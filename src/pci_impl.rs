@@ -9,7 +9,7 @@ use core::{
 use acpi::AcpiTables;
 use pcics::header::{ClassCode, InterruptPin};
 use x86_64::{
-    structures::paging::{Mapper, Page, Size4KiB, FrameAllocator},
+    structures::paging::{FrameAllocator, Mapper, Page, Size4KiB},
     VirtAddr,
 };
 
