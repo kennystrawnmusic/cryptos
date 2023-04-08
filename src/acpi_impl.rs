@@ -53,8 +53,7 @@ impl AcpiHandler for KernelAcpi {
         physical_address: usize,
         size: usize,
     ) -> PhysicalMapping<Self, T> {
-        let virt = physical_address + get_phys_offset() as usize;
-        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(virt as u64));
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(physical_address as u64 + get_phys_offset()));
         let virtual_address = test.start_address().as_u64();
 
         // now that we handle the PageAlreadyMapped and ParentEntryHugePage errors properly, i.e. without panicking
