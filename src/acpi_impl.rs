@@ -61,7 +61,7 @@ impl AcpiHandler for KernelAcpi {
             physical_address,
             virtual_address,
             Size4KiB,
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_CACHE | PageTableFlags::WRITE_THROUGH
         );
 
         PhysicalMapping::new(
