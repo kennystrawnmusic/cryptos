@@ -52,31 +52,31 @@ fn main() {
 }
 
 fn download_ovmf() {
-    let mut url_cmd = Command::new(env!("CARGO_BIN_FILE_OVMF_PREBUILT_ovmf-prebuilt"));
+    let mut download_cmd = Command::new(env!("CARGO_BIN_FILE_OVMF_PREBUILT_ovmf-prebuilt"));
 
-    let _ = url_cmd.output().unwrap_or_else(|e| {
+    let _ = download_cmd.output().unwrap_or_else(|e| {
         panic!(
-            "Error attempting to parse URL of latest version of OVMF: {:#?}",
+            "Error attempting to download and extract latest version of OVMF: {:#?}",
             e
         )
     });
 
-    let mut download_cmd = Command::new("cp");
+    let mut copy_cmd = Command::new("cp");
 
-    let download_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let dest_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
 
-    download_cmd
+    copy_cmd
         .arg("target/download/extracted/usr/share/edk2.git/ovmf-x64/OVMF-pure-efi.fd")
-        .arg(download_dir.as_os_str());
+        .arg(dest_dir.as_os_str());
 
-    let download_status = download_cmd.status().unwrap();
+    let copy_status = copy_cmd.status().unwrap();
 
-    if !download_status.success() {
+    if !copy_status.success() {
         println!(
-            "Failed to retrieve OVMF: {:#?}",
-            &download_status.code().clone().unwrap()
+            "Failed to copy OVMF to crate root: {:#?}",
+            &copy_status.code().clone().unwrap()
         );
-        exit(download_status.code().clone().unwrap());
+        exit(copy_status.code().clone().unwrap());
     }
 }
 
