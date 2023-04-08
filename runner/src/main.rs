@@ -43,8 +43,27 @@ fn main() {
                     run_qemu(kdir, &out_path);
                 }
             }
+            "--write" => {
+                // Workaround to satisfy the borrow checker
+                let args = args().collect::<Vec<_>>();
+                let dev = args.get(2).unwrap_or_else(|| {
+                    eprintln!("Error: no device specified");
+                    exit(1);
+                });
+                
+                let mut write_cmd = Command::new("sudo");
+                write_cmd.arg("dd").arg("if=cryptos.img").arg(format!("of={}", dev));
+
+                match write_cmd.status() {
+                    Ok(_) => println!("Image successfully written to {}", dev),
+                    Err(e) => {
+                        eprintln!("Error attempting to write to {}: {}", dev, e);
+                        exit(1);
+                    }
+                }
+            }
             _ => {
-                println!("Unknown command line argument specified. Acceptable options are \"--boot\" and \"--debug\"");
+                println!("Unknown command line argument specified. Acceptable options are \"--boot\" and \"--write\"");
                 exit(1)
             }
         }
