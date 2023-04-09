@@ -401,6 +401,7 @@ dependencies = [
  "pcics",
  "raw-cpuid",
  "redox_syscall 0.3.4",
+ "rsdp",
  "sha3",
  "slab_allocator_rs",
  "spin 0.9.4",
