@@ -71,7 +71,7 @@ impl AcpiHandler for KernelAcpi {
 
         PhysicalMapping::new(
             physical_address,
-            NonNull::new(virtual_address as *mut _).unwrap(), //page must exist
+            NonNull::new(virtual_address as *mut T).unwrap(), //page must exist
             size,
             page_align(size as u64, virtual_address),
             Self,
