@@ -121,6 +121,10 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("-d")
         .arg("int");
 
+    if cfg!(target_os = "linux") {
+        uefi_cmd.arg("-enable-kvm");
+    }
+
     uefi_cmd.current_dir(&kdir);
 
     let uefi_status = uefi_cmd.status().unwrap();
