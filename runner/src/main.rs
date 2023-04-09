@@ -50,12 +50,9 @@ fn main() {
                     eprintln!("Error: no device specified");
                     exit(1);
                 });
-
+                
                 let mut write_cmd = Command::new("sudo");
-                write_cmd
-                    .arg("dd")
-                    .arg("if=cryptos.img")
-                    .arg(format!("of={}", dev));
+                write_cmd.arg("dd").arg("if=cryptos.img").arg(format!("of={}", dev));
 
                 match write_cmd.status() {
                     Ok(_) => println!("Image successfully written to {}", dev),

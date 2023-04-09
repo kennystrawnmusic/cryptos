@@ -74,7 +74,6 @@ use pcics::{
     header::{Header, HeaderType, InterruptPin},
 };
 use raw_cpuid::CpuId;
-use rsdp::Rsdp;
 use sha3::digest::typenum::U654;
 use spin::{Mutex, RwLock};
 use x86_64::{
@@ -296,35 +295,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         &boot_info.memory_regions.first().unwrap() as *const _ as usize
     );
 
-    let rsdp_map = unsafe {
-        KernelAcpi::map_physical_region::<Rsdp>(
-            &KernelAcpi,
-            rsdp.clone() as usize,
-            core::mem::size_of::<SdtHeader>(),
-        )
-    };
-    let rsdt_rev = rsdp_map.revision().clone();
-
-    info!("ACPI revision: {:#?}", &rsdt_rev);
-
-    let mut tables = if rsdt_rev == 0 {
-        // Classic RSDT
-        let rsdt_addr = rsdp_map.rsdt_address().clone();
-
-        unsafe {
-            info!("RSDT address: {:#x}", rsdt_addr);
-            AcpiTables::from_rsdt(KernelAcpi, rsdt_rev, rsdt_addr as usize).unwrap()
-        }
-    } else {
-        // XSDT
-        let xsdt_addr = rsdp_map.xsdt_address().clone();
-
-        unsafe {
-            info!("XSDT address: {:#x}", xsdt_addr);
-            AcpiTables::from_rsdt(KernelAcpi, rsdt_rev, xsdt_addr as usize).unwrap()
-        }
-    };
-
+    let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
     let mcfg = match PciConfigRegions::new(&tables) {
         Ok(mcfg) => Some(mcfg),
         Err(_) => None,
