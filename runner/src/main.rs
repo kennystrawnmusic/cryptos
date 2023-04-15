@@ -1,12 +1,46 @@
 use bootloader::{BootConfig, UefiBoot};
 use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
-    env::args,
+    env::{args, set_var},
     path::Path,
     process::{exit, Command},
 };
 
 fn main() {
+    let mut ubuntu_install_deps = Command::new("which");
+    ubuntu_install_deps.arg("apt-get");
+
+    if let Ok(_) = ubuntu_install_deps.status() {
+        let mut does_dep_1_already_exist = Command::new("which");
+        does_dep_1_already_exist.arg("7z");
+
+        if let Err(_) = does_dep_1_already_exist.status() {
+            let mut does_dep_2_already_exist = Command::new("which");
+            does_dep_2_already_exist.arg("gcc");
+
+            if let Err(_) = does_dep_2_already_exist.status() {
+                let mut does_dep_3_already_exist = Command::new("which");
+                does_dep_3_already_exist.arg("qemu-system-x86_64");
+
+                if let Err(_) = does_dep_3_already_exist.status() {
+                    let mut ubuntu_install_deps_inner = Command::new("sudo");
+                    ubuntu_install_deps_inner
+                        .arg("apt-get")
+                        .arg("-y")
+                        .arg("install")
+                        .arg("build-essential")
+                        .arg("qemu-system-x86")
+                        .arg("p7zip-full");
+
+                    let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                        eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                        exit(e.raw_os_error().unwrap());
+                    });
+                }
+            }
+        }
+    }
+
     let kernel_path = Path::new(env!("CARGO_BIN_FILE_CRYPTOS_cryptos"));
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
@@ -112,12 +146,15 @@ fn download_ovmf() {
 }
 
 fn run_qemu(kdir: &Path, out_path: &Path) {
+    // Workaround to get this to work from the Snap version of VS Code
+    set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+
     let mut uefi_cmd = Command::new("qemu-system-x86_64");
 
     if cfg!(target_os = "linux") {
         uefi_cmd.arg("-enable-kvm");
     }
-    
+
     uefi_cmd
         .arg("-drive")
         .arg(format!(
