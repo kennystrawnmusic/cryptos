@@ -8,6 +8,7 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
+use raw_cpuid::CpuId;
 use rsdp::Rsdp;
 use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
 
@@ -553,8 +554,14 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     };
 
     if let Ok(()) = aml_ctx.initialize_objects() {
+        let aml_stream = if let Some(_) = CpuId::new().get_hypervisor_info() {
+            raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1
+        } else {
+            raw_table
+        };
+
         if let Ok(()) =
-            aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
+            aml_ctx.parse_table(&aml_stream)
         {
             // Make sure AML knows that the APIC, not the legacy PIC, is what's being used
             let _ = aml_ctx.invoke_method(
