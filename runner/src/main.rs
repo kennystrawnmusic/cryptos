@@ -16,6 +16,7 @@ fn main() {
     let mut c = BootConfig::default();
     c.frame_buffer = fb;
 
+    // Suppress excessive output in release mode
     if cfg!(opt_level = "0") {
         c.log_level = LevelFilter::Trace;
     } else {
