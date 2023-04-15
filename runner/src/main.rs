@@ -13,18 +13,18 @@ fn main() {
     if let Ok(_) = ubuntu_install_deps.status() {
         let mut ubuntu_install_deps_inner = Command::new("sudo");
 
-        let mut does_dep_1_already_exist = Command::new("which");
-        does_dep_1_already_exist.arg("7z");
+        let mut does_dep_1_exist = Command::new("which");
+        does_dep_1_exist.arg("7z");
 
-        if let Err(_) = does_dep_1_already_exist.status() {
-            let mut does_dep_2_already_exist = Command::new("which");
-            does_dep_2_already_exist.arg("gcc");
+        if let Err(_) = does_dep_1_exist.status() {
+            let mut does_dep_2_exist = Command::new("which");
+            does_dep_2_exist.arg("gcc");
 
-            if let Err(_) = does_dep_2_already_exist.status() {
-                let mut does_dep_3_already_exist = Command::new("which");
-                does_dep_3_already_exist.arg("qemu-system-x86_64");
+            if let Err(_) = does_dep_2_exist.status() {
+                let mut does_dep_3_exist = Command::new("which");
+                does_dep_3_exist.arg("qemu-system-x86_64");
 
-                if let Err(_) = does_dep_3_already_exist.status() {
+                if let Err(_) = does_dep_3_exist.status() {
                     ubuntu_install_deps_inner
                         .arg("apt-get")
                         .arg("-y")
