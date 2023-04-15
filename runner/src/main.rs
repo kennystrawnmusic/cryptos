@@ -151,14 +151,6 @@ fn main() {
 
 fn download_ovmf() {
     let mut download_cmd = Command::new(env!("CARGO_BIN_FILE_OVMF_PREBUILT_ovmf-prebuilt"));
-    let mut extract_cmd = Command::new("7z");
-
-    extract_cmd.arg("--help");
-
-    let _ = extract_cmd.output().unwrap_or_else(|_| {
-        eprintln!("7z not found; please install p7zip and try again");
-        exit(1);
-    });
 
     let _ = download_cmd.output().unwrap_or_else(|e| {
         panic!(
@@ -180,7 +172,7 @@ fn download_ovmf() {
     if !copy_status.success() {
         println!(
             "Failed to copy OVMF to crate root: {:#?}",
-            &copy_status.code().clone().unwrap()
+            &copy_status.clone()
         );
         exit(copy_status.code().clone().unwrap());
     }
