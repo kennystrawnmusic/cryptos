@@ -11,6 +11,8 @@ fn main() {
     ubuntu_install_deps.arg("apt-get");
 
     if let Ok(_) = ubuntu_install_deps.status() {
+        let mut ubuntu_install_deps_inner = Command::new("sudo");
+
         let mut does_dep_1_already_exist = Command::new("which");
         does_dep_1_already_exist.arg("7z");
 
@@ -23,7 +25,6 @@ fn main() {
                 does_dep_3_already_exist.arg("qemu-system-x86_64");
 
                 if let Err(_) = does_dep_3_already_exist.status() {
-                    let mut ubuntu_install_deps_inner = Command::new("sudo");
                     ubuntu_install_deps_inner
                         .arg("apt-get")
                         .arg("-y")
@@ -36,7 +37,32 @@ fn main() {
                         eprintln!("Error attempting to install dependencies: {:#?}", &e);
                         exit(e.raw_os_error().unwrap());
                     });
+                } else {
+                    // have QEMU but don't have the other 2 dependencies
+                    ubuntu_install_deps_inner
+                        .arg("apt-get")
+                        .arg("-y")
+                        .arg("install")
+                        .arg("build-essential")
+                        .arg("p7zip-full");
+
+                    let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                        eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                        exit(e.raw_os_error().unwrap());
+                    });
                 }
+            } else {
+                // have QEMU and GCC but don't have p7zip
+                ubuntu_install_deps_inner
+                    .arg("apt-get")
+                    .arg("-y")
+                    .arg("install")
+                    .arg("p7zip-full");
+
+                let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                    eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                    exit(e.raw_os_error().unwrap());
+                });
             }
         }
     }
