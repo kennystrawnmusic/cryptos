@@ -79,7 +79,7 @@ fn download_ovmf() {
 
     extract_cmd.arg("--help");
 
-    let _ = extract_cmd.output().unwrap_or_else(|e| {
+    let _ = extract_cmd.output().unwrap_or_else(|_| {
         eprintln!("7z not found; please install p7zip and try again");
         exit(1);
     });
