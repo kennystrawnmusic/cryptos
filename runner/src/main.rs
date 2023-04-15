@@ -114,6 +114,10 @@ fn download_ovmf() {
 fn run_qemu(kdir: &Path, out_path: &Path) {
     let mut uefi_cmd = Command::new("qemu-system-x86_64");
 
+    if cfg!(target_os = "linux") {
+        uefi_cmd.arg("-enable-kvm");
+    }
+    
     uefi_cmd
         .arg("-drive")
         .arg(format!(
@@ -132,10 +136,6 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("4G")
         .arg("-d")
         .arg("int");
-
-    if cfg!(target_os = "linux") {
-        uefi_cmd.arg("-enable-kvm");
-    }
 
     uefi_cmd.current_dir(&kdir);
 
