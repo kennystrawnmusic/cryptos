@@ -215,7 +215,7 @@ dependencies = [
 [[package]]
 name = "bootloader"
 version = "0.11.3"
-source = "git+https://github.com/rust-osdev/bootloader#63340a3dfc30e73ca8ea834ed0ac152b18056dd8"
+source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
 dependencies = [
  "anyhow",
  "async-process",
@@ -233,7 +233,7 @@ dependencies = [
 [[package]]
 name = "bootloader-boot-config"
 version = "0.11.3"
-source = "git+https://github.com/rust-osdev/bootloader#63340a3dfc30e73ca8ea834ed0ac152b18056dd8"
+source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
 dependencies = [
  "serde",
 ]
@@ -241,7 +241,7 @@ dependencies = [
 [[package]]
 name = "bootloader-x86_64-common"
 version = "0.11.3"
-source = "git+https://github.com/rust-osdev/bootloader#63340a3dfc30e73ca8ea834ed0ac152b18056dd8"
+source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
 dependencies = [
  "bootloader-boot-config",
  "bootloader_api",
@@ -261,7 +261,7 @@ dependencies = [
 [[package]]
 name = "bootloader_api"
 version = "0.11.3"
-source = "git+https://github.com/rust-osdev/bootloader#63340a3dfc30e73ca8ea834ed0ac152b18056dd8"
+source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
 
 [[package]]
 name = "buddy_system_allocator"
