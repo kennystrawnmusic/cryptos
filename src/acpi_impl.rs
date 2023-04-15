@@ -1,3 +1,5 @@
+use core::mem::size_of;
+
 use acpi::{fadt::Fadt, sdt::SdtHeader};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
@@ -6,6 +8,7 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
+use rsdp::Rsdp;
 use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
 
 use crate::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
@@ -46,6 +49,37 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 
 #[derive(Clone)]
 pub struct KernelAcpi;
+
+impl KernelAcpi {
+    pub(crate) fn rsdp_map(addr: usize) -> PhysicalMapping<Self, Rsdp> {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
+            addr as u64 + unsafe { get_phys_offset() },
+        ));
+        
+        let virt = test.start_address().as_u64();
+        let size = core::mem::size_of::<Rsdp>();
+
+        map_page!(
+            addr,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+
+        unsafe {
+            PhysicalMapping::new(
+                addr,
+                NonNull::new(virt as *mut Rsdp).unwrap(),
+                size,
+                page_align(size as u64, virt),
+                Self,
+            )
+        }
+    }
+}
 
 impl AcpiHandler for KernelAcpi {
     unsafe fn map_physical_region<T>(

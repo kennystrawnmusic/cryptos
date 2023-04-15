@@ -32,6 +32,7 @@ noto-sans-mono-bitmap = "0.2.0"
 pcics = "0.3.1"
 raw-cpuid = "10.6.0"
 redox_syscall = "0.3.4"
+rsdp = "2.0.0"
 sha3 = { version = "0.10.6", default-features = false }
 slab_allocator_rs = "1.0.1"
 spin = "0.9.4"
