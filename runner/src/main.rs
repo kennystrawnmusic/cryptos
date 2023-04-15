@@ -33,10 +33,15 @@ fn main() {
                         .arg("qemu-system-x86")
                         .arg("p7zip-full");
 
-                    let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                    let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
                         eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                        exit(e.raw_os_error().unwrap());
+                        exit(1);
                     });
+
+                    if !status.success() {
+                        eprintln!("Error attempting to install dependencies: {:#?}", &status);
+                        exit(status.code().unwrap());
+                    }
                 } else {
                     // have QEMU but don't have the other 2 dependencies
                     ubuntu_install_deps_inner
@@ -46,10 +51,15 @@ fn main() {
                         .arg("build-essential")
                         .arg("p7zip-full");
 
-                    let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                    let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
                         eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                        exit(e.raw_os_error().unwrap());
+                        exit(1);
                     });
+
+                    if !status.success() {
+                        eprintln!("Error attempting to install dependencies: {:#?}", &status);
+                        exit(status.code().unwrap());
+                    }
                 }
             } else {
                 // have QEMU and GCC but don't have p7zip
@@ -59,10 +69,15 @@ fn main() {
                     .arg("install")
                     .arg("p7zip-full");
 
-                let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
                     eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                    exit(e.raw_os_error().unwrap());
+                    exit(1);
                 });
+
+                if !status.success() {
+                    eprintln!("Error attempting to install dependencies: {:#?}", &status);
+                    exit(status.code().unwrap());
+                }
             }
         }
     }
