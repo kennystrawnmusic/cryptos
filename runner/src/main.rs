@@ -51,19 +51,19 @@ fn main() {
                         exit(e.raw_os_error().unwrap());
                     });
                 }
-            } else {
-                // have QEMU and GCC but don't have p7zip
-                ubuntu_install_deps_inner
-                    .arg("apt-get")
-                    .arg("-y")
-                    .arg("install")
-                    .arg("p7zip-full");
-
-                let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
-                    eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                    exit(e.raw_os_error().unwrap());
-                });
             }
+        } else {
+            // have QEMU and GCC but don't have p7zip
+            ubuntu_install_deps_inner
+                .arg("apt-get")
+                .arg("-y")
+                .arg("install")
+                .arg("p7zip-full");
+
+            let _ = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                exit(e.raw_os_error().unwrap());
+            });
         }
     }
 
