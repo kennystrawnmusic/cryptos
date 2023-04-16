@@ -295,43 +295,24 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         &boot_info.memory_regions.first().unwrap() as *const _ as usize
     );
 
-    let rsdp_map = KernelAcpi::rsdp_map(rsdp as usize);
-    let rev = rsdp_map.revision();
-
-    let tables = if rev == 0 {
-        // Legacy RSDT
-        let rsdt = rsdp_map.rsdt_address();
-
-        info!("RSDT address: {:#x?}", &rsdt);
-        unsafe {AcpiTables::from_rsdt(KernelAcpi, rev, rsdt as usize)}
-    } else {
-        // XSDT
-        let xsdt = rsdp_map.xsdt_address();
-
-        info!("XSDT address: {:#x?}", &xsdt);
-        unsafe {AcpiTables::from_rsdt(KernelAcpi, rev, xsdt as usize)}
+    let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
+    let mcfg = match PciConfigRegions::new(&tables) {
+        Ok(mcfg) => Some(mcfg),
+        Err(_) => None,
     };
 
-    // let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
-    if let Ok(mut tables) = tables {
-        let mcfg = match PciConfigRegions::new(&tables) {
-            Ok(mcfg) => Some(mcfg),
-            Err(_) => None,
-        };
+    let interrupts = tables.platform_info().unwrap().interrupt_model;
 
-        let interrupts = tables.platform_info().unwrap().interrupt_model;
+    INTERRUPT_MODEL.get_or_init(move || interrupts);
+    PCI_CONFIG.get_or_init(move || mcfg.clone());
 
-        INTERRUPT_MODEL.get_or_init(move || interrupts);
-        PCI_CONFIG.get_or_init(move || mcfg.clone());
+    debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-        debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
+    info!("TLS template: {:#x?}", boot_info.tls_template);
+    debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
 
-        info!("TLS template: {:#x?}", boot_info.tls_template);
-        debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
-
-        ahci_init();
-        pci_impl::init(&mut tables);
-    }
+    ahci_init();
+    pci_impl::init(&mut tables);
 
     loop {
         unsafe {
