@@ -488,12 +488,12 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
-    let fadt = unsafe { &mut tables.get_sdt::<Fadt>(Signature::FADT).unwrap().unwrap() };
+    let fadt = &mut tables.find_table::<Fadt>().unwrap();
 
     // Properly reintroduce the size/length of the header
     let dsdt_addr = fadt.dsdt_address().unwrap();
     info!("DSDT address: {:#x}", dsdt_addr.clone());
-    let dsdt_len = tables.dsdt.as_ref().unwrap().length.clone() as usize;
+    let dsdt_len = tables.dsdt().as_ref().unwrap().length.clone() as usize;
 
     let aml_test_page =
         Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));

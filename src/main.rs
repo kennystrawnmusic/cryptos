@@ -35,7 +35,7 @@ use acpi::{
     AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
     PhysicalMapping, PlatformInfo, RsdpError,
 };
-use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec, alloc::Global};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
     value::Args,
@@ -181,10 +181,10 @@ pub unsafe fn get_phys_offset() -> u64 {
     PHYS_OFFSET.get().clone().unwrap().clone()
 }
 
-pub static INTERRUPT_MODEL: OnceCell<InterruptModel> = OnceCell::uninit();
-pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions>> = OnceCell::uninit();
+pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();
+pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions<Global>>> = OnceCell::uninit();
 
-pub fn get_mcfg() -> Option<PciConfigRegions> {
+pub fn get_mcfg() -> &'static Option<PciConfigRegions<'static, Global>> {
     PCI_CONFIG.get().clone().unwrap().clone()
 }
 
@@ -296,23 +296,24 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     );
 
     let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
-    let mcfg = match PciConfigRegions::new(&tables) {
+    let mcfg = match PciConfigRegions::new_in(&tables, &Global) {
         Ok(mcfg) => Some(mcfg),
         Err(_) => None,
     };
 
-    let interrupts = tables.platform_info().unwrap().interrupt_model;
+    if let Ok(platform_info) = PlatformInfo::new_in(&tables, &Global) {
+        let interrupts = platform_info.interrupt_model;
 
-    INTERRUPT_MODEL.get_or_init(move || interrupts);
-    PCI_CONFIG.get_or_init(move || mcfg.clone());
+        INTERRUPT_MODEL.get_or_init(move || interrupts);
+        PCI_CONFIG.get_or_init(move || mcfg);
 
-    debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
+        debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-    info!("TLS template: {:#x?}", boot_info.tls_template);
-    debug!("PCI Configuration Regions: {:#x?}", get_mcfg());
+        info!("TLS template: {:#x?}", boot_info.tls_template);
 
-    ahci_init();
-    pci_impl::init(&mut tables);
+        ahci_init();
+        pci_impl::init(&mut tables);
+    }
 
     loop {
         unsafe {
