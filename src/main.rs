@@ -316,7 +316,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 pci_impl::init(&mut tables);
             }
         }
-        Err(e) => error!("Failed to parse the ACPI tables: {:#?}", e),
+        Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
 
     loop {
