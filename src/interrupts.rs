@@ -141,8 +141,10 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
 
     if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
-
         ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
+
+        // get the ball rolling
+        unsafe { get_active_lapic().send_ipi(100, LAPIC_IDS.get().unwrap()[1]) };
     } else {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = LAPIC_IDS.get().unwrap().iter().cycle();
