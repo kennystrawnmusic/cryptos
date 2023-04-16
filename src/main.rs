@@ -35,7 +35,7 @@ use acpi::{
     AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
     PhysicalMapping, PlatformInfo, RsdpError,
 };
-use alloc::{boxed::Box, format, string::String, sync::Arc, vec::Vec, alloc::Global};
+use alloc::{alloc::Global, boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
     value::Args,
@@ -295,24 +295,28 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         &boot_info.memory_regions.first().unwrap() as *const _ as usize
     );
 
-    let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
-    let mcfg = match PciConfigRegions::new_in(&tables, &Global) {
-        Ok(mcfg) => Some(mcfg),
-        Err(_) => None,
-    };
+    match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize) } {
+        Ok(mut tables) => {
+            let mcfg = match PciConfigRegions::new_in(&tables, &Global) {
+                Ok(mcfg) => Some(mcfg),
+                Err(_) => None,
+            };
 
-    if let Ok(platform_info) = PlatformInfo::new_in(&tables, &Global) {
-        let interrupts = platform_info.interrupt_model;
+            if let Ok(platform_info) = PlatformInfo::new_in(&tables, &Global) {
+                let interrupts = platform_info.interrupt_model;
 
-        INTERRUPT_MODEL.get_or_init(move || interrupts);
-        PCI_CONFIG.get_or_init(move || mcfg);
+                INTERRUPT_MODEL.get_or_init(move || interrupts);
+                PCI_CONFIG.get_or_init(move || mcfg);
 
-        debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
+                debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-        info!("TLS template: {:#x?}", boot_info.tls_template);
+                info!("TLS template: {:#x?}", boot_info.tls_template);
 
-        ahci_init();
-        pci_impl::init(&mut tables);
+                ahci_init();
+                pci_impl::init(&mut tables);
+            }
+        }
+        Err(e) => error!("Failed to parse the ACPI tables: {:#?}", e),
     }
 
     loop {
