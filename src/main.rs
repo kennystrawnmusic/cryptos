@@ -312,13 +312,13 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         let rsdt = rsdp_map.rsdt_address();
 
         info!("RSDT address: {:#x?}", &rsdt);
-        unsafe {AcpiTables::from_rsdt(KernelAcpi, rev, rsdt as usize)}
+        unsafe { AcpiTables::from_rsdt(KernelAcpi, rev, rsdt as usize) }
     } else {
         // XSDT
         let xsdt = rsdp_map.xsdt_address();
 
         info!("XSDT address: {:#x?}", &xsdt);
-        unsafe {AcpiTables::from_rsdt(KernelAcpi, rev, xsdt as usize)}
+        unsafe { AcpiTables::from_rsdt(KernelAcpi, rev, xsdt as usize) }
     };
 
     // let mut tables = unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize).unwrap() };
