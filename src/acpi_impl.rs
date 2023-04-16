@@ -12,10 +12,7 @@ use raw_cpuid::CpuId;
 use rsdp::Rsdp;
 use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
 
-use crate::{
-    interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    OEM_ID,
-};
+use crate::{interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ}, OEM_ID};
 
 use {
     crate::{get_phys_offset, map_page},
@@ -59,7 +56,7 @@ impl KernelAcpi {
         let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
             addr as u64 + unsafe { get_phys_offset() },
         ));
-
+        
         let virt = test.start_address().as_u64();
         let size = core::mem::size_of::<Rsdp>();
 
@@ -550,9 +547,11 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     );
 
     let raw_table = unsafe {
-        if OEM_ID.get().unwrap().contains("ALASKA") {
-            // BioStar
-            core::slice::from_raw_parts_mut(aml_virt as *mut u8, dsdt_len.clone())
+        if OEM_ID.get().unwrap().contains("ALASKA") { // BioStar
+            core::slice::from_raw_parts_mut(
+                aml_virt as *mut u8,
+                dsdt_len.clone(),
+            )
         } else {
             core::slice::from_raw_parts_mut(
                 aml_virt as *mut u8,
@@ -562,14 +561,15 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     };
 
     if let Ok(()) = aml_ctx.initialize_objects() {
-        let aml_stream = if OEM_ID.get().unwrap().contains("ALASKA") {
-            // BioStar
+        let aml_stream = if OEM_ID.get().unwrap().contains("ALASKA") { // BioStar
             raw_table
         } else {
             raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1
         };
 
-        if let Ok(()) = aml_ctx.parse_table(&aml_stream) {
+        if let Ok(()) =
+            aml_ctx.parse_table(&aml_stream)
+        {
             // Make sure AML knows that the APIC, not the legacy PIC, is what's being used
             let _ = aml_ctx.invoke_method(
                 &AmlName::from_str("\\_PIC").unwrap(),
