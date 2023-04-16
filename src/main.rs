@@ -231,6 +231,8 @@ pub const TLS_TEMPLATE_SIZE: u64 = 0x600_0000; //100MB; increasing later as app 
 
 entry_point!(maink, config = &CONFIG);
 
+pub static OEM_ID: OnceCell<String> = OnceCell::uninit();
+
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
     let offset = VirtAddr::new(
@@ -297,6 +299,13 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     let rsdp_map = KernelAcpi::rsdp_map(rsdp as usize);
     let rev = rsdp_map.revision();
+
+    let rsdp_clone = rsdp_map.clone();
+    let oem_id = rsdp_clone.oem_id();
+
+    OEM_ID.get_or_init(move || String::from(oem_id));
+
+    info!("OEM ID: {:#?}", rsdp_map.oem_id());
 
     let tables = if rev == 0 {
         // Legacy RSDT
