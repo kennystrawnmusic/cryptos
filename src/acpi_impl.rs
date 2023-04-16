@@ -557,7 +557,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
         let aml_stream = if let Some(_) = CpuId::new().get_hypervisor_info() {
             raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1
         } else {
-            raw_table
+            raw_table.split_at_mut(core::mem::size_of::<SdtHeader>() - 1).1
         };
 
         if let Ok(()) =
