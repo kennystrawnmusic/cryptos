@@ -302,9 +302,10 @@ fn is_snap() -> Option<bool> {
             is_vscode_snap.stderr(Stdio::null());
 
             if let Ok(status) = &is_vscode_snap.status() {
-                let output = is_vscode_snap.output().unwrap();
                 if status.success() {
+                    let output = is_vscode_snap.output().unwrap();
                     let full_path = String::from_utf8_lossy(&output.stdout);
+                    
                     if full_path.contains("/snap") {
                         Some(true)
                     } else {
