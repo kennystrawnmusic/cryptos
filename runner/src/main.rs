@@ -70,7 +70,7 @@ fn main() {
                 // Workaround to satisfy the borrow checker
                 let args = args().collect::<Vec<_>>();
                 let dev = args.get(2).unwrap_or_else(|| {
-                    eprintln!("Error: no device specified");
+                    eprintln!("Must specify a device to write to");
                     exit(1);
                 });
 
