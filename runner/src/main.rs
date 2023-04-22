@@ -156,9 +156,9 @@ fn install_arch_deps() {
         } else {
             // have QEMU and GCC but don't have p7zip
             arch_install_deps
-                .arg("apt-get")
-                .arg("-y")
-                .arg("install")
+                .arg("pacman")
+                .arg("--noconfirm")
+                .arg("-S")
                 .arg("p7zip");
 
             let status = arch_install_deps.status().unwrap_or_else(|e| {
