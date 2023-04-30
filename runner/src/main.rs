@@ -33,10 +33,15 @@ fn main() {
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
 
-    let fb = FrameBuffer::default();
+    let mut fb_phys = FrameBuffer::default();
+    fb_phys.minimum_framebuffer_width = Some(1920);
+    fb_phys.minimum_framebuffer_height = Some(1080);
+
+    let fb_virt = FrameBuffer::default();
 
     let mut c = BootConfig::default();
-    c.frame_buffer = fb;
+    c.frame_buffer_physical = fb_phys;
+    c.frame_buffer_virtual = fb_virt;
 
     // Suppress excessive output in release mode
     if cfg!(opt_level = "0") {

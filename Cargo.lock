@@ -11,7 +11,7 @@ checksum = "bd8b2abd55bf1f9cffbf00fd594566c51a9d31402553284920c1309ca8351086"
 [[package]]
 name = "acpi"
 version = "4.1.1"
-source = "git+https://github.com/rust-osdev/acpi#d8140ca0e6427236e39c2ec294fd9d6de4ad40c4"
+source = "git+https://github.com/rust-osdev/acpi#a77817f48f1eacfa2d8c7b9943a19a2a497b2f83"
 dependencies = [
  "bit_field",
  "log",
@@ -27,7 +27,7 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 [[package]]
 name = "aml"
 version = "0.16.3"
-source = "git+https://github.com/rust-osdev/acpi#d8140ca0e6427236e39c2ec294fd9d6de4ad40c4"
+source = "git+https://github.com/rust-osdev/acpi#a77817f48f1eacfa2d8c7b9943a19a2a497b2f83"
 dependencies = [
  "bit_field",
  "bitvec",
@@ -38,9 +38,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.70"
+version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7de8ce5e0f9f8d88245311066a578d72b7af3e7088f32783804676302df237e4"
+checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
 
 [[package]]
 name = "approx"
@@ -214,7 +214,7 @@ dependencies = [
 [[package]]
 name = "bootloader"
 version = "0.11.3"
-source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
+source = "git+https://github.com/kennystrawnmusic/bootloader#2f66e58d088402a5752a0745671574f89f8fbff7"
 dependencies = [
  "anyhow",
  "async-process",
@@ -232,7 +232,7 @@ dependencies = [
 [[package]]
 name = "bootloader-boot-config"
 version = "0.11.3"
-source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
+source = "git+https://github.com/kennystrawnmusic/bootloader#2f66e58d088402a5752a0745671574f89f8fbff7"
 dependencies = [
  "serde",
 ]
@@ -240,7 +240,7 @@ dependencies = [
 [[package]]
 name = "bootloader-x86_64-common"
 version = "0.11.3"
-source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
+source = "git+https://github.com/kennystrawnmusic/bootloader#2f66e58d088402a5752a0745671574f89f8fbff7"
 dependencies = [
  "bootloader-boot-config",
  "bootloader_api",
@@ -248,7 +248,7 @@ dependencies = [
  "log",
  "noto-sans-mono-bitmap",
  "rand 0.8.5",
- "rand_hc 0.3.1",
+ "rand_hc 0.3.2",
  "raw-cpuid",
  "spinning_top",
  "uart_16550",
@@ -260,7 +260,7 @@ dependencies = [
 [[package]]
 name = "bootloader_api"
 version = "0.11.3"
-source = "git+https://github.com/kennystrawnmusic/bootloader#84d3f621a3e2d83993b7f5f119c2dc11d01d3102"
+source = "git+https://github.com/kennystrawnmusic/bootloader#2f66e58d088402a5752a0745671574f89f8fbff7"
 
 [[package]]
 name = "buddy_system_allocator"
@@ -279,9 +279,9 @@ checksum = "b4ae4235e6dac0694637c763029ecea1a2ec9e4e06ec2729bd21ba4d9c863eb7"
 
 [[package]]
 name = "bumpalo"
-version = "3.12.0"
+version = "3.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d261e256854913907f67ed06efbc3338dfe6179796deefc1ff763fc1aee5535"
+checksum = "9b1ce199063694f33ffb7dd4e0ee620741495c32833cde5aa08f02a0bf96f0c8"
 
 [[package]]
 name = "byteorder"
@@ -333,9 +333,9 @@ checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "280a9f2d8b3a38871a3c8a46fb80db65e5e5ed97da80c4d08bf27fb63e35e181"
+checksum = "3e4c1eaa2012c47becbbad2ab175484c2a84d1185b566fb2cc5b8707343dfe58"
 dependencies = [
  "libc",
 ]
@@ -572,9 +572,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.0.25"
+version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8a2db397cb1c8772f31494cb8917e48cd1e64f0fa7efac59fbd741a0a8ce841"
+checksum = "3b9429470923de8e8cbd4d2dc513535400b4b3fef0319fb5c4e1f520a7bef743"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -696,7 +696,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.14",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -913,15 +913,15 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.141"
+version = "0.2.142"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3304a64d199bb964be99741b7a14d26972741915b3649639149b2479bb46f4b5"
+checksum = "6a987beff54b60ffa6d51982e1aa1146bc42f19bd26be28b0586f252fccf5317"
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.3.1"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59d8c75012853d2e872fb56bc8a2e53718e2cafe1a4c823143141c6d90c322f"
+checksum = "b64f40e5e03e0d54f03845c8197d0291253cdbedfb1cb46b13c2c117554a9f4c"
 
 [[package]]
 name = "llvm-tools"
@@ -1001,9 +1001,9 @@ checksum = "bc4010833aea396656c2f91ee704d51a6f1329ec2ab56ffd00bfd56f7481ea94"
 
 [[package]]
 name = "miniz_oxide"
-version = "0.6.2"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b275950c28b37e794e8c55d88aeb5e139d0ce23fdbbeda68f8d7174abdf9e8fa"
+checksum = "e7810e0be55b428ada41041c41f32c9f1a42817901b4ccf45fa3d4b6561e74c7"
 dependencies = [
  "adler",
 ]
@@ -1299,9 +1299,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "polling"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4be1c66a6add46bff50935c313dae30a5030cf8385c5206e8a95e9e9def974aa"
+checksum = "4b2d323e8ca7996b3e23126511a523f7e62924d93ecd5ae73b333815b0eb3dce"
 dependencies = [
  "autocfg",
  "bitflags",
@@ -1429,9 +1429,9 @@ dependencies = [
 
 [[package]]
 name = "rand_hc"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
+checksum = "7b363d4f6370f88d62bf586c80405657bde0f0e1b8945d47d2ad59b906cb4f54"
 dependencies = [
  "rand_core 0.6.4",
 ]
@@ -1490,7 +1490,7 @@ dependencies = [
 [[package]]
 name = "rsdp"
 version = "2.0.0"
-source = "git+https://github.com/rust-osdev/acpi#d8140ca0e6427236e39c2ec294fd9d6de4ad40c4"
+source = "git+https://github.com/rust-osdev/acpi#a77817f48f1eacfa2d8c7b9943a19a2a497b2f83"
 dependencies = [
  "log",
 ]
@@ -1516,9 +1516,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.11"
+version = "0.37.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85597d61f83914ddeba6a47b3b8ffe7365107221c2e557ed94426489fefb5f77"
+checksum = "8bbfc1d1c7c40c01715f47d71444744a81669ca84e8b63e25a55e169b1f86433"
 dependencies = [
  "bitflags",
  "errno",
@@ -1636,7 +1636,7 @@ checksum = "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.14",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -1851,9 +1851,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.14"
+version = "2.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf316d5356ed6847742d036f8a39c3b8435cac10bd528a4bd461928a6ab34d5"
+checksum = "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1913,7 +1913,7 @@ checksum = "f9456a42c5b0d803c8cd86e73dd7cc9edd429499f37a3550d286d5e86720569f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.14",
+ "syn 2.0.15",
 ]
 
 [[package]]
