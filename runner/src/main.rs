@@ -315,7 +315,7 @@ fn is_snap() -> Option<bool> {
                 if status.success() {
                     let output = is_vscode_snap.output().unwrap();
                     let full_path = String::from_utf8_lossy(&output.stdout);
-                    
+
                     if full_path.contains("/snap") {
                         Some(true)
                     } else {
@@ -332,7 +332,7 @@ fn is_snap() -> Option<bool> {
                 if status.success() {
                     let output = is_vscode_insiders_snap.output().unwrap();
                     let full_path = String::from_utf8_lossy(&output.stdout);
-                    
+
                     if full_path.contains("/snap") {
                         Some(true)
                     } else {
