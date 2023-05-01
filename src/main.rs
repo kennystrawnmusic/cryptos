@@ -65,7 +65,7 @@ use core::{
 };
 use cralloc::{
     frames::{map_memory, Falloc},
-    heap_init, BEGIN_HEAP,
+    heap_init_inner, BEGIN_HEAP,
 };
 use itertools::Itertools;
 use log::{debug, error, info};
@@ -74,7 +74,6 @@ use pcics::{
     header::{Header, HeaderType, InterruptPin},
 };
 use raw_cpuid::CpuId;
-use sha3::digest::typenum::U654;
 use spin::{Mutex, RwLock};
 use x86_64::{
     structures::paging::{
@@ -246,7 +245,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     MAPPER.get_or_init(move || Mutex::new(map));
     FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
 
-    heap_init(
+    heap_init_inner(
         &mut *MAPPER.get().unwrap().lock(),
         &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
     )

@@ -1,3 +1,7 @@
+use crate::{get_boot_info, map_memory};
+
+use self::frames::Falloc;
+
 pub mod frames;
 
 #[allow(unused_imports)] //future-proof
@@ -17,7 +21,7 @@ pub static ALLOC: LockedHeap = LockedHeap::empty();
 pub const BEGIN_HEAP: usize = 0x2000_0000_0000;
 pub const HEAP_LEN: usize = 32 * 1024 * 1024;
 
-pub fn heap_init(
+pub fn heap_init_inner(
     mapper: &mut impl Mapper<Size4KiB>,
     falloc: &mut impl FrameAllocator<Size4KiB>,
 ) -> Result<(), MapToError<Size4KiB>> {
@@ -42,4 +46,21 @@ pub fn heap_init(
     }
 
     Ok(())
+}
+
+pub fn heap_init() {
+    let boot_info = get_boot_info();
+
+    let offset = VirtAddr::new(
+        boot_info
+            .physical_memory_offset
+            .clone()
+            .into_option()
+            .unwrap(),
+    );
+
+    let mut map = unsafe { map_memory(offset) };
+    let mut falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
+
+    heap_init_inner(&mut map, &mut falloc).unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
