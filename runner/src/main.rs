@@ -7,25 +7,10 @@ use std::{
 };
 
 fn main() {
-    let mut is_ubuntu = Command::new("which");
-    is_ubuntu.arg("apt-get");
-    is_ubuntu.stdout(Stdio::null());
-    is_ubuntu.stderr(Stdio::null());
-
-    if let Ok(status) = is_ubuntu.status() {
-        if status.success() {
-            install_ubuntu_deps();
-        }
-    }
-
-    let mut is_archlinux = Command::new("which");
-    is_archlinux.arg("pacman");
-    is_archlinux.stdout(Stdio::null());
-    is_archlinux.stderr(Stdio::null());
-
-    if let Ok(status) = is_archlinux.status() {
-        if status.success() {
-            install_arch_deps();
+    if cfg!(target_os = "linux") {
+        match HostDistro::new() {
+            HostDistro::Ubuntu => install_ubuntu_deps(),
+            HostDistro::Archlinux => install_arch_deps()
         }
     }
 
@@ -101,6 +86,44 @@ fn main() {
     }
 }
 
+pub enum HostDistro {
+    Ubuntu,
+    Archlinux,
+    //TBC
+}
+
+impl HostDistro {
+    pub fn new() -> Self {
+        let mut is_ubuntu = Command::new("which");
+        is_ubuntu.arg("apt-get");
+        is_ubuntu.stdout(Stdio::null());
+        is_ubuntu.stderr(Stdio::null());
+
+        let mut is_archlinux = Command::new("which");
+        is_archlinux.arg("pacman");
+        is_archlinux.stdout(Stdio::null());
+        is_archlinux.stderr(Stdio::null());
+        
+        let ret = if let Ok(status) = is_ubuntu.status() {
+            if status.success() {
+                Self::Ubuntu
+            } else {
+                Self::Archlinux
+            }
+        } else if let Ok(status) = is_archlinux.status() {
+            if status.success() {
+                Self::Archlinux
+            } else {
+                unreachable!()
+            }
+        } else {
+            todo!("Unsupported Linux distribution")
+        };
+
+        ret
+    }
+}
+
 fn install_arch_deps() {
     let mut arch_install_deps = Command::new("sudo");
 
@@ -139,6 +162,8 @@ fn install_arch_deps() {
                     eprintln!("Error attempting to install dependencies: {:#?}", &status);
                     exit(status.code().unwrap());
                 }
+            
+
             } else {
                 // have QEMU but don't have the other 2 dependencies
                 arch_install_deps
@@ -362,9 +387,13 @@ fn is_snap() -> Option<bool> {
 
 fn run_qemu(kdir: &Path, out_path: &Path) {
     // Workaround to get this to work from the Snap version of VS Code
-    if let Some(is_snap) = is_snap() {
-        if is_snap {
-            set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+    if cfg!(target_os = "linux") {
+        if let HostDistro::Ubuntu = HostDistro::new() {
+            if let Some(is_snap) = is_snap() {
+                if is_snap {
+                    set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+                }
+            }
         }
     }
 
