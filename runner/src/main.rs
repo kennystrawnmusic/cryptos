@@ -205,74 +205,32 @@ fn install_arch_deps() {
 }
 
 fn install_ubuntu_deps() {
-    let mut ubuntu_install_deps = Command::new("which");
-    ubuntu_install_deps.arg("apt-get");
-    ubuntu_install_deps.stdout(Stdio::null());
-    ubuntu_install_deps.stderr(Stdio::null());
+    let mut ubuntu_install_deps_inner = Command::new("sudo");
 
-    if let Ok(_) = ubuntu_install_deps.status() {
-        let mut ubuntu_install_deps_inner = Command::new("sudo");
+    let mut does_dep_1_exist = Command::new("which");
+    does_dep_1_exist.arg("7z");
+    does_dep_1_exist.stdout(Stdio::null());
+    does_dep_1_exist.stderr(Stdio::null());
 
-        let mut does_dep_1_exist = Command::new("which");
-        does_dep_1_exist.arg("7z");
-        does_dep_1_exist.stdout(Stdio::null());
-        does_dep_1_exist.stderr(Stdio::null());
+    if let Err(_) = does_dep_1_exist.status() {
+        let mut does_dep_2_exist = Command::new("which");
+        does_dep_2_exist.arg("gcc");
+        does_dep_2_exist.stdout(Stdio::null());
+        does_dep_2_exist.stderr(Stdio::null());
 
-        if let Err(_) = does_dep_1_exist.status() {
-            let mut does_dep_2_exist = Command::new("which");
-            does_dep_2_exist.arg("gcc");
-            does_dep_2_exist.stdout(Stdio::null());
-            does_dep_2_exist.stderr(Stdio::null());
+        if let Err(_) = does_dep_2_exist.status() {
+            let mut does_dep_3_exist = Command::new("which");
+            does_dep_3_exist.arg("qemu-system-x86_64");
+            does_dep_3_exist.stdout(Stdio::null());
+            does_dep_3_exist.stderr(Stdio::null());
 
-            if let Err(_) = does_dep_2_exist.status() {
-                let mut does_dep_3_exist = Command::new("which");
-                does_dep_3_exist.arg("qemu-system-x86_64");
-                does_dep_3_exist.stdout(Stdio::null());
-                does_dep_3_exist.stderr(Stdio::null());
-
-                if let Err(_) = does_dep_3_exist.status() {
-                    ubuntu_install_deps_inner
-                        .arg("apt-get")
-                        .arg("-y")
-                        .arg("install")
-                        .arg("build-essential")
-                        .arg("qemu-system-x86")
-                        .arg("p7zip-full");
-
-                    let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
-                        eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                        exit(1);
-                    });
-
-                    if !status.success() {
-                        eprintln!("Error attempting to install dependencies: {:#?}", &status);
-                        exit(status.code().unwrap());
-                    }
-                } else {
-                    // have QEMU but don't have the other 2 dependencies
-                    ubuntu_install_deps_inner
-                        .arg("apt-get")
-                        .arg("-y")
-                        .arg("install")
-                        .arg("build-essential")
-                        .arg("p7zip-full");
-
-                    let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
-                        eprintln!("Error attempting to install dependencies: {:#?}", &e);
-                        exit(1);
-                    });
-
-                    if !status.success() {
-                        eprintln!("Error attempting to install dependencies: {:#?}", &status);
-                        exit(status.code().unwrap());
-                    }
-                }
-            } else {
-                // have QEMU and GCC but don't have p7zip
+            if let Err(_) = does_dep_3_exist.status() {
                 ubuntu_install_deps_inner
                     .arg("apt-get")
                     .arg("-y")
                     .arg("install")
+                    .arg("build-essential")
+                    .arg("qemu-system-x86")
                     .arg("p7zip-full");
 
                 let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
@@ -284,6 +242,41 @@ fn install_ubuntu_deps() {
                     eprintln!("Error attempting to install dependencies: {:#?}", &status);
                     exit(status.code().unwrap());
                 }
+            } else {
+                // have QEMU but don't have the other 2 dependencies
+                ubuntu_install_deps_inner
+                    .arg("apt-get")
+                    .arg("-y")
+                    .arg("install")
+                    .arg("build-essential")
+                    .arg("p7zip-full");
+
+                let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                    eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                    exit(1);
+                });
+
+                if !status.success() {
+                    eprintln!("Error attempting to install dependencies: {:#?}", &status);
+                    exit(status.code().unwrap());
+                }
+            }
+        } else {
+            // have QEMU and GCC but don't have p7zip
+            ubuntu_install_deps_inner
+                .arg("apt-get")
+                .arg("-y")
+                .arg("install")
+                .arg("p7zip-full");
+
+            let status = ubuntu_install_deps_inner.status().unwrap_or_else(|e| {
+                eprintln!("Error attempting to install dependencies: {:#?}", &e);
+                exit(1);
+            });
+
+            if !status.success() {
+                eprintln!("Error attempting to install dependencies: {:#?}", &status);
+                exit(status.code().unwrap());
             }
         }
     }
