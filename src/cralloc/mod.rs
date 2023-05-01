@@ -1,4 +1,4 @@
-use crate::{get_boot_info, map_memory};
+use crate::{get_boot_info, map_memory, get_phys_offset};
 
 use self::frames::Falloc;
 
@@ -51,13 +51,7 @@ pub fn heap_init_inner(
 pub fn heap_init() {
     let boot_info = get_boot_info();
 
-    let offset = VirtAddr::new(
-        boot_info
-            .physical_memory_offset
-            .clone()
-            .into_option()
-            .unwrap(),
-    );
+    let offset = VirtAddr::new(unsafe { get_phys_offset() });
 
     let mut map = unsafe { map_memory(offset) };
     let mut falloc = unsafe { Falloc::new(&boot_info.memory_regions) };

@@ -8,6 +8,10 @@
 #![feature(never_type)]
 #![feature(target_feature_11)]
 #![feature(portable_simd)]
+#![feature(const_mut_refs)]
+#![feature(const_option)]
+#![feature(const_trait_impl)]
+#![feature(const_clone)]
 #![allow(unused_imports)]
 
 extern crate alloc;
@@ -101,7 +105,7 @@ fn panic(info: &PanicInfo) -> ! {
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 32) as u64;
 const FB_ADDR: u64 = BOOT_INFO_ADDR * 2;
 
-pub fn get_boot_info<'a>() -> &'a mut BootInfo {
+pub const fn get_boot_info<'a>() -> &'a mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
 }
 
@@ -176,8 +180,8 @@ pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
 /// Convenient wrapper for getting the physical memory offset
 ///
 /// Safety: only call this if you know that the OnceCell holding the physical memory offset has been initialized
-pub unsafe fn get_phys_offset() -> u64 {
-    PHYS_OFFSET.get().clone().unwrap().clone()
+pub const unsafe fn get_phys_offset() -> u64 {
+    get_boot_info().physical_memory_offset.as_ref().unwrap().clone()
 }
 
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();
@@ -232,13 +236,7 @@ entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
-    let offset = VirtAddr::new(
-        boot_info
-            .physical_memory_offset
-            .clone()
-            .into_option()
-            .unwrap(),
-    );
+    let offset = VirtAddr::new(unsafe { get_phys_offset() });
     let map = unsafe { map_memory(offset) };
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
 
