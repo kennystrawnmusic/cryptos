@@ -10,7 +10,7 @@ fn main() {
     if cfg!(target_os = "linux") {
         match HostDistro::new() {
             HostDistro::Ubuntu => install_ubuntu_deps(),
-            HostDistro::Archlinux => install_arch_deps()
+            HostDistro::Archlinux => install_arch_deps(),
         }
     }
 
@@ -103,7 +103,7 @@ impl HostDistro {
         is_archlinux.arg("pacman");
         is_archlinux.stdout(Stdio::null());
         is_archlinux.stderr(Stdio::null());
-        
+
         let ret = if let Ok(status) = is_ubuntu.status() {
             if status.success() {
                 Self::Ubuntu
@@ -162,8 +162,6 @@ fn install_arch_deps() {
                     eprintln!("Error attempting to install dependencies: {:#?}", &status);
                     exit(status.code().unwrap());
                 }
-            
-
             } else {
                 // have QEMU but don't have the other 2 dependencies
                 arch_install_deps
@@ -388,10 +386,19 @@ fn is_snap() -> Option<bool> {
 fn run_qemu(kdir: &Path, out_path: &Path) {
     // Workaround to get this to work from the Snap version of VS Code
     if cfg!(target_os = "linux") {
-        if let HostDistro::Ubuntu = HostDistro::new() {
-            if let Some(is_snap) = is_snap() {
-                if is_snap {
-                    set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+        match HostDistro::new() {
+            HostDistro::Ubuntu => {
+                if let Some(is_snap) = is_snap() {
+                    if is_snap {
+                        set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+                    }
+                }
+            }
+            HostDistro::Archlinux => {
+                if let Some(is_snap) = is_snap() {
+                    if is_snap {
+                        set_var("LD_PRELOAD", "/usr/lib/libpthread.so.0");
+                    }
                 }
             }
         }
