@@ -1,3 +1,5 @@
+#![feature(exit_status_error)]
+
 use bootloader::{BootConfig, UefiBoot};
 use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
@@ -105,13 +107,13 @@ impl HostDistro {
         is_archlinux.stderr(Stdio::null());
 
         let ret = if let Ok(status) = is_ubuntu.status() {
-            if status.success() {
+            if let Ok(()) = status.exit_ok() {
                 Self::Ubuntu
             } else {
                 Self::Archlinux
             }
         } else if let Ok(status) = is_archlinux.status() {
-            if status.success() {
+            if let Ok(()) = status.exit_ok() {
                 Self::Archlinux
             } else {
                 unreachable!()
