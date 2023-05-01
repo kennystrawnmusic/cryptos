@@ -240,6 +240,8 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     let map = unsafe { map_memory(offset) };
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
 
+    let falloc_addr = addr_of!(falloc) as usize;
+
     MAPPER.get_or_init(move || Mutex::new(map));
     FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
 
@@ -283,6 +285,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         boot_info.api_version.version_minor(),
         boot_info.api_version.version_patch()
     );
+
+    info!("Frame allocator address: {:#x}", falloc_addr);
+
     let vendor_info = CpuId::new().get_vendor_info();
     info!("CPU vendor: {}", vendor_info.unwrap().as_str());
 
