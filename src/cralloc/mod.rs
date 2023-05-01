@@ -1,3 +1,7 @@
+use core::{sync::atomic::{AtomicU64, Ordering}, ptr::addr_of};
+
+use x86_64::structures::paging::OffsetPageTable;
+
 use crate::{get_boot_info, map_memory, get_phys_offset};
 
 use self::frames::Falloc;
@@ -20,6 +24,17 @@ pub static ALLOC: LockedHeap = LockedHeap::empty();
 
 pub const BEGIN_HEAP: usize = 0x2000_0000_0000;
 pub const HEAP_LEN: usize = 32 * 1024 * 1024;
+
+pub static MAP_ADDR: AtomicU64 = AtomicU64::new(0);
+pub static FRAME_ALLOC_ADDR: AtomicU64 = AtomicU64::new(0);
+
+pub fn get_mapper<'a>() -> &'a mut OffsetPageTable<'static> {
+    unsafe { &mut *(MAP_ADDR.load(Ordering::SeqCst) as *mut OffsetPageTable) }
+}
+
+pub fn get_falloc<'a>() -> &'a mut Falloc {
+    unsafe { &mut *(FRAME_ALLOC_ADDR.load(Ordering::SeqCst) as *mut Falloc) }
+}
 
 pub fn heap_init_inner(
     mapper: &mut impl Mapper<Size4KiB>,
@@ -54,7 +69,10 @@ pub fn heap_init() {
     let offset = VirtAddr::new(unsafe { get_phys_offset() });
 
     let mut map = unsafe { map_memory(offset) };
+    MAP_ADDR.store(addr_of!(map) as usize as u64, Ordering::SeqCst);
+
     let mut falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
+    FRAME_ALLOC_ADDR.store(addr_of!(falloc) as usize as u64, Ordering::SeqCst);
 
     heap_init_inner(&mut map, &mut falloc).unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
