@@ -306,7 +306,12 @@ fn is_snap() -> Option<bool> {
             is_vscode_snap.stdout(Stdio::piped());
             is_vscode_snap.stderr(Stdio::null());
 
-            if let Ok(status) = &is_vscode_snap.status() {
+            let mut is_vscode_insiders_snap = Command::new("which");
+            is_vscode_insiders_snap.arg("code-insiders");
+            is_vscode_insiders_snap.stdout(Stdio::piped());
+            is_vscode_insiders_snap.stderr(Stdio::null());
+
+            let vscode = if let Ok(status) = &is_vscode_snap.status() {
                 if status.success() {
                     let output = is_vscode_snap.output().unwrap();
                     let full_path = String::from_utf8_lossy(&output.stdout);
@@ -319,6 +324,31 @@ fn is_snap() -> Option<bool> {
                 } else {
                     None
                 }
+            } else {
+                None
+            };
+
+            let vscode_insiders = if let Ok(status) = &is_vscode_insiders_snap.status() {
+                if status.success() {
+                    let output = is_vscode_insiders_snap.output().unwrap();
+                    let full_path = String::from_utf8_lossy(&output.stdout);
+                    
+                    if full_path.contains("/snap") {
+                        Some(true)
+                    } else {
+                        Some(false)
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            if let Some(_) = vscode_insiders {
+                vscode_insiders
+            } else if let Some(_) = vscode {
+                vscode
             } else {
                 None
             }
