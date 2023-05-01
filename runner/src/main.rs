@@ -106,20 +106,20 @@ impl HostDistro {
         is_archlinux.stdout(Stdio::null());
         is_archlinux.stderr(Stdio::null());
 
-        let ret = if let Ok(status) = is_ubuntu.status() {
-            if let Ok(()) = status.exit_ok() {
+        let ret = if let Ok(ubuntu_status) = is_ubuntu.status() {
+            if let Ok(()) = ubuntu_status.exit_ok() {
                 Self::Ubuntu
+            } else if let Ok(arch_status) = is_archlinux.status() {
+                if let Ok(()) = arch_status.exit_ok() {
+                    Self::Archlinux
+                } else {
+                    unreachable!()
+                }
             } else {
-                Self::Archlinux
-            }
-        } else if let Ok(status) = is_archlinux.status() {
-            if let Ok(()) = status.exit_ok() {
-                Self::Archlinux
-            } else {
-                unreachable!()
+                todo!("Unsupported Linux distribution")
             }
         } else {
-            todo!("Unsupported Linux distribution")
+            unreachable!()
         };
 
         ret
