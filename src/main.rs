@@ -31,7 +31,7 @@ use crate::{
     ahci::{ahci_init, get_ahci, ABAR},
     drm::avx_accel::enable_avx,
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::{PciDeviceHandle, PCI_TABLE},
+    pci_impl::{PciDeviceHandle, PCI_TABLE}, cralloc::heap_init,
 };
 use acpi::{
     fadt::Fadt,
@@ -236,20 +236,7 @@ entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
-    let offset = VirtAddr::new(unsafe { get_phys_offset() });
-    let map = unsafe { map_memory(offset) };
-    let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
-
-    let falloc_addr = addr_of!(falloc) as usize;
-
-    MAPPER.get_or_init(move || Mutex::new(map));
-    FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
-
-    heap_init_inner(
-        &mut *MAPPER.get().unwrap().lock(),
-        &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
-    )
-    .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
+    heap_init();
 
     // map the TLS template onto the heap to ensure proper memory safety
     TLS_TEMPLATE_ADDR.store(Box::into_raw(Box::new(0)) as usize as u64, Ordering::SeqCst);
@@ -285,8 +272,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         boot_info.api_version.version_minor(),
         boot_info.api_version.version_patch()
     );
-
-    info!("Frame allocator address: {:#x}", falloc_addr);
 
     let vendor_info = CpuId::new().get_vendor_info();
     info!("CPU vendor: {}", vendor_info.unwrap().as_str());
