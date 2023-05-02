@@ -18,6 +18,7 @@
   * Design goal: do what Microsoft tried and failed to do with WinFS, except at the block level instead of the service level because it's far easier to accomplish in the former case
 * USB mass storage — TODO (need to support this inside the kernel for the exact same reason as AHCI: you can't run apps from USB flash drives if you can't access the drives they — and the kernel itself along with them in some cases — are stored on)
 * NVMe — TODO (same as above)
+* Initramfs — TODO (needed for some kinds of critical hardware support; virtualized Linux — i.e. ported UML — would also help in this case as far as improving hardware support goes)
 * Task scheduler — [in progress](https://github.com/kennystrawnmusic/cryptos/blob/cc49a4b2b8586fb64d777587120ccde0feccbbdc/src/interrupts.rs#L123) — using an IPI to force all available CPU cores to play a game of "hot potato" with the instruction pointer; idea behind this is to take advantage of all available CPU resources at the scheduler level as opposed to the thread level. Ultimate goal is to eventually have a 2-tiered scheduler that ensures all resources get pooled by default, taking the burden of needing to write multithreaded apps to take advantage of all that power off of the developer. This is called Scheduler-Level Resource Sharing (SLRS).
 * Graphics — [in progress](https://github.com/kennystrawnmusic/cryptos/blob/master/src/drm/mod.rs)
 * USB HID — TODO (can't have a GUI without a mouse and keyboard)
