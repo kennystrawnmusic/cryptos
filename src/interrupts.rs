@@ -16,7 +16,7 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::{get_active_lapic, LAPIC_IDS},
+    apic_impl::{get_active_lapic, get_lapic_ids},
     get_phys_offset,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
@@ -141,20 +141,20 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
 
     if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
-        ACTIVE_LAPIC_ID.store(LAPIC_IDS.get().unwrap()[0], Ordering::Relaxed);
+        ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::Relaxed);
 
         // get the ball rolling
-        unsafe { get_active_lapic().send_ipi(100, LAPIC_IDS.get().unwrap()[1]) };
+        unsafe { get_active_lapic().send_ipi(100, get_lapic_ids().nth(1).unwrap()) };
     } else {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
-        let mut lapic_iter = LAPIC_IDS.get().unwrap().iter().cycle();
+        let mut lapic_iter = get_lapic_ids().cycle();
 
-        if let Some(_) = lapic_iter.find(|&&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
+        if let Some(_) = lapic_iter.find(|&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
             // find the next LAPIC ID after the current one
             let id = lapic_iter.next().unwrap();
 
             // update active LAPIC ID to match the next one
-            ACTIVE_LAPIC_ID.store(*id, Ordering::Relaxed);
+            ACTIVE_LAPIC_ID.store(id, Ordering::Relaxed);
 
             // send the very IPI that this handler handles to the next available CPU core on the system
             unsafe { get_active_lapic().send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) };

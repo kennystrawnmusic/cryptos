@@ -19,10 +19,19 @@ use {
     },
 };
 
-pub static LAPIC_IDS: OnceCell<Vec<u32>> = OnceCell::uninit();
+pub fn get_lapic_ids() -> impl Iterator<Item = u32> + Clone {
+    let mut id_vec = Vec::new();
 
-pub fn get_lapic_ids() -> impl Iterator<Item = u32> {
-    LAPIC_IDS.get().unwrap().iter().map(|id| id.clone())
+    if let Some(iter) = raw_cpuid::CpuId::new().get_extended_topology_info() {
+        for topology in iter {
+            id_vec.push(topology.x2apic_id());
+        }
+    } else {
+        //only have one core
+        id_vec.push(unsafe { get_active_lapic().id() });
+    }
+
+    id_vec.into_iter()
 }
 
 pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
@@ -63,8 +72,6 @@ pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
         let offset = unsafe { crate::get_phys_offset() };
         let mut ioapic_impl_vec = Vec::new();
 
-        let mut id_vec = Vec::new();
-
         let lapic_virt = apic.local_apic_address.clone() + offset;
 
         map_page!(
@@ -81,17 +88,6 @@ pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
             .set_xapic_base(lapic_virt)
             .build()
             .unwrap_or_else(|e| panic!("Error building the local APIC: {:#?}", e));
-
-        if let Some(iter) = raw_cpuid::CpuId::new().get_extended_topology_info() {
-            for topology in iter {
-                id_vec.push(topology.x2apic_id());
-            }
-        } else {
-            //only have one core
-            id_vec.push(unsafe { first_lapic.id() });
-        }
-
-        LAPIC_IDS.get_or_init(move || id_vec.to_vec());
 
         for ioapic in apic.io_apics.iter() {
             let phys = ioapic.address.clone() as u64;
