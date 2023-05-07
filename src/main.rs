@@ -179,7 +179,7 @@ pub fn get_next_usable_frame() -> PhysFrame {
 /// Convenient wrapper for getting the physical memory offset
 ///
 /// Safety: only call this if you know that the OnceCell holding the physical memory offset has been initialized
-pub const unsafe fn get_phys_offset() -> u64 {
+pub const fn get_phys_offset() -> u64 {
     get_boot_info()
         .physical_memory_offset
         .as_ref()

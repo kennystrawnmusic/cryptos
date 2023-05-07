@@ -88,7 +88,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -105,7 +105,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -122,7 +122,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -139,7 +139,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -156,7 +156,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -175,7 +175,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -194,7 +194,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -212,7 +212,7 @@ impl aml::Handler for KernelAcpi {
         let test_start = test.start_address().as_u64();
         map_page!(
             address,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -286,7 +286,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -316,7 +316,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -346,7 +346,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -384,7 +384,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -424,7 +424,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -464,7 +464,7 @@ impl aml::Handler for KernelAcpi {
 
         map_page!(
             rebuilt,
-            test_start + unsafe { get_phys_offset() } + test.size(),
+            test_start + get_phys_offset() + test.size(),
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -497,7 +497,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
 
     let aml_test_page =
         Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
-    let aml_virt = aml_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+    let aml_virt = aml_test_page.start_address().as_u64() + get_phys_offset();
 
     info!("Virtual DSDT address: {:#x}", &aml_virt);
 

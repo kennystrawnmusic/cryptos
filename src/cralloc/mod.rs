@@ -75,7 +75,7 @@ pub fn heap_init_inner(
 pub fn heap_init() {
     let boot_info = get_boot_info();
 
-    let offset = VirtAddr::new(unsafe { get_phys_offset() });
+    let offset = VirtAddr::new(get_phys_offset());
 
     let map = unsafe { map_memory(offset) };
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };

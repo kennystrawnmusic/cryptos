@@ -312,7 +312,7 @@ impl DmaRequest {
             let count = core::cmp::min(remaning, 0x2000);
 
             let buffer_phys = buffer.start();
-            let buffer_virt = VirtAddr::new(buffer_phys.as_u64() + unsafe { get_phys_offset() });
+            let buffer_virt = VirtAddr::new(buffer_phys.as_u64() + get_phys_offset());
 
             let buffer_pointer = buffer_virt.as_ptr();
             let buffer = unsafe { core::slice::from_raw_parts::<u8>(buffer_pointer, count) };
@@ -634,7 +634,7 @@ impl HbaPort {
     fn cmd_header_at(&mut self, index: usize) -> &mut HbaCmdHeader {
         // Since the CLB holds the physical address, we make the address mapped
         // before reading it.
-        let clb_mapped = VirtAddr::new(self.clb.get().as_u64() + unsafe { get_phys_offset() });
+        let clb_mapped = VirtAddr::new(self.clb.get().as_u64() + get_phys_offset());
         // Get the address of the command header at `index`.
         let clb_addr = clb_mapped + core::mem::size_of::<HbaCmdHeader>() * index;
 
@@ -652,7 +652,7 @@ impl HbaPort {
          * two 4KiB size frames).
          */
         let frame_addr = pmm_alloc(BuddyOrdering::Size8KiB);
-        let page_addr = unsafe { get_phys_offset() } + frame_addr.as_u64();
+        let page_addr = get_phys_offset() + frame_addr.as_u64();
 
         for size in (0..0x2000u64).step_by(0x1000) {
             map_page!(
@@ -772,7 +772,7 @@ impl HbaPort {
         header.prdtl.set(length as _); // Update the number of PRD entries.
 
         let command_table_addr =
-            VirtAddr::new(unsafe { get_phys_offset() } + header.ctb.get().as_u64());
+            VirtAddr::new(get_phys_offset() + header.ctb.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
         for pri in 0..length {
@@ -1042,7 +1042,7 @@ impl AhciProtected {
             info!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
-            let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
+            let abar_virt = abar_test_page.start_address().as_u64() + get_phys_offset();
 
             map_page!(
                 abar,

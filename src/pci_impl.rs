@@ -706,7 +706,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
         for dev in mcfg_brute_force() {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 
-            let virt = test_page.start_address().as_u64() + unsafe { crate::get_phys_offset() };
+            let virt = test_page.start_address().as_u64() + crate::get_phys_offset();
 
             map_page!(
                 dev,

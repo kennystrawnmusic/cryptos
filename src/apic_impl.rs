@@ -69,7 +69,7 @@ pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
     };
 
     if let InterruptModel::Apic(apic) = INTERRUPT_MODEL.get().unwrap() {
-        let offset = unsafe { crate::get_phys_offset() };
+        let offset = crate::get_phys_offset();
         let mut ioapic_impl_vec = Vec::new();
 
         let lapic_virt = apic.local_apic_address.clone() + offset;
