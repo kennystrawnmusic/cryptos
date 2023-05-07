@@ -981,9 +981,7 @@ impl AhciProtected {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
 
-                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
-                        info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
-                    }
+                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
 
                     drop(port); // Drop the reference to the port.
                     drop(hba); // Drop the reference to the HBA.
@@ -1041,9 +1039,7 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
-                info!("ABAR: {:#x}", &abar);
-            }
+            info!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + unsafe { get_phys_offset() };
@@ -1069,7 +1065,7 @@ impl AhciProtected {
             for port in self.ports.iter().filter(|p| p.is_some()) {
                 if let Some(port) = port {
                     let buffer = &mut [0u8; 512];
-                    if let Some(_) = port.read(0, buffer) {
+                    if let Some(_) = port.read(2000, buffer) {
                         info!("Read sector 0: {:?}", buffer);
                     } else {
                         warn!("Couldn't read any data")
