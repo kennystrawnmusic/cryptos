@@ -56,7 +56,12 @@ pub fn heap_init_inner(
         let f = falloc
             .allocate_frame()
             .ok_or(MapToError::FrameAllocationFailed)?;
-        let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
+
+        let flags = PageTableFlags::PRESENT
+            | PageTableFlags::WRITABLE
+            | PageTableFlags::NO_CACHE
+            | PageTableFlags::WRITE_THROUGH;
+
         unsafe { mapper.map_to(p, f, flags, falloc)?.flush() };
     }
 
