@@ -1,8 +1,11 @@
-use core::{sync::atomic::{AtomicU64, Ordering}, ptr::addr_of};
+use core::{
+    ptr::addr_of,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use x86_64::structures::paging::OffsetPageTable;
 
-use crate::{get_boot_info, map_memory, get_phys_offset, MAPPER, FRAME_ALLOCATOR};
+use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
 use spin::Mutex;
 
 use self::frames::Falloc;
@@ -71,7 +74,7 @@ pub fn heap_init() {
 
     let map = unsafe { map_memory(offset) };
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
-    
+
     MAPPER.get_or_init(move || Mutex::new(map));
     FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
 
