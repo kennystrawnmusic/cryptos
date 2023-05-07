@@ -311,11 +311,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
 
-    loop {
-        unsafe {
-            core::arch::asm!("hlt");
-        };
-    }
+    loop {}
 }
 
 #[alloc_error_handler]
