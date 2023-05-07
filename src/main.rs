@@ -176,8 +176,6 @@ pub fn get_next_usable_frame() -> PhysFrame {
         .clone()
 }
 
-pub static PHYS_OFFSET: OnceCell<u64> = OnceCell::uninit();
-
 /// Convenient wrapper for getting the physical memory offset
 ///
 /// Safety: only call this if you know that the OnceCell holding the physical memory offset has been initialized
@@ -253,15 +251,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     };
 
     boot_info.tls_template = Optional::Some(tls);
-
-    // clone the physical memory offset into a static ASAP
-    // so it doesn't need to be hardcoded everywhere it's needed
-    let cloned_offset = boot_info
-        .physical_memory_offset
-        .clone()
-        .into_option()
-        .unwrap();
-    PHYS_OFFSET.get_or_init(move || cloned_offset);
 
     let buffer_optional = &mut boot_info.framebuffer;
     let buffer_option = buffer_optional.as_mut();

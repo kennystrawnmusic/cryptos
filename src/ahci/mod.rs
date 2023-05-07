@@ -18,7 +18,7 @@ use crate::{
     cralloc::frames::safe_active_pml4,
     get_phys_offset,
     interrupts::{self, IDT},
-    map_page, MAPPER, PHYS_OFFSET,
+    map_page, MAPPER,
 };
 
 use self::util::sync::MutexGuard;
