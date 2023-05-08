@@ -16,7 +16,7 @@ pub(crate) enum HandleKind {
 }
 
 pub(crate) struct Handle {
-    offset: VirtAddr,
+    offset: u64,
     kind: HandleKind,
     stat: AtomicBool,
 }
@@ -84,7 +84,7 @@ impl Scheme for AcpiScheme {
         let stat = AtomicBool::new(flags & O_STAT == O_STAT);
 
         let _ = handle_guard.insert(fd, Handle {
-            offset: VirtAddr::new(0),
+            offset: 0,
             kind: handle_kind,
             stat,
         });
