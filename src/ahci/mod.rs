@@ -771,8 +771,7 @@ impl HbaPort {
         let length = ((count - 1) >> 4) + 1;
         header.prdtl.set(length as _); // Update the number of PRD entries.
 
-        let command_table_addr =
-            VirtAddr::new(get_phys_offset() + header.ctb.get().as_u64());
+        let command_table_addr = VirtAddr::new(get_phys_offset() + header.ctb.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
         for pri in 0..length {

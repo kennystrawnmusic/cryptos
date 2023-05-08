@@ -1,11 +1,14 @@
 #![allow(dead_code)] // work in progress!
-use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use super::Scheme;
+use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use alloc::{collections::BTreeMap, vec::Vec};
-use spin::{RwLock, Once};
+use spin::{Once, RwLock};
+use syscall::{
+    Error, EACCES, EINVAL, EISDIR, ENOENT, EROFS, O_ACCMODE, O_CREAT, O_DIRECTORY, O_EXCL,
+    O_RDONLY, O_STAT, O_SYMLINK,
+};
 use x86_64::VirtAddr;
-use syscall::{Error, EACCES, O_CREAT, EROFS, O_EXCL, O_SYMLINK, EINVAL, O_ACCMODE, O_RDONLY, O_STAT, O_DIRECTORY, EISDIR, ENOENT};
 
 pub struct AcpiScheme;
 
@@ -33,7 +36,6 @@ pub(crate) static WAIT_FLAG: AtomicBool = AtomicBool::new(false);
 pub(crate) static SCHID: AtomicU64 = AtomicU64::new(0);
 
 impl Scheme for AcpiScheme {
-
     fn open(&self, path: &str, flags: usize, uid: u32, _gid: u32) -> syscall::Result<usize> {
         let path = path.trim_start_matches('/');
 
@@ -75,7 +77,7 @@ impl Scheme for AcpiScheme {
 
                 HandleKind::ShutdownPipe
             }
-            _ => return Err(Error::new(ENOENT))
+            _ => return Err(Error::new(ENOENT)),
         };
 
         let fd = NEXT.fetch_add(1, Ordering::Relaxed);
@@ -83,14 +85,16 @@ impl Scheme for AcpiScheme {
         let mut handle_guard = HANDLES.write();
         let stat = AtomicBool::new(flags & O_STAT == O_STAT);
 
-        let _ = handle_guard.insert(fd, Handle {
-            offset: 0,
-            kind: handle_kind,
-            stat,
-        });
+        let _ = handle_guard.insert(
+            fd,
+            Handle {
+                offset: 0,
+                kind: handle_kind,
+                stat,
+            },
+        );
 
         Ok(fd as usize)
-
     }
 
     fn chmod(&self, _path: &str, _mode: u16, _uid: u32, _gid: u32) -> syscall::Result<usize> {
@@ -133,7 +137,11 @@ impl Scheme for AcpiScheme {
         Err(syscall::Error::new(syscall::EBADF))
     }
 
-    fn fevent(&self, _id: usize, _flags: syscall::EventFlags) -> syscall::Result<syscall::EventFlags> {
+    fn fevent(
+        &self,
+        _id: usize,
+        _flags: syscall::EventFlags,
+    ) -> syscall::Result<syscall::EventFlags> {
         Err(syscall::Error::new(syscall::EBADF))
     }
 
@@ -145,11 +153,14 @@ impl Scheme for AcpiScheme {
         if map.flags.contains(syscall::MapFlags::MAP_FIXED) {
             return Err(syscall::Error::new(syscall::EINVAL));
         }
-        self.fmap_old(id, &syscall::OldMap {
-            offset: map.offset,
-            size: map.size,
-            flags: map.flags,
-        })
+        self.fmap_old(
+            id,
+            &syscall::OldMap {
+                offset: map.offset,
+                size: map.size,
+                flags: map.flags,
+            },
+        )
     }
 
     fn funmap_old(&self, _address: usize) -> syscall::Result<usize> {
