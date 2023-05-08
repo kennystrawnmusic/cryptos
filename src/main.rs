@@ -25,6 +25,7 @@ pub mod exceptions;
 pub mod fs;
 pub mod interrupts;
 pub mod pci_impl;
+pub mod scheme;
 
 use crate::{
     acpi_impl::KernelAcpi,

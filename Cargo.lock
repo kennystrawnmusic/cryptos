@@ -400,7 +400,7 @@ dependencies = [
  "noto-sans-mono-bitmap",
  "pcics",
  "raw-cpuid",
- "redox_syscall 0.3.5",
+ "redox_syscall 0.3.5 (git+https://gitlab.redox-os.org/redox-os/syscall)",
  "sha3",
  "slab_allocator_rs",
  "spin 0.9.8",
@@ -1473,6 +1473,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_syscall"
+version = "0.3.5"
+source = "git+https://gitlab.redox-os.org/redox-os/syscall#abf7e59f5ad001a7a981d53751368c8fad189ffc"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1874,7 +1882,7 @@ checksum = "b9fbec84f381d5795b08656e4912bec604d162bff9291d6189a78f4c8ab87998"
 dependencies = [
  "cfg-if",
  "fastrand",
- "redox_syscall 0.3.5",
+ "redox_syscall 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustix",
  "windows-sys 0.45.0",
 ]
