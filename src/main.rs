@@ -277,12 +277,12 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize) } {
         Ok(mut tables) => {
-            let mcfg = match PciConfigRegions::new_in(&tables, &Global) {
+            let mcfg = match PciConfigRegions::new_in(&tables, Global) {
                 Ok(mcfg) => Some(mcfg),
                 Err(_) => None,
             };
 
-            if let Ok(platform_info) = PlatformInfo::new_in(&tables, &Global) {
+            if let Ok(platform_info) = PlatformInfo::new_in(&tables, Global) {
                 let interrupts = platform_info.interrupt_model;
 
                 INTERRUPT_MODEL.get_or_init(move || interrupts);
