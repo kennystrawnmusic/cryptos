@@ -228,7 +228,7 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
     } else {
         log::set_max_level(log::LevelFilter::Info);
     }
-    info!("CryptOS v. 0.1.1-alpha");
+    info!("CryptOS version {}", env!("CARGO_PKG_VERSION"));
 }
 
 pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
