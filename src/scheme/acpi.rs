@@ -11,7 +11,7 @@ pub struct AcpiScheme;
 
 pub(crate) enum HandleKind {
     TopLevel,
-    DescriptorTable,
+    RootTable,
     ShutdownPipe,
 }
 
@@ -66,7 +66,7 @@ impl Scheme for AcpiScheme {
                     return Err(Error::new(EISDIR));
                 }
 
-                HandleKind::DescriptorTable
+                HandleKind::RootTable
             }
             "kstop" => {
                 if flags & O_DIRECTORY != O_DIRECTORY && flags & O_STAT != O_STAT {
