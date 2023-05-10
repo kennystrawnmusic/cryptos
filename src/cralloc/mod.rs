@@ -93,7 +93,7 @@ pub fn heap_init() {
 pub struct PageBox<T>(NonNull<T>);
 
 impl<T> PageBox<T> {
-    pub fn new(_layout: Layout, _size: impl PageSize) -> Self {
+    pub fn new<S: PageSize>(_test: Page<S>) -> Self {
         todo!()
     }
 }
