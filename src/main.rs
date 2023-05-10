@@ -180,7 +180,7 @@ pub const fn get_phys_offset() -> u64 {
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();
 pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions<Global>>> = OnceCell::uninit();
 
-pub fn get_mcfg() -> &'static Option<PciConfigRegions<'static, Global>> {
+pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
     PCI_CONFIG.get().clone().unwrap().clone()
 }
 
