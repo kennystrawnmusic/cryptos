@@ -4,7 +4,7 @@ use x86_64::structures::paging::{FrameAllocator, PageTableFlags};
 use crate::get_phys_offset;
 
 use {
-    crate::{interrupts::IrqIndex, map_page, INTERRUPT_MODEL},
+    crate::{arch::x86_64::interrupts::IrqIndex, map_page, INTERRUPT_MODEL},
     acpi::InterruptModel,
     alloc::vec::Vec,
     conquer_once::spin::OnceCell,

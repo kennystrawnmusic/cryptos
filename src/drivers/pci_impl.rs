@@ -16,7 +16,7 @@ use x86_64::{
 use crate::{
     acpi_impl::{aml_init, aml_route, KernelAcpi},
     get_mcfg,
-    interrupts::{self, IDT},
+    arch::x86_64::interrupts::{self, IDT},
     mcfg_brute_force,
 };
 

@@ -17,7 +17,7 @@ use crate::{
     acpi_impl::{aml_route, KernelAcpi},
     cralloc::frames::safe_active_pml4,
     get_phys_offset,
-    interrupts::{self, IDT},
+    arch::x86_64::interrupts::{self, IDT},
     map_page, MAPPER,
 };
 
@@ -1023,7 +1023,7 @@ impl AhciProtected {
                         // GDT will #GP if an IDT-load is attempted more than once
 
                         info!("Loading descriptor tables...");
-                        crate::interrupts::init();
+                        crate::arch::x86_64::interrupts::init();
 
                         info!("Setting up interrupts...");
                         crate::apic_impl::init_all_available_apics();

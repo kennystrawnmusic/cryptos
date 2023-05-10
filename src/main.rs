@@ -16,16 +16,12 @@
 
 extern crate alloc;
 
-pub mod acpi_impl;
-pub mod ahci;
-pub mod apic_impl;
+pub mod drivers;
 pub mod cralloc;
 pub mod drm;
-pub mod exceptions;
 pub mod fs;
-pub mod interrupts;
-pub mod pci_impl;
 pub mod scheme;
+pub mod arch;
 
 use crate::{
     acpi_impl::KernelAcpi,
@@ -90,7 +86,12 @@ use x86_64::{
 };
 use xmas_elf::ElfFile;
 
-pub use acpi_impl::aml_init; //compatibility
+ //compatibility
+pub use arch::x86_64::*;
+pub use arch::x86_64::exceptions;
+pub use arch::x86_64::interrupts;
+pub use drivers::*;
+pub use drivers::acpi_impl::aml_init;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {

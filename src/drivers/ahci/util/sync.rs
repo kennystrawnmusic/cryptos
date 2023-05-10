@@ -4,7 +4,7 @@
 
 #[allow(unused_imports)]
 use {
-    crate::interrupts,
+    crate::arch::x86_64::interrupts,
     alloc::{sync::Arc, vec::Vec},
     spin::relax::RelaxStrategy,
 };

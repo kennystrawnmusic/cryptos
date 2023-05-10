@@ -8,7 +8,7 @@ use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
 use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
 
-use crate::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
+use crate::arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
 
 use {
     crate::{get_phys_offset, map_page},
