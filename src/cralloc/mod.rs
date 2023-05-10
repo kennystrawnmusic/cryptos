@@ -1,9 +1,9 @@
 use core::{
-    ptr::addr_of,
-    sync::atomic::{AtomicU64, Ordering},
+    ptr::{addr_of, NonNull},
+    sync::atomic::{AtomicU64, Ordering}, alloc::Layout,
 };
 
-use x86_64::structures::paging::OffsetPageTable;
+use x86_64::structures::paging::{OffsetPageTable, PageSize};
 
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
 use spin::Mutex;
@@ -88,4 +88,12 @@ pub fn heap_init() {
         &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
     )
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
+}
+
+pub struct PageBox<T>(NonNull<T>);
+
+impl<T> PageBox<T> {
+    pub fn new(_layout: Layout, _size: impl PageSize) -> Self {
+        todo!()
+    }
 }
