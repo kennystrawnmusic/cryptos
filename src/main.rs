@@ -151,21 +151,6 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 
 pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
-// override compiler's pickiness about raw pointers not implementing Send
-pub struct SendRawPointer<T>(*mut T);
-
-impl<T> SendRawPointer<T> {
-    pub fn new(inner: *mut T) -> Self {
-        Self(inner)
-    }
-
-    pub unsafe fn get(&self) -> *mut T {
-        self.0
-    }
-}
-
-unsafe impl<T> Send for SendRawPointer<T> {}
-
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
 pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
