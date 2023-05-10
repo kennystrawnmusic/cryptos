@@ -250,6 +250,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
     let rsdp = boot_info.rsdp_addr.clone().into_option().unwrap();
     printk_init(raw_buffer, bi);
+
     info!(
         "Using version {}.{}.{} of crates.io/crates/bootloader",
         boot_info.api_version.version_major(),
