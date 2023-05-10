@@ -1,8 +1,10 @@
 use core::{
-    ptr::{addr_of, NonNull},
-    sync::atomic::{AtomicU64, Ordering}, alloc::Layout,
+    alloc::{Allocator, Layout},
+    ptr::{addr_of, addr_of_mut, NonNull},
+    sync::atomic::{AtomicU64, Ordering},
 };
 
+use alloc::alloc::Global;
 use x86_64::structures::paging::{OffsetPageTable, PageSize};
 
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
@@ -93,7 +95,19 @@ pub fn heap_init() {
 pub struct PageBox<T>(NonNull<T>);
 
 impl<T> PageBox<T> {
-    pub fn new<S: PageSize>(_test: Page<S>) -> Self {
-        todo!()
+    pub fn new<S: PageSize>(inner: T) -> Self {
+        let inner_addr = addr_of!(inner) as usize as u64;
+        let test = Page::<S>::containing_address(VirtAddr::new(inner_addr));
+
+        let size = test.size() as usize;
+        let align = test.start_address().as_u64() as usize;
+
+        let layout = Layout::from_size_align(size, align)
+            .unwrap_or_else(|e| panic!("Failed to create memory layout: {:#?}", e));
+        let new_inner = Global
+            .allocate_zeroed(layout)
+            .unwrap_or_else(|e| panic!("Error allocating memory: {:#?}", e));
+
+        Self(NonNull::new(unsafe { *(new_inner.as_ptr() as *mut _) }).unwrap())
     }
 }
