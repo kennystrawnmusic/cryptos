@@ -108,6 +108,6 @@ impl<T> PageBox<T> {
             .allocate_zeroed(layout)
             .unwrap_or_else(|e| panic!("Error allocating memory: {:#?}", e));
 
-        Self(NonNull::new(unsafe { *(new_inner.as_ptr() as *mut _) }).unwrap())
+        Self(NonNull::<T>::new(unsafe { *(new_inner.as_ptr() as *mut _) }).unwrap())
     }
 }
