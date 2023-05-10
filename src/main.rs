@@ -86,10 +86,14 @@ use x86_64::{
 };
 use xmas_elf::ElfFile;
 
- //compatibility
+//compatibility
+#[cfg(target_arch = "x86_64")]
 pub use arch::x86_64::*;
+#[cfg(target_arch = "x86_64")]
 pub use arch::x86_64::exceptions;
+#[cfg(target_arch = "x86_64")]
 pub use arch::x86_64::interrupts;
+
 pub use drivers::*;
 pub use drivers::acpi_impl::aml_init;
 
