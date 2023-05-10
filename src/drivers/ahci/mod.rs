@@ -15,10 +15,9 @@ use x86_64::{
 
 use crate::{
     acpi_impl::{aml_route, KernelAcpi},
-    cralloc::frames::safe_active_pml4,
-    get_phys_offset,
     arch::x86_64::interrupts::{self, IDT},
-    map_page, MAPPER,
+    cralloc::frames::safe_active_pml4,
+    get_phys_offset, map_page, MAPPER,
 };
 
 use self::util::sync::MutexGuard;
