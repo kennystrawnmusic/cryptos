@@ -10,16 +10,21 @@ use x86_64::{
         read_rip,
         rflags::{self, RFlags},
     },
-    structures::idt::{DescriptorTable, SelectorErrorCode},
+    structures::{
+        idt::{DescriptorTable, SelectorErrorCode},
+        paging::{PhysFrame, Page, PageTableFlags, Size4KiB},
+    },
     VirtAddr,
 };
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
+    cralloc::frames::map_page,
     get_phys_offset,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
+    get_phys_offset,
 };
 
 #[allow(unused_imports)]
@@ -206,12 +211,29 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 }
 
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
-    panic!(
-        "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
-        Cr2::read(),
-        code,
-        frame
-    );
+    if code.is_empty() {
+        // Create and map the nonexistent page and try again
+        let phys = Cr2::read() - get_phys_offset();
+        let virt = Cr2::read();
+        
+        map_page!(
+            phys,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+            | PageTableFlags::WRITABLE
+            | PageTableFlags::NO_CACHE
+            | PageTableFlags::WRITE_THROUGH
+        );
+        
+    } else {
+        panic!(
+            "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
+            Cr2::read(),
+            code,
+            frame
+        );
+    }
 }
 
 extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
