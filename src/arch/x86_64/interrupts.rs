@@ -213,8 +213,8 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
-        let phys = Cr2::read() - get_phys_offset();
         let virt = Cr2::read();
+        let phys = virt - get_phys_offset();
         
         map_page!(
             phys,
