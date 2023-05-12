@@ -12,7 +12,7 @@ use x86_64::{
     },
     structures::{
         idt::{DescriptorTable, SelectorErrorCode},
-        paging::{Page, PageTableFlags, PhysFrame, Size4KiB},
+        paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
     VirtAddr,
 };
@@ -20,7 +20,7 @@ use x86_64::{
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    get_phys_offset, get_phys_offset, map_page,
+    get_phys_offset, map_page,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
 };
