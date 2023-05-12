@@ -20,7 +20,7 @@ use x86_64::{
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    cralloc::frames::map_page,
+    map_page,
     get_phys_offset,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
