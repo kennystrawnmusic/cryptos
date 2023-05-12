@@ -12,7 +12,7 @@ use x86_64::{
     },
     structures::{
         idt::{DescriptorTable, SelectorErrorCode},
-        paging::{PhysFrame, Page, PageTableFlags, Size4KiB},
+        paging::{Page, PageTableFlags, PhysFrame, Size4KiB},
     },
     VirtAddr,
 };
@@ -20,11 +20,9 @@ use x86_64::{
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    map_page,
-    get_phys_offset,
+    get_phys_offset, get_phys_offset, map_page,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
     PRINTK,
-    get_phys_offset,
 };
 
 #[allow(unused_imports)]
@@ -215,17 +213,16 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
         // Create and map the nonexistent page and try again
         let virt = Cr2::read().as_u64();
         let phys = virt - get_phys_offset();
-        
+
         map_page!(
             phys,
             virt,
             Size4KiB,
             PageTableFlags::PRESENT
-            | PageTableFlags::WRITABLE
-            | PageTableFlags::NO_CACHE
-            | PageTableFlags::WRITE_THROUGH
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
         );
-        
     } else {
         panic!(
             "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
