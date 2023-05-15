@@ -234,6 +234,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
             );
         } else {
             // user mode
+            // TODO: SIGSEGV
             error!(
                 "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
                 Cr2::read(),
