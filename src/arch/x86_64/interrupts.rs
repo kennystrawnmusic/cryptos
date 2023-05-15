@@ -8,13 +8,13 @@ use x86_64::{
     instructions::interrupts,
     registers::{
         read_rip,
-        rflags::{self, RFlags},
+        rflags::{self, RFlags}, segmentation::{CS, Segment},
     },
     structures::{
         idt::{DescriptorTable, SelectorErrorCode},
         paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
-    VirtAddr,
+    VirtAddr, PrivilegeLevel,
 };
 
 use crate::{
@@ -224,12 +224,23 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::WRITE_THROUGH
         );
     } else {
-        panic!(
-            "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
-            Cr2::read(),
-            code,
-            frame
-        );
+        if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
+            // kernel mode
+            panic!(
+                "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
+                Cr2::read(),
+                code,
+                frame
+            );
+        } else {
+            // user mode
+            error!(
+                "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
+                Cr2::read(),
+                code,
+                frame
+            );
+        }
     }
 }
 
