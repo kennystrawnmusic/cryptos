@@ -613,13 +613,13 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
 
 // Needed for cloning the ACPI tables into an abstraction for usermode use
 pub struct UserAcpi {
-    pub(crate) bgrt: Bgrt,
-    pub(crate) fadt: Fadt,
-    pub(crate) hpet: HpetTable,
-    pub(crate) madt: Madt,
-    pub(crate) mcfg: Vec<McfgEntry>,
-    pub(crate) dsdt: Option<AmlTable>,
-    pub(crate) ssdts: Vec<AmlTable>,
+    pub bgrt: Bgrt,
+    pub fadt: Fadt,
+    pub hpet: HpetTable,
+    pub madt: Madt,
+    pub mcfg: Vec<McfgEntry>,
+    pub dsdt: Option<AmlTable>,
+    pub ssdts: Vec<AmlTable>,
 }
 
 impl UserAcpi {
