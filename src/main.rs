@@ -70,6 +70,7 @@ use cralloc::{
     frames::{map_memory, Falloc},
     heap_init_inner, BEGIN_HEAP,
 };
+use drivers::acpi_impl::UserAcpi;
 use itertools::Itertools;
 use log::{debug, error, info};
 use pcics::{
@@ -77,7 +78,7 @@ use pcics::{
     header::{Header, HeaderType, InterruptPin},
 };
 use raw_cpuid::CpuId;
-use spin::{Mutex, RwLock};
+use spin::{Mutex, Once, RwLock};
 use x86_64::{
     structures::paging::{
         FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size1GiB,
@@ -226,6 +227,8 @@ pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
 pub static TLS_TEMPLATE_ADDR: AtomicU64 = AtomicU64::new(0);
 pub const TLS_TEMPLATE_SIZE: u64 = 0x600_0000; //100MB; increasing later as app size increases
 
+pub(crate) static USER_ACPI: Once<UserAcpi> = Once::new();
+
 entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
@@ -269,9 +272,8 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     );
 
     match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize) } {
-        Ok(tables) => {
-            DATA.call_once(|| Mutex::new(tables));
-            let mut tables = DATA.get().unwrap().lock();
+        Ok(mut tables) => {
+            USER_ACPI.call_once(|| UserAcpi::new(&mut tables));
 
             let mcfg = match PciConfigRegions::new_in(&tables, Global) {
                 Ok(mcfg) => Some(mcfg),

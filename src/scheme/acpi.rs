@@ -1,5 +1,8 @@
 #![allow(dead_code)]
-use crate::acpi_impl::KernelAcpi;
+use crate::{
+    acpi_impl::{KernelAcpi, UserAcpi},
+    USER_ACPI,
+};
 
 // work in progress!
 use super::Scheme;
@@ -11,6 +14,7 @@ use core::{
 
 use acpi::{AcpiTables, AmlTable};
 use alloc::{collections::BTreeMap, vec::Vec};
+use log::error;
 use spin::{Mutex, Once, RwLock};
 use syscall::{
     Error, EventFlags, EACCES, EBADF, EBADFD, EINVAL, EISDIR, ENOENT, EROFS, MODE_CHR, MODE_DIR,
@@ -18,6 +22,7 @@ use syscall::{
     SEEK_END, SEEK_SET,
 };
 use x86_64::VirtAddr;
+
 pub struct AcpiScheme;
 pub(crate) enum HandleKind {
     TopLevel,
@@ -34,7 +39,7 @@ pub(crate) struct Handle {
 pub(crate) static HANDLES: RwLock<BTreeMap<u64, Handle>> = RwLock::new(BTreeMap::new());
 pub(crate) static NEXT: AtomicU64 = AtomicU64::new(0);
 
-pub(crate) static DATA: Once<Mutex<AcpiTables<KernelAcpi>>> = Once::new();
+pub(crate) static DATA: Once<UserAcpi> = Once::new();
 
 pub(crate) const SIGNATURE: &[u8] = b"rxsdt\nkstop\n";
 
@@ -45,16 +50,38 @@ pub(crate) static SCHID: AtomicU64 = AtomicU64::new(0);
 pub(crate) fn acpi_len() -> u64 {
     if let Some(tables) = DATA.get() {
         let data = unsafe {
-            let tables = tables.lock();
+            let tables = tables;
             let tblptr = addr_of!(tables) as *const u8;
 
-            let raw =
-                core::slice::from_raw_parts(tblptr, core::mem::size_of::<AcpiTables<KernelAcpi>>());
+            let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
             raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
         };
         data.len() as u64
     } else {
         panic!("ACPI tables not present");
+    }
+}
+
+impl AcpiScheme {
+    pub fn new(id: u64) -> Self {
+        let mut data_init = false;
+        let mut id_init = false;
+
+        if let Some(user_acpi) = USER_ACPI.get() {
+            DATA.call_once(|| {
+                data_init = true;
+                id_init = true;
+
+                SCHID.store(id, Ordering::SeqCst);
+                user_acpi.clone()
+            });
+        }
+
+        if !data_init || !id_init {
+            error!("Scheme initializer called multiple times");
+        }
+
+        Self
     }
 }
 
@@ -127,13 +154,10 @@ impl Scheme for AcpiScheme {
         match handle.kind {
             HandleKind::RootTable => {
                 let data = unsafe {
-                    let tables = DATA.get().ok_or(Error::new(EBADFD))?.lock();
+                    let tables = DATA.get().ok_or(Error::new(EBADFD))?;
                     let tblptr = addr_of!(tables) as *const u8;
 
-                    let raw = core::slice::from_raw_parts(
-                        tblptr,
-                        core::mem::size_of::<AcpiTables<KernelAcpi>>(),
-                    );
+                    let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
                     raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
                 };
 
@@ -231,13 +255,10 @@ impl Scheme for AcpiScheme {
                 .map(|byte| byte.clone())
                 .collect::<Vec<_>>(),
             HandleKind::RootTable => unsafe {
-                let tables = DATA.get().ok_or(Error::new(EBADFD))?.lock();
+                let tables = DATA.get().ok_or(Error::new(EBADFD))?;
                 let tblptr = addr_of!(tables) as *const u8;
 
-                let raw = core::slice::from_raw_parts(
-                    tblptr,
-                    core::mem::size_of::<AcpiTables<KernelAcpi>>(),
-                );
+                let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
                 raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
             },
             HandleKind::ShutdownPipe => {

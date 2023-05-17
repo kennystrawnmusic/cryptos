@@ -1,4 +1,15 @@
-use acpi::{fadt::Fadt, sdt::SdtHeader};
+use core::todo;
+
+use acpi::{
+    bgrt::Bgrt,
+    fadt::Fadt,
+    hpet::HpetTable,
+    madt::Madt,
+    mcfg::{Mcfg, McfgEntry},
+    sdt::SdtHeader,
+    AmlTable, Sdt,
+};
+use alloc::{alloc::Global, collections::BTreeMap};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
     value::Args,
@@ -599,3 +610,89 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
     }
     return None;
 }
+
+// Needed for cloning the ACPI tables into an abstraction for usermode use
+pub(crate) struct UserAcpi {
+    pub(crate) bgrt: Bgrt,
+    pub(crate) fadt: Fadt,
+    pub(crate) hpet: HpetTable,
+    pub(crate) madt: Madt,
+    pub(crate) mcfg: Vec<McfgEntry>,
+    pub(crate) dsdt: Option<AmlTable>,
+    pub(crate) ssdts: Vec<AmlTable>,
+}
+
+impl UserAcpi {
+    pub fn new(tables: &mut AcpiTables<KernelAcpi>) -> Self {
+        Self {
+            bgrt: tables
+                .find_table::<Bgrt>()
+                .unwrap_or_else(|e| panic!("Failed to find BGRT table: {:#?}", e))
+                .clone(),
+            fadt: tables
+                .find_table::<Fadt>()
+                .unwrap_or_else(|e| panic!("Failed to find FADT table: {:#?}", e))
+                .clone(),
+            hpet: tables
+                .find_table::<HpetTable>()
+                .unwrap_or_else(|e| panic!("Failed to find HPET table: {:#?}", e))
+                .clone(),
+            madt: tables
+                .find_table::<Madt>()
+                .unwrap_or_else(|e| panic!("Failed to find MADT table: {:#?}", e))
+                .clone(),
+            mcfg: tables
+                .find_table::<Mcfg>()
+                .unwrap_or_else(|e| panic!("Failed to find MCFG table: {:#?}", e))
+                .entries()
+                .iter()
+                .map(|&entry| entry.clone())
+                .collect::<Vec<_>>(),
+            dsdt: if let Ok(dsdt) = tables.dsdt() {
+                Some(dsdt)
+            } else {
+                None
+            },
+            ssdts: {
+                let mut v = Vec::new();
+                for ssdt in tables.ssdts() {
+                    v.push(ssdt);
+                }
+                v
+            },
+        }
+    }
+}
+
+impl Clone for UserAcpi {
+    fn clone(&self) -> Self {
+        Self {
+            bgrt: self.bgrt.clone(),
+            fadt: self.fadt.clone(),
+            hpet: self.hpet.clone(),
+            madt: self.madt.clone(),
+            mcfg: self.mcfg.clone(),
+            dsdt: if let Some(dsdt) = &self.dsdt {
+                Some(AmlTable {
+                    address: dsdt.address + core::mem::size_of::<SdtHeader>(),
+                    length: dsdt.length - (core::mem::size_of::<SdtHeader>() as u32),
+                })
+            } else {
+                None
+            },
+            ssdts: {
+                let mut v = Vec::new();
+                for table in self.ssdts.iter() {
+                    v.push(AmlTable {
+                        address: table.address + core::mem::size_of::<SdtHeader>(),
+                        length: table.length - (core::mem::size_of::<SdtHeader>() as u32),
+                    })
+                }
+                v
+            },
+        }
+    }
+}
+
+unsafe impl Send for UserAcpi {}
+unsafe impl Sync for UserAcpi {}
