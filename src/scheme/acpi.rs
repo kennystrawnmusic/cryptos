@@ -1,17 +1,16 @@
 #![allow(dead_code)] // work in progress!
 use super::Scheme;
-use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use core::{sync::atomic::{AtomicBool, AtomicU64, Ordering}, cmp::min};
 
 use alloc::{collections::BTreeMap, vec::Vec};
 use spin::{Once, RwLock};
 use syscall::{
-    Error, EACCES, EINVAL, EISDIR, ENOENT, EROFS, O_ACCMODE, O_CREAT, O_DIRECTORY, O_EXCL,
-    O_RDONLY, O_STAT, O_SYMLINK,
+    Error, EventFlags, EACCES, EBADF, EBADFD, EINVAL, EISDIR, ENOENT, EROFS, MODE_CHR, MODE_DIR,
+    MODE_FILE, O_ACCMODE, O_CREAT, O_DIRECTORY, O_EXCL, O_RDONLY, O_STAT, O_SYMLINK, SEEK_CUR,
+    SEEK_END, SEEK_SET,
 };
 use x86_64::VirtAddr;
-
 pub struct AcpiScheme;
-
 pub(crate) enum HandleKind {
     TopLevel,
     RootTable,
@@ -97,109 +96,137 @@ impl Scheme for AcpiScheme {
         Ok(fd as usize)
     }
 
-    fn chmod(&self, _path: &str, _mode: u16, _uid: u32, _gid: u32) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::ENOENT))
+    fn fstat(&self, id: usize, stat: &mut syscall::Stat) -> syscall::Result<usize> {
+        let handles = HANDLES.read();
+        let handle = handles.get(&(id as u64)).ok_or(Error::new(EBADF))?;
+
+        match handle.kind {
+            HandleKind::RootTable => {
+                let data = DATA.get().ok_or(Error::new(EBADFD))?;
+
+                stat.st_mode = MODE_FILE;
+                stat.st_size = data.len().try_into().unwrap_or(u64::MAX);
+            }
+            HandleKind::TopLevel => {
+                stat.st_mode = MODE_DIR;
+                stat.st_size = SIGNATURE.len().try_into().unwrap_or(u64::MAX);
+            }
+            HandleKind::ShutdownPipe => {
+                stat.st_mode = MODE_CHR;
+                stat.st_size = 1;
+            }
+        }
+
+        Ok(0)
     }
 
-    fn rmdir(&self, _path: &str, _uid: u32, _gid: u32) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::ENOENT))
-    }
-
-    fn unlink(&self, _path: &str, _uid: u32, _gid: u32) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::ENOENT))
-    }
-
-    fn dup(&self, _old_id: usize, _buf: &[u8]) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn read(&self, _id: usize, _buf: &mut [u8]) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
+    fn close(&self, id: usize) -> syscall::Result<usize> {
+        if HANDLES.write().remove(&(id as u64)).is_none() {
+            return Err(Error::new(EBADF));
+        }
+        Ok(0)
     }
 
     fn write(&self, _id: usize, _buf: &[u8]) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
+        Err(Error::new(EBADF))
     }
 
-    fn seek(&self, _id: usize, _pos: isize, _whence: usize) -> syscall::Result<isize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
+    fn seek(&self, id: usize, pos: isize, whence: usize) -> syscall::Result<isize> {
+        let mut handles = HANDLES.write();
+        let handle = handles.get_mut(&(id as u64)).ok_or(Error::new(EBADF))?;
 
-    fn fchmod(&self, _id: usize, _mode: u16) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
+        if handle.stat.load(Ordering::SeqCst) {
+            return Err(Error::new(EBADF));
+        }
 
-    fn fchown(&self, _id: usize, _uid: u32, _gid: u32) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
+        let flen = match handle.kind {
+            HandleKind::TopLevel => SIGNATURE.len(),
+            HandleKind::RootTable => DATA.get().ok_or(Error::new(EBADFD))?.len(),
+            HandleKind::ShutdownPipe => 1,
+        };
 
-    fn fcntl(&self, _id: usize, _cmd: usize, _arg: usize) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
+        let offset = match whence {
+            SEEK_SET => pos as u64,
+            SEEK_CUR => {
+                if pos < 0 {
+                    (handle.offset as u64)
+                        .checked_sub((-pos) as u64)
+                        .ok_or(Error::new(EINVAL))?
+                } else {
+                    (handle.offset as u64).saturating_add(pos as u64)
+                }
+            }
+            SEEK_END => {
+                if pos < 0 {
+                    (flen as u64)
+                        .checked_sub((-pos) as u64)
+                        .ok_or(Error::new(EINVAL))?
+                } else {
+                    flen as u64
+                }
+            }
+            _ => return Err(Error::new(EINVAL)),
+        };
+
+        handle.offset = offset;
+
+        Ok(offset as isize)
     }
 
     fn fevent(
         &self,
-        _id: usize,
+        id: usize,
         _flags: syscall::EventFlags,
     ) -> syscall::Result<syscall::EventFlags> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
+        let handles = HANDLES.read();
+        let handle = handles.get(&(id as u64)).ok_or(Error::new(EBADF))?;
 
-    fn fmap_old(&self, _id: usize, _map: &syscall::OldMap) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn fmap(&self, id: usize, map: &syscall::Map) -> syscall::Result<usize> {
-        if map.flags.contains(syscall::MapFlags::MAP_FIXED) {
-            return Err(syscall::Error::new(syscall::EINVAL));
+        if handle.stat.load(Ordering::SeqCst) {
+            return Err(Error::new(EBADF));
         }
-        self.fmap_old(
-            id,
-            &syscall::OldMap {
-                offset: map.offset,
-                size: map.size,
-                flags: map.flags,
+
+        Ok(EventFlags::empty())
+    }
+
+    fn read(&self, id: usize, buf: &mut [u8]) -> syscall::Result<usize> {
+        let mut handles = HANDLES.write();
+        let handle = handles.get_mut(&(id as u64)).ok_or(Error::new(EBADF))?;
+
+        let data = match handle.kind {
+            HandleKind::TopLevel => SIGNATURE,
+            HandleKind::RootTable => DATA.get().ok_or(Error::new(EBADFD))?.as_slice(),
+            HandleKind::ShutdownPipe => {
+                let dest_char = match buf.first_mut() {
+                    Some(dest) => if handle.offset >= 1 {
+                        return Ok(0)
+                    } else {
+                        dest
+                    },
+                    None => return Ok(0),
+                };
+
+                loop {
+                    let guard = WAIT_FLAG.load(Ordering::SeqCst);
+
+                    if guard {
+                        break;
+                    } // TODO: wait conditions
+                }
+
+                *dest_char = 0x42;
+                handle.offset = 1;
+                return Ok(1)
             },
-        )
-    }
+        };
 
-    fn funmap_old(&self, _address: usize) -> syscall::Result<usize> {
-        Ok(0)
-    }
+        let src_offset = min(handle.offset, data.len() as u64);
+        let src = data.get((src_offset as usize)..).expect("Data payload too short: must be at least `data.len()` bytes in length");
 
-    fn funmap(&self, _address: usize, _length: usize) -> syscall::Result<usize> {
-        Ok(0)
-    }
+        let to_cp = min(buf.len() as u64, src.len() as u64);
 
-    fn fpath(&self, _id: usize, _buf: &mut [u8]) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
+        buf[..(to_cp as usize)].copy_from_slice(&src[..(to_cp as usize)]);
+        handle.offset += to_cp;
 
-    fn frename(&self, _id: usize, _path: &str, _uid: u32, _gid: u32) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn fstat(&self, _id: usize, _stat: &mut syscall::Stat) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn fstatvfs(&self, _id: usize, _stat: &mut syscall::StatVfs) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn fsync(&self, _id: usize) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn ftruncate(&self, _id: usize, _len: usize) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn futimens(&self, _id: usize, _times: &[syscall::TimeSpec]) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
-    }
-
-    fn close(&self, _id: usize) -> syscall::Result<usize> {
-        Err(syscall::Error::new(syscall::EBADF))
+        Ok(to_cp as usize)
     }
 }

@@ -8,13 +8,14 @@ use x86_64::{
     instructions::interrupts,
     registers::{
         read_rip,
-        rflags::{self, RFlags}, segmentation::{CS, Segment},
+        rflags::{self, RFlags},
+        segmentation::{Segment, CS},
     },
     structures::{
         idt::{DescriptorTable, SelectorErrorCode},
         paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
-    VirtAddr, PrivilegeLevel,
+    PrivilegeLevel, VirtAddr,
 };
 
 use crate::{
