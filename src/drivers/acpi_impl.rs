@@ -674,8 +674,8 @@ impl Clone for UserAcpi {
             mcfg: self.mcfg.clone(),
             dsdt: if let Some(dsdt) = &self.dsdt {
                 Some(AmlTable {
-                    address: dsdt.address + core::mem::size_of::<SdtHeader>(),
-                    length: dsdt.length - (core::mem::size_of::<SdtHeader>() as u32),
+                    address: dsdt.address,
+                    length: dsdt.length,
                 })
             } else {
                 None
@@ -684,8 +684,8 @@ impl Clone for UserAcpi {
                 let mut v = Vec::new();
                 for table in self.ssdts.iter() {
                     v.push(AmlTable {
-                        address: table.address + core::mem::size_of::<SdtHeader>(),
-                        length: table.length - (core::mem::size_of::<SdtHeader>() as u32),
+                        address: table.address,
+                        length: table.length,
                     })
                 }
                 v
