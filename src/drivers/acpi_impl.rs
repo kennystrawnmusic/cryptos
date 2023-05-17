@@ -649,14 +649,20 @@ impl UserAcpi {
                 .map(|&entry| entry.clone())
                 .collect::<Vec<_>>(),
             dsdt: if let Ok(dsdt) = tables.dsdt() {
-                Some(dsdt)
+                Some(AmlTable {
+                    address: dsdt.address,
+                    length: dsdt.length,
+                })
             } else {
                 None
             },
             ssdts: {
                 let mut v = Vec::new();
                 for ssdt in tables.ssdts() {
-                    v.push(ssdt);
+                    v.push(AmlTable {
+                        address: ssdt.address,
+                        length: ssdt.length,
+                    });
                 }
                 v
             },
@@ -686,7 +692,7 @@ impl Clone for UserAcpi {
                     v.push(AmlTable {
                         address: table.address,
                         length: table.length,
-                    })
+                    });
                 }
                 v
             },
