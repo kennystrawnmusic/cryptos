@@ -48,10 +48,8 @@ pub(crate) fn acpi_len() -> u64 {
             let tables = tables.lock();
             let tblptr = addr_of!(tables) as *const u8;
 
-            let raw = core::slice::from_raw_parts(
-                tblptr,
-                core::mem::size_of::<AcpiTables<KernelAcpi>>(),
-            );
+            let raw =
+                core::slice::from_raw_parts(tblptr, core::mem::size_of::<AcpiTables<KernelAcpi>>());
             raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
         };
         data.len() as u64
@@ -131,7 +129,7 @@ impl Scheme for AcpiScheme {
                 let data = unsafe {
                     let tables = DATA.get().ok_or(Error::new(EBADFD))?.lock();
                     let tblptr = addr_of!(tables) as *const u8;
-    
+
                     let raw = core::slice::from_raw_parts(
                         tblptr,
                         core::mem::size_of::<AcpiTables<KernelAcpi>>(),
