@@ -1,9 +1,17 @@
-#![allow(dead_code)] // work in progress!
-use super::Scheme;
-use core::{sync::atomic::{AtomicBool, AtomicU64, Ordering}, cmp::min};
+#![allow(dead_code)]
+use crate::acpi_impl::KernelAcpi;
 
+// work in progress!
+use super::Scheme;
+use core::{
+    cmp::min,
+    ptr::addr_of,
+    sync::atomic::{AtomicBool, AtomicU64, Ordering},
+};
+
+use acpi::{AcpiTables, AmlTable};
 use alloc::{collections::BTreeMap, vec::Vec};
-use spin::{Once, RwLock};
+use spin::{Mutex, Once, RwLock};
 use syscall::{
     Error, EventFlags, EACCES, EBADF, EBADFD, EINVAL, EISDIR, ENOENT, EROFS, MODE_CHR, MODE_DIR,
     MODE_FILE, O_ACCMODE, O_CREAT, O_DIRECTORY, O_EXCL, O_RDONLY, O_STAT, O_SYMLINK, SEEK_CUR,
@@ -26,13 +34,31 @@ pub(crate) struct Handle {
 pub(crate) static HANDLES: RwLock<BTreeMap<u64, Handle>> = RwLock::new(BTreeMap::new());
 pub(crate) static NEXT: AtomicU64 = AtomicU64::new(0);
 
-pub(crate) static DATA: Once<Vec<u8>> = Once::new();
+pub(crate) static DATA: Once<Mutex<AcpiTables<KernelAcpi>>> = Once::new();
 
 pub(crate) const SIGNATURE: &[u8] = b"rxsdt\nkstop\n";
 
 pub(crate) static WAIT_FLAG: AtomicBool = AtomicBool::new(false);
 
 pub(crate) static SCHID: AtomicU64 = AtomicU64::new(0);
+
+pub(crate) fn acpi_len() -> u64 {
+    if let Some(tables) = DATA.get() {
+        let data = unsafe {
+            let tables = tables.lock();
+            let tblptr = addr_of!(tables) as *const u8;
+
+            let raw = core::slice::from_raw_parts(
+                tblptr,
+                core::mem::size_of::<AcpiTables<KernelAcpi>>(),
+            );
+            raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+        };
+        data.len() as u64
+    } else {
+        panic!("ACPI tables not present");
+    }
+}
 
 impl Scheme for AcpiScheme {
     fn open(&self, path: &str, flags: usize, uid: u32, _gid: u32) -> syscall::Result<usize> {
@@ -102,7 +128,16 @@ impl Scheme for AcpiScheme {
 
         match handle.kind {
             HandleKind::RootTable => {
-                let data = DATA.get().ok_or(Error::new(EBADFD))?;
+                let data = unsafe {
+                    let tables = DATA.get().ok_or(Error::new(EBADFD))?.lock();
+                    let tblptr = addr_of!(tables) as *const u8;
+    
+                    let raw = core::slice::from_raw_parts(
+                        tblptr,
+                        core::mem::size_of::<AcpiTables<KernelAcpi>>(),
+                    );
+                    raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+                };
 
                 stat.st_mode = MODE_FILE;
                 stat.st_size = data.len().try_into().unwrap_or(u64::MAX);
@@ -141,7 +176,7 @@ impl Scheme for AcpiScheme {
 
         let flen = match handle.kind {
             HandleKind::TopLevel => SIGNATURE.len(),
-            HandleKind::RootTable => DATA.get().ok_or(Error::new(EBADFD))?.len(),
+            HandleKind::RootTable => acpi_len() as usize,
             HandleKind::ShutdownPipe => 1,
         };
 
@@ -193,15 +228,29 @@ impl Scheme for AcpiScheme {
         let handle = handles.get_mut(&(id as u64)).ok_or(Error::new(EBADF))?;
 
         let data = match handle.kind {
-            HandleKind::TopLevel => SIGNATURE,
-            HandleKind::RootTable => DATA.get().ok_or(Error::new(EBADFD))?.as_slice(),
+            HandleKind::TopLevel => SIGNATURE
+                .iter()
+                .map(|byte| byte.clone())
+                .collect::<Vec<_>>(),
+            HandleKind::RootTable => unsafe {
+                let tables = DATA.get().ok_or(Error::new(EBADFD))?.lock();
+                let tblptr = addr_of!(tables) as *const u8;
+
+                let raw = core::slice::from_raw_parts(
+                    tblptr,
+                    core::mem::size_of::<AcpiTables<KernelAcpi>>(),
+                );
+                raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+            },
             HandleKind::ShutdownPipe => {
                 let dest_char = match buf.first_mut() {
-                    Some(dest) => if handle.offset >= 1 {
-                        return Ok(0)
-                    } else {
-                        dest
-                    },
+                    Some(dest) => {
+                        if handle.offset >= 1 {
+                            return Ok(0);
+                        } else {
+                            dest
+                        }
+                    }
                     None => return Ok(0),
                 };
 
@@ -215,12 +264,14 @@ impl Scheme for AcpiScheme {
 
                 *dest_char = 0x42;
                 handle.offset = 1;
-                return Ok(1)
-            },
+                return Ok(1);
+            }
         };
 
         let src_offset = min(handle.offset, data.len() as u64);
-        let src = data.get((src_offset as usize)..).expect("Data payload too short: must be at least `data.len()` bytes in length");
+        let src = data
+            .get((src_offset as usize)..)
+            .expect("Data payload too short: must be at least `data.len()` bytes in length");
 
         let to_cp = min(buf.len() as u64, src.len() as u64);
 

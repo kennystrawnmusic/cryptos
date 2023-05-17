@@ -30,6 +30,7 @@ use crate::{
     drm::avx_accel::enable_avx,
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::{PciDeviceHandle, PCI_TABLE},
+    scheme::acpi::DATA,
 };
 use acpi::{
     fadt::Fadt,
@@ -268,7 +269,10 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     );
 
     match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize) } {
-        Ok(mut tables) => {
+        Ok(tables) => {
+            DATA.call_once(|| Mutex::new(tables));
+            let mut tables = DATA.get().unwrap().lock();
+
             let mcfg = match PciConfigRegions::new_in(&tables, Global) {
                 Ok(mcfg) => Some(mcfg),
                 Err(_) => None,
