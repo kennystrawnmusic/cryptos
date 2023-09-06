@@ -7,7 +7,7 @@ use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::{
     iter::zip,
-    simd::{f32x4, u8x4, Simd},
+    simd::{f32x4, u8x4, Simd, SimdUint, SimdFloat},
 };
 use embedded_graphics::{
     pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},

@@ -106,6 +106,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     struct HbaBohc: u32 {
         const BOS =     1 << 0; // BIOS Owned Semaphore
         const OOS =     1 << 1; // OS Owned Semaphore
@@ -138,6 +139,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     struct HbaHostCont: u32 {
         const HR =   1 << 0;  // HBA Reset
         const IE =   1 << 1;  // Interrupt Enable
@@ -147,6 +149,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     pub struct HbaPortIS: u32 {
         const DHRS = 1 << 0; // Device to Host Register FIS Interrupt
         const PSS = 1 << 1; // PIO Setup FIS Interrupt
@@ -169,6 +172,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     struct HbaPortIE: u32 {
         const DHRE = 1 << 0; // Device to Host Register FIS Interrupt
         const PSE = 1 << 1; // PIO Setup FIS Interrupt
@@ -191,6 +195,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     struct HbaPortCmd: u32 {
         const ST = 1 << 0; // Start
         const SUD = 1 << 1; // Spin-Up Device
@@ -216,6 +221,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     struct HbaCmdHeaderFlags: u16 {
         const A = 1 << 5; // ATAPI
         const W = 1 << 6; // Write
@@ -231,7 +237,7 @@ impl HbaCmdHeaderFlags {
     /// length of the FIS it shall send to the device.
     #[inline]
     fn set_command_fis_size(&mut self, size: usize) {
-        self.bits.set_bits(0..=4, size as _);
+        self.bits().set_bits(0..=4, size as _);
     }
 }
 
@@ -980,9 +986,6 @@ impl AhciProtected {
                     let address = VirtAddr::new(port as *const _ as _);
 
                     info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
-
-                    drop(port); // Drop the reference to the port.
-                    drop(hba); // Drop the reference to the HBA.
 
                     let port = Arc::new(AhciPort::new(address));
 

@@ -17,27 +17,27 @@ acpi = { git = "https://github.com/rust-osdev/acpi", version = "4.1.1" }
 aml = { git = "https://github.com/rust-osdev/acpi", version = "0.16.3" }
 bit = "0.1.1"
 bit_field = "0.10.1"
-bitflags = "1.3.2"
-bootloader-x86_64-common = { git = "https://github.com/kennystrawnmusic/bootloader", version = "0.11.3" }
-bootloader_api = { git = "https://github.com/kennystrawnmusic/bootloader", version = "0.11.3" }
+bitflags = "2.4.0"
+bootloader-x86_64-common = "0.11.4"
+bootloader_api = "0.11.4"
 byteorder = { version = "1.4.3", default-features = false }
 conquer-once = { version = "^0.4.0", default-features = false }
-embedded-graphics = { version = "0.7.1", features = ["nalgebra_support"] }
-embedded-graphics-core = { version = "0.3.3", features = ["nalgebra_support"] }
-hashbrown = { version = "0.13.1", default-features = false, features = ["inline-more"] }
-itertools = { version = "0.10.5", default-features = false, features = ["use_alloc"] }
+embedded-graphics = { version = "0.8.1", features = ["nalgebra_support"] }
+embedded-graphics-core = { version = "0.4.0", features = ["nalgebra_support"] }
+hashbrown = { version = "0.14.0", default-features = false, features = ["inline-more"] }
+itertools = { version = "0.11.0", default-features = false, features = ["use_alloc"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
 nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
 pcics = "0.3.1"
-raw-cpuid = "10.6.0"
+raw-cpuid = "11.0.1"
 redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall", version = "0.3.5" }
 sha3 = { version = "0.10.6", default-features = false }
 slab_allocator_rs = "1.0.1"
 spin = "0.9.4"
 spinning_top = "0.2.4"
-strum = { version = "0.24.1", default-features = false }
+strum = { version = "0.25.0", default-features = false }
 unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
 usb_hid_item = { git = "https://github.com/rust-osdev/usb", version = "0.1.0" }
 usb_hid_usage = { git = "https://github.com/rust-osdev/usb", version = "0.1.0" }
@@ -57,3 +57,9 @@ debug-assertions = true
 overflow-checks = true
 incremental = true
 codegen-units = 256
+
+[patch.crates-io]
+bootloader = { git = "https://github.com/kennystrawnmusic/bootloader" }
+bootloader-boot-config = { git = "https://github.com/kennystrawnmusic/bootloader" }
+bootloader-x86_64-common = { git = "https://github.com/kennystrawnmusic/bootloader" }
+bootloader_api = { git = "https://github.com/kennystrawnmusic/bootloader" }

@@ -4,14 +4,12 @@
 #![feature(alloc_error_handler)]
 #![feature(abi_x86_interrupt)]
 #![feature(maybe_uninit_slice)]
-#![feature(build_hasher_simple_hash_one)]
 #![feature(never_type)]
 #![feature(target_feature_11)]
 #![feature(portable_simd)]
 #![feature(const_mut_refs)]
 #![feature(const_option)]
 #![feature(const_trait_impl)]
-#![feature(const_clone)]
 #![allow(unused_imports)]
 
 extern crate alloc;
@@ -171,7 +169,7 @@ pub fn get_next_usable_frame() -> PhysFrame {
 }
 
 /// Convenient wrapper for getting the physical memory offset
-pub const fn get_phys_offset() -> u64 {
+pub fn get_phys_offset() -> u64 {
     get_boot_info()
         .physical_memory_offset
         .as_ref()
@@ -183,7 +181,7 @@ pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit(
 pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions<Global>>> = OnceCell::uninit();
 
 pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
-    PCI_CONFIG.get().clone().unwrap().clone()
+    PCI_CONFIG.get().clone().unwrap()
 }
 
 /// Returns an Iterator of all possible `Option<u64>` in the PCIe extended address space
