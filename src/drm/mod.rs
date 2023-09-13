@@ -164,34 +164,41 @@ impl CompositingLayer {
             panic!("Alpha value must be a value between 0 and 1");
         }
 
-        for (mut this, other) in self.pixels.iter_mut().zip(other.pixels) {
-            let mut this_simd = match this.1 {
+        let own_colors = self.pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
+        let other_colors = other.pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
+
+        let pixels = self.pixels.clone(); // borrow checker
+
+        for (i, p) in pixels.iter().map(|p| p.0).enumerate() {
+            let pixel_offset = p.y as usize * self.info.stride + p.x as usize;
+
+            let mut this_simd = match own_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&mut [0, bgr.b(), bgr.g(), bgr.r()])
+                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
                 }
                 PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&mut [0, rgb.r(), rgb.g(), rgb.b()])
+                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
                 }
                 PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                    grayscale.luma(),
+                    grayscale.luma(),
+                    grayscale.luma(),
                     0,
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
                 ]),
             };
 
-            let other_simd = match other.1 {
+            let other_simd = match other_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&mut [0, bgr.b(), bgr.g(), bgr.r()])
+                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
                 }
                 PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&mut [0, rgb.r(), rgb.g(), rgb.b()])
+                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
                 }
                 PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                    grayscale.luma(),
+                    grayscale.luma(),
+                    grayscale.luma(),
                     0,
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
                 ]),
             };
 
@@ -204,20 +211,16 @@ impl CompositingLayer {
 
             let out_simd = this_simd.to_array();
 
-            let new_rgb = &mut Pixel(
-                this.0.clone(),
-                PixelColorKind::new(self.info, out_simd[0], out_simd[1], out_simd[2]),
-            );
-
-            let new_bgr = &mut Pixel(
-                this.0.clone(),
-                PixelColorKind::new(self.info, out_simd[2], out_simd[1], out_simd[0]),
-            );
-
-            this = match this.1 {
-                PixelColorKind::Rgb(_) => new_rgb,
-                PixelColorKind::Bgr(_) => new_bgr,
-                PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported")
+            self.pixels[pixel_offset] = match own_colors[i] {
+                PixelColorKind::Rgb(_) => Pixel(
+                    p,
+                    PixelColorKind::new(self.info, out_simd[0], out_simd[1], out_simd[2]),
+                ),
+                PixelColorKind::Bgr(_) => Pixel(
+                    p,
+                    PixelColorKind::new(self.info, out_simd[2], out_simd[1], out_simd[0]),
+                ),
+                PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
             }
         }
     }
