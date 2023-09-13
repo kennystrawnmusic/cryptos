@@ -5,7 +5,7 @@ use core::{
 };
 
 use alloc::alloc::Global;
-use x86_64::structures::paging::{OffsetPageTable, PageSize};
+use x86_64::{structures::paging::{OffsetPageTable, PageSize, PhysFrame}, PhysAddr};
 
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
 use spin::Mutex;
@@ -92,11 +92,11 @@ pub fn heap_init() {
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
 
-/// Structure that provides page-aligned physical memory access (proprietary drivers, which can *only* be usermode drivers, are going to need this)
-pub struct PageBox<T>(NonNull<T>);
+/// Structure that provides page/frame-aligned physical memory access (proprietary drivers, which can *only* be usermode drivers, are going to need this)
+pub struct PhysBox<T>(NonNull<T>);
 
-impl<T> PageBox<T> {
-    /// Creates a new `PageBox<T>` by creating a test page at the address of `T`
+impl<T> PhysBox<T> {
+    /// Creates a new `PhysBox<T>` by creating a test page at the address of `T`
     /// and aligning it to `T`'s start address
     ///
     /// Example (untested!!!):
@@ -105,14 +105,14 @@ impl<T> PageBox<T> {
     ///
     /// fn foo() {
     ///     let x = 42u64;
-    ///     let pb = PageBox::new::<Size4KiB>(x);
+    ///     let pb = PhysBox::new::<Size4KiB>(x);
     ///     // do whatever`
     /// }
     /// ```
     /// Help wanted for those who can come up with a better example than this
     pub fn new<S: PageSize>(inner: T) -> Self {
         let inner_addr = addr_of!(inner) as usize as u64;
-        let test = Page::<S>::containing_address(VirtAddr::new(inner_addr));
+        let test = PhysFrame::<S>::containing_address(PhysAddr::new(inner_addr));
 
         let size = test.size() as usize;
         let align = test.start_address().as_u64() as usize;
