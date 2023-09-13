@@ -109,6 +109,7 @@ impl<T> PageBox<T> {
     ///     // do whatever`
     /// }
     /// ```
+    /// Help wanted for those who can come up with a better example than this
     pub fn new<S: PageSize>(inner: T) -> Self {
         let inner_addr = addr_of!(inner) as usize as u64;
         let test = Page::<S>::containing_address(VirtAddr::new(inner_addr));
