@@ -92,7 +92,9 @@ pub fn heap_init() {
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
 
-/// Structure that provides page/frame-aligned physical memory access (proprietary drivers, which can *only* be usermode drivers if the GPL is to be honored, are going to need this)
+/// Structure that provides page/frame-aligned physical memory access
+/// 
+/// Proprietary drivers, which can *only* be usermode drivers if the GPL is to be honored, are going to need this.
 pub struct PhysBox<T>(NonNull<T>);
 
 impl<T> PhysBox<T> {
