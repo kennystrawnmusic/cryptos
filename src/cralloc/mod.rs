@@ -92,9 +92,23 @@ pub fn heap_init() {
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }
 
+/// Structure that provides page-aligned physical memory access (proprietary drivers, which can *only* be usermode drivers, are going to need this)
 pub struct PageBox<T>(NonNull<T>);
 
 impl<T> PageBox<T> {
+    /// Creates a new `PageBox<T>` by creating a test page at the address of `T`
+    /// and aligning it to `T`'s start address
+    /// 
+    /// Example (untested!!!):
+    /// ```
+    /// use x86_64::structures::paging::Size4KiB;
+    /// 
+    /// fn foo() {
+    ///     let x = 42u64;
+    ///     let pb = PageBox::new::<Size4KiB>(x);
+    ///     // do whatever
+    /// }
+    /// ```
     pub fn new<S: PageSize>(inner: T) -> Self {
         let inner_addr = addr_of!(inner) as usize as u64;
         let test = Page::<S>::containing_address(VirtAddr::new(inner_addr));
