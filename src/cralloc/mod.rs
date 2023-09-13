@@ -98,6 +98,8 @@ pub fn heap_init() {
 /// Structure that provides page/frame-aligned physical memory access
 ///
 /// Proprietary drivers, which can *only* be usermode drivers if the GPL is to be honored, are going to need this.
+/// Also exactly the point of making this a hybrid kernel in the roadmap: you can segregate the proprietary drivers
+/// which monolithic kernels like Linux can't do.
 pub struct PhysBox<T>(NonNull<T>);
 
 impl<T> PhysBox<T> {
