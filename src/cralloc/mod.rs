@@ -133,7 +133,7 @@ impl<T> PhysBox<T> {
     /// 4KiB is by far the most common physical frame size.
     ///
     /// This, therefore, is shorthand for `PhysBox::new_inner::<Size4KiB>` for both ease of use
-    /// and compatibility with redox_syscall
+    /// and compatibility with redox_syscall which uses a similar structure defined by the Redox kernel
     pub fn new(inner: T) -> Self {
         Self::new_inner::<Size4KiB>(inner)
     }
