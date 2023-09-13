@@ -11,7 +11,7 @@ use x86_64::{
 };
 
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
-use spin::Mutex;
+use spin::{Mutex, RwLock};
 
 use self::frames::Falloc;
 
@@ -86,11 +86,11 @@ pub fn heap_init() {
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
 
     MAPPER.get_or_init(move || Mutex::new(map));
-    FRAME_ALLOCATOR.get_or_init(move || Mutex::new(falloc));
+    FRAME_ALLOCATOR.get_or_init(move || RwLock::new(falloc));
 
     heap_init_inner(
         &mut *MAPPER.get().unwrap().lock(),
-        &mut *FRAME_ALLOCATOR.get().unwrap().lock(),
+        &mut *FRAME_ALLOCATOR.get().unwrap().write(),
     )
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }

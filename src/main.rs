@@ -153,14 +153,14 @@ pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
 pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
-pub static FRAME_ALLOCATOR: OnceCell<Mutex<Falloc>> = OnceCell::uninit();
+pub static FRAME_ALLOCATOR: OnceCell<RwLock<Falloc>> = OnceCell::uninit();
 
 pub fn get_next_usable_frame() -> PhysFrame {
     FRAME_ALLOCATOR
         .get()
         .as_ref()
         .unwrap()
-        .lock()
+        .write()
         .usable()
         .next()
         .clone()

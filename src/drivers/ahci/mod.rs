@@ -62,7 +62,7 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
     let frame = FRAME_ALLOCATOR
         .get()
         .expect("Frame allocator not initialized")
-        .lock()
+        .write()
         .allocate_frame()
         .expect("Out of memory");
 

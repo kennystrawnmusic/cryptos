@@ -79,7 +79,7 @@ macro_rules! map_page {
                     page,
                     frame,
                     $flags,
-                    &mut *crate::FRAME_ALLOCATOR.get().unwrap().lock(),
+                    &mut *crate::FRAME_ALLOCATOR.get().unwrap().write(),
                 )
             };
 
