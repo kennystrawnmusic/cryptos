@@ -98,7 +98,7 @@ pub fn heap_init() {
 pub struct PhysBox<T>(NonNull<T>);
 
 impl<T> PhysBox<T> {
-    /// Creates a new `PhysBox<T>` by creating a test page at the address of `T`
+    /// Creates a new `PhysBox<T>` by creating a test page of size `S` at the address of `T`
     /// and aligning it to `T`'s start address
     ///
     /// Example (untested!!!):
@@ -126,5 +126,12 @@ impl<T> PhysBox<T> {
             .unwrap_or_else(|e| panic!("Error allocating memory: {:#?}", e));
 
         Self(NonNull::<T>::new(unsafe { *(new_inner.as_ptr() as *mut _) }).unwrap())
+    }
+    /// 4KiB is by far the most common physical frame size.
+    /// 
+    /// This, therefore, is shorthand for `PhysBox::new_inner::<Size4KiB>` for both ease of use
+    /// and compatibility with redox_syscall
+    pub fn new(inner: T) -> Self {
+        Self::new_inner::<Size4KiB>(inner)
     }
 }
