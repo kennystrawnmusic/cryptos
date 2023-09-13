@@ -157,7 +157,7 @@ impl CompositingLayer {
         }
     }
 
-    #[allow(unused_assignments)]
+    #[allow(unused_assignments)] // FIXME: figure out why attempting to assign from inside the loop is causing this problem
     #[target_feature(enable = "avx")]
     unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CompositingLayer) {
         if alpha > 1.0 || alpha < 0.0 {
@@ -204,10 +204,21 @@ impl CompositingLayer {
 
             let out_simd = this_simd.to_array();
 
-            this = &mut Pixel(
+            let new_rgb = &mut Pixel(
                 this.0.clone(),
-                PixelColorKind::new(self.info, out_simd[1], out_simd[2], out_simd[3]),
-            )
+                PixelColorKind::new(self.info, out_simd[0], out_simd[1], out_simd[2]),
+            );
+
+            let new_bgr = &mut Pixel(
+                this.0.clone(),
+                PixelColorKind::new(self.info, out_simd[2], out_simd[1], out_simd[0]),
+            );
+
+            this = match this.1 {
+                PixelColorKind::Rgb(_) => new_rgb,
+                PixelColorKind::Bgr(_) => new_bgr,
+                PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported")
+            }
         }
     }
     /// Computes alpha values relative to those associated with another layer
