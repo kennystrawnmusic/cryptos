@@ -156,7 +156,7 @@ impl CompositingLayer {
             info,
         }
     }
-    
+
     #[target_feature(enable = "avx")]
     unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CompositingLayer) {
         if alpha > 1.0 || alpha < 0.0 {
@@ -171,6 +171,7 @@ impl CompositingLayer {
         for (i, p) in pixels.iter().map(|p| p.0).enumerate() {
             let pixel_offset = p.y as usize * self.info.stride + p.x as usize;
 
+            // first, copy all color values from layer we're currently on
             let mut this_simd = match own_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
                     Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
@@ -186,6 +187,7 @@ impl CompositingLayer {
                 ]),
             };
 
+            // next, copy all color values from layer we want to blend with
             let other_simd = match other_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
                     Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
@@ -201,15 +203,19 @@ impl CompositingLayer {
                 ]),
             };
 
+            // alpha value to compute
             let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
 
+            // here's where the magic happens
             this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
                 + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
                     * (other_simd.clone().cast::<f32>())))
             .cast::<u8>();
-
+            
+            // extract result of the alpha-blend formula
             let out_simd = this_simd.to_array();
 
+            // finally, overwrite the pixels with the new values
             self.pixels[pixel_offset] = match own_colors[i] {
                 PixelColorKind::Rgb(_) => Pixel(
                     p,
