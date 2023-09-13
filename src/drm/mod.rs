@@ -143,22 +143,16 @@ pub fn buffer_pixels(buffer: &mut FrameBuffer) -> impl Iterator<Item = Pixel<Pix
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct CompositingLayer {
-    color: PixelColorKind,
-    fb: Vec<u8>,
+    pixels: Vec<Pixel<PixelColorKind>>,
     info: FrameBufferInfo,
 }
 
 impl CompositingLayer {
     /// Creates a new `CompositingLayer` using a provided `FrameBuffer` and color values
-    pub fn new(buffer: &'static mut FrameBuffer, red: u8, green: u8, blue: u8) -> Self {
+    pub fn new(buffer: &'static mut FrameBuffer) -> Self {
         let info = buffer.info().clone();
         Self {
-            color: PixelColorKind::new(info, red, green, blue),
-            fb: buffer
-                .buffer_mut()
-                .iter()
-                .map(|i| i.clone())
-                .collect::<Vec<_>>(),
+            pixels: buffer_pixels(buffer).collect::<Vec<_>>(),
             info,
         }
     }
@@ -170,78 +164,50 @@ impl CompositingLayer {
             panic!("Alpha value must be a value between 0 and 1");
         }
 
-        match self.color {
-            PixelColorKind::Rgb(own_rgb) => {
-                if let PixelColorKind::Rgb(other_rgb) = other.color {
-                    let new_red = ((alpha * (own_rgb.r() as f32))
-                        + ((1.0 - alpha) * (other_rgb.r() as f32)))
-                        as u8;
-                    let new_green = ((alpha * (own_rgb.g() as f32))
-                        + ((1.0 - alpha) * (other_rgb.g() as f32)))
-                        as u8;
-                    let new_blue = ((alpha * (own_rgb.b() as f32))
-                        + ((1.0 - alpha) * (other_rgb.b() as f32)))
-                        as u8;
-
-                    for (mut this, other) in self
-                        .fb
-                        .chunks_exact_mut(self.info.bytes_per_pixel)
-                        .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
-                    {
-                        // bytes per pixel is always 4 in UEFI
-                        let mut this_simd = Simd::<u8, 4>::from_slice(this);
-                        let other_simd = Simd::<u8, 4>::from_slice(other);
-                        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
-
-                        this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                                * (other_simd.clone().cast::<f32>())))
-                        .cast::<u8>();
-
-                        this = &mut this_simd.to_array();
-                    }
-
-                    self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
-                } else {
-                    unreachable!()
+        for (mut this, other) in self.pixels.iter_mut().zip(other.pixels) {
+            let mut this_simd = match this.1 {
+                PixelColorKind::Bgr(bgr) => {
+                    Simd::<u8, 4>::from_slice(&mut [0, bgr.b(), bgr.g(), bgr.r()])
                 }
-            }
-            PixelColorKind::Bgr(own_bgr) => {
-                if let PixelColorKind::Bgr(other_bgr) = other.color {
-                    let new_blue = ((alpha * (own_bgr.b() as f32))
-                        + ((1.0 - alpha) * (other_bgr.b() as f32)))
-                        as u8;
-                    let new_green = ((alpha * (own_bgr.g() as f32))
-                        + ((1.0 - alpha) * (other_bgr.g() as f32)))
-                        as u8;
-                    let new_red = ((alpha * (own_bgr.r() as f32))
-                        + ((1.0 - alpha) * (other_bgr.r() as f32)))
-                        as u8;
-
-                    for (mut this, other) in self
-                        .fb
-                        .chunks_exact_mut(self.info.bytes_per_pixel)
-                        .zip(other.fb.chunks_exact(self.info.bytes_per_pixel))
-                    {
-                        // bytes per pixel is always 4 in UEFI
-                        let mut this_simd = Simd::<u8, 4>::from_slice(this);
-                        let other_simd = Simd::<u8, 4>::from_slice(other);
-                        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
-
-                        this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
-                            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                                * (other_simd.clone().cast::<f32>())))
-                        .cast::<u8>();
-
-                        this = &mut this_simd.to_array();
-                    }
-
-                    self.color = PixelColorKind::new(self.info, new_red, new_green, new_blue);
-                } else {
-                    unreachable!()
+                PixelColorKind::Rgb(rgb) => {
+                    Simd::<u8, 4>::from_slice(&mut [0, rgb.r(), rgb.g(), rgb.b()])
                 }
-            }
-            PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
+                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                    0,
+                    grayscale.luma(),
+                    grayscale.luma(),
+                    grayscale.luma(),
+                ]),
+            };
+
+            let other_simd = match other.1 {
+                PixelColorKind::Bgr(bgr) => {
+                    Simd::<u8, 4>::from_slice(&mut [0, bgr.b(), bgr.g(), bgr.r()])
+                }
+                PixelColorKind::Rgb(rgb) => {
+                    Simd::<u8, 4>::from_slice(&mut [0, rgb.r(), rgb.g(), rgb.b()])
+                }
+                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                    0,
+                    grayscale.luma(),
+                    grayscale.luma(),
+                    grayscale.luma(),
+                ]),
+            };
+
+            let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
+
+            this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
+                + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
+                    * (other_simd.clone().cast::<f32>())))
+            .cast::<u8>();
+
+            let out_simd = this_simd.to_array();
+
+            this = &mut Pixel(
+                this.0.clone(),
+                PixelColorKind::new(self.info, out_simd[1], out_simd[2], out_simd[3]),
+            )
         }
     }
     /// Computes alpha values relative to those associated with another layer
@@ -250,8 +216,29 @@ impl CompositingLayer {
     }
     /// Writes finished render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
-        for (index, byte) in self.fb.iter().enumerate() {
-            root_buffer.buffer_mut()[index] = byte.clone();
+        with_avx(|| unsafe { self.merge_down_inner(root_buffer) })
+    }
+
+    #[target_feature(enable = "avx")]
+    unsafe fn merge_down_inner(&self, root_buffer: &mut FrameBuffer) {
+        for (chunk, pixel) in root_buffer
+            .buffer_mut()
+            .chunks_exact_mut(4)
+            .zip(&self.pixels)
+        {
+            let mut new_chunk = match pixel.1 {
+                PixelColorKind::Bgr(bgr) => {
+                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
+                }
+                PixelColorKind::Rgb(rgb) => {
+                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
+                }
+                PixelColorKind::U8(grayscale) => {
+                    Simd::<u8, 4>::from_slice(&mut [grayscale.luma(), 0, 0, 0])
+                }
+            };
+
+            chunk.copy_from_slice(new_chunk.as_mut_array());
         }
     }
     /// Adds the given `CompositingLayer` to the compositing table
@@ -288,11 +275,20 @@ impl DrawTarget for CompositingLayer {
                 PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
             };
 
-            let pixel_bytes = self.info.bytes_per_pixel;
-            let byte_offset = pixel_offset * pixel_bytes;
-
-            self.fb[byte_offset..(byte_offset + pixel_bytes)]
-                .copy_from_slice(&color[..pixel_bytes]);
+            self.pixels[pixel_offset] = match colors[index] {
+                PixelColorKind::Rgb(_) => Pixel(
+                    point,
+                    PixelColorKind::new(self.info, color[0], color[1], color[2]),
+                ),
+                PixelColorKind::Bgr(_) => Pixel(
+                    point,
+                    PixelColorKind::new(self.info, color[2], color[1], color[0]),
+                ),
+                PixelColorKind::U8(gray) => Pixel(
+                    point,
+                    PixelColorKind::new(self.info, gray.luma(), gray.luma(), gray.luma()),
+                ),
+            };
         }
         Ok(())
     }
