@@ -105,12 +105,12 @@ impl<T> PhysBox<T> {
     ///
     /// fn foo() {
     ///     let x = 42u64;
-    ///     let pb = PhysBox::new::<Size4KiB>(x);
-    ///     // do whatever`
+    ///     let pb = PhysBox::new_inner::<Size4KiB>(x);
+    ///     // do whatever you want with `pb` at this point
     /// }
     /// ```
     /// Help wanted for those who can come up with a better example than this
-    pub fn new<S: PageSize>(inner: T) -> Self {
+    pub fn new_inner<S: PageSize>(inner: T) -> Self {
         let inner_addr = addr_of!(inner) as usize as u64;
         let test = PhysFrame::<S>::containing_address(PhysAddr::new(inner_addr));
 
