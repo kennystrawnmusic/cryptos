@@ -5,7 +5,10 @@ use core::{
 };
 
 use alloc::alloc::Global;
-use x86_64::{structures::paging::{OffsetPageTable, PageSize, PhysFrame}, PhysAddr};
+use x86_64::{
+    structures::paging::{OffsetPageTable, PageSize, PhysFrame},
+    PhysAddr,
+};
 
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
 use spin::Mutex;
@@ -93,7 +96,7 @@ pub fn heap_init() {
 }
 
 /// Structure that provides page/frame-aligned physical memory access
-/// 
+///
 /// Proprietary drivers, which can *only* be usermode drivers if the GPL is to be honored, are going to need this.
 pub struct PhysBox<T>(NonNull<T>);
 
@@ -128,7 +131,7 @@ impl<T> PhysBox<T> {
         Self(NonNull::<T>::new(unsafe { *(new_inner.as_ptr() as *mut _) }).unwrap())
     }
     /// 4KiB is by far the most common physical frame size.
-    /// 
+    ///
     /// This, therefore, is shorthand for `PhysBox::new_inner::<Size4KiB>` for both ease of use
     /// and compatibility with redox_syscall
     pub fn new(inner: T) -> Self {
