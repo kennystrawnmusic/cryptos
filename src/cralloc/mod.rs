@@ -98,15 +98,15 @@ pub struct PageBox<T>(NonNull<T>);
 impl<T> PageBox<T> {
     /// Creates a new `PageBox<T>` by creating a test page at the address of `T`
     /// and aligning it to `T`'s start address
-    /// 
+    ///
     /// Example (untested!!!):
     /// ```
     /// use x86_64::structures::paging::Size4KiB;
-    /// 
+    ///
     /// fn foo() {
     ///     let x = 42u64;
     ///     let pb = PageBox::new::<Size4KiB>(x);
-    ///     // do whatever
+    ///     // do whatever`
     /// }
     /// ```
     pub fn new<S: PageSize>(inner: T) -> Self {
