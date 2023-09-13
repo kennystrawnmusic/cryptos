@@ -85,11 +85,11 @@ pub fn heap_init() {
     let map = unsafe { map_memory(offset) };
     let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
 
-    MAPPER.get_or_init(move || Mutex::new(map));
+    MAPPER.get_or_init(move || RwLock::new(map));
     FRAME_ALLOCATOR.get_or_init(move || RwLock::new(falloc));
 
     heap_init_inner(
-        &mut *MAPPER.get().unwrap().lock(),
+        &mut *MAPPER.get().unwrap().write(),
         &mut *FRAME_ALLOCATOR.get().unwrap().write(),
     )
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));

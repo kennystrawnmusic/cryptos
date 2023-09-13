@@ -25,7 +25,7 @@ use {
     crate::{get_phys_offset, map_page},
     acpi::{
         sdt::Signature, AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel,
-        PciConfigRegions, PhysicalMapping, PlatformInfo, RsdpError,
+        PciConfigRegions, PhysicalMapping, PlatformInfo,
     },
     alloc::boxed::Box,
     alloc::sync::Arc,
@@ -486,6 +486,14 @@ impl aml::Handler for KernelAcpi {
         unsafe {
             core::ptr::write_volatile(((rebuilt + get_phys_offset()) as usize) as *mut u32, value)
         }
+    }
+
+    fn stall(&self, _microseconds: u64) {
+        unimplemented!()
+    }
+
+    fn sleep(&self, _milliseconds: u64) {
+        unimplemented!()
     }
 }
 

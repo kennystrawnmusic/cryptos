@@ -75,7 +75,7 @@ macro_rules! map_page {
             // suppress warnings if this macro is called from an unsafe fn
             #[allow(unused_unsafe)]
             let res = unsafe {
-                crate::MAPPER.get().unwrap().lock().map_to(
+                crate::MAPPER.get().unwrap().write().map_to(
                     page,
                     frame,
                     $flags,

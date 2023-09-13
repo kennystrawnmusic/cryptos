@@ -34,7 +34,7 @@ use acpi::{
     fadt::Fadt,
     sdt::{SdtHeader, Signature},
     AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
-    PhysicalMapping, PlatformInfo, RsdpError,
+    PhysicalMapping, PlatformInfo,
 };
 use alloc::{alloc::Global, boxed::Box, format, string::String, sync::Arc, vec::Vec};
 use aml::{
@@ -152,7 +152,7 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
-pub static MAPPER: OnceCell<Mutex<OffsetPageTable>> = OnceCell::uninit();
+pub static MAPPER: OnceCell<RwLock<OffsetPageTable>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<RwLock<Falloc>> = OnceCell::uninit();
 
 pub fn get_next_usable_frame() -> PhysFrame {
