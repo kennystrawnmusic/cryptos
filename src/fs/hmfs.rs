@@ -73,17 +73,37 @@ pub fn new_map_shorthand() -> HashMap<Properties, Rc<Entry>> {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Entry {
     kind: EntryKind,
-    checksum: Option<u64>,
+    checksum: u64,
     parent: Option<EntryKind>,
 }
 
 impl Entry {
     pub fn new(kind: EntryKind, parent: Option<EntryKind>) -> Self {
-        Self {
+        let mut new = Self {
             kind,
-            checksum: None,
-            parent,
-        }
+            checksum: 0,
+            parent: parent.clone(),
+        };
+
+        if let Some(parent) = parent {
+            match parent {
+                EntryKind::Directory(dir) => {
+                    new.checksum = dir.hasher().hash_one(&new);
+                },
+                EntryKind::File(_) => panic!("Parent must be a directory"),
+                EntryKind::Root(root) => {
+                    let root = Rc::clone(&root).get_root_dir();
+
+                    if let EntryKind::Directory(dir) = root.kind {
+                        new.checksum = dir.hasher().hash_one(&new);
+                    } else {
+                        unreachable!("always a directory here")
+                    }
+                },
+            }
+        };
+
+        new
     }
     pub fn parent(&self) -> Option<EntryKind> {
         self.parent.clone()
@@ -108,7 +128,7 @@ impl Entry {
                 );
 
                 let kind = EntryKind::Directory(new_map);
-                let checksum = Some(dir.hasher().hash_one(&kind));
+                let checksum = dir.hasher().hash_one(&kind);
 
                 let to_insert = Self {
                     kind,
@@ -142,7 +162,7 @@ impl Entry {
                     );
 
                     let kind = EntryKind::Directory(new_map);
-                    let checksum = Some(dir.hasher().hash_one(&kind));
+                    let checksum = dir.hasher().hash_one(&kind);
 
                     let to_insert = Self {
                         kind,
