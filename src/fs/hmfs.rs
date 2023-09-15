@@ -81,7 +81,7 @@ impl Entry {
     pub fn new(kind: EntryKind, parent: Option<EntryKind>) -> Self {
         let mut new = Self {
             kind,
-            checksum: 0,
+            checksum: 0x0,
             parent: parent.clone(),
         };
 
