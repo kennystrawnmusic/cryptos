@@ -211,7 +211,7 @@ impl CompositingLayer {
                 + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
                     * (other_simd.clone().cast::<f32>())))
             .cast::<u8>();
-            
+
             // extract result of the alpha-blend formula
             let out_simd = this_simd.to_array();
 

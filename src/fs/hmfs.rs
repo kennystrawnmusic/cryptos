@@ -89,7 +89,7 @@ impl Entry {
             match parent {
                 EntryKind::Directory(dir) => {
                     new.checksum = dir.hasher().hash_one(&new);
-                },
+                }
                 EntryKind::File(_) => panic!("Parent must be a directory"),
                 EntryKind::Root(root) => {
                     let root = Rc::clone(&root).get_root_dir();
@@ -99,7 +99,7 @@ impl Entry {
                     } else {
                         unreachable!("always a directory here")
                     }
-                },
+                }
             }
         };
 
