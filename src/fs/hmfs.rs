@@ -164,6 +164,7 @@ impl Entry {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[non_exhaustive]
 pub struct Properties {
     name: String,
     entry_kind: EntryKind,
