@@ -15,6 +15,7 @@ pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
 }
 
 // need something far more secure than AHash here to pave the way for things like per-directory encryption
+// and ZFS-like real-time checksumming
 #[derive(Default)]
 pub struct HMFSHasher(Sha3_512);
 
