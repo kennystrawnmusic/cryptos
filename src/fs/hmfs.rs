@@ -31,6 +31,7 @@ impl Hasher for HMFSHasher {
 
 pub type HMFSHashBuilder = BuildHasherDefault<HMFSHasher>;
 pub type HashMap<K, V> = hashbrown::HashMap<K, V, HMFSHashBuilder>;
+pub type Result<T> = syscall::Result<T, syscall::Error>;
 
 // going one-further than most other implementations to ensure this never overflows
 #[allow(non_camel_case_types)]
