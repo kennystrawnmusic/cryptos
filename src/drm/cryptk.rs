@@ -1,13 +1,15 @@
-use embedded_graphics::{primitives::{Rectangle, RoundedRectangle, Circle, Line}, text::Text};
+use embedded_graphics::primitives::{Rectangle, RoundedRectangle, Circle, Line};
 use u8g2_fonts::U8g2TextStyle;
 use alloc::vec::Vec;
 
-use super::{CompositingLayer, PixelColorKind};
+use super::{Canvas, PixelColorKind};
+
+type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKind>>;
 
 #[allow(unused)] // not finished
 pub struct WindowDecoration<'a> {
     background: RoundedRectangle,
-    text: Text<'a, U8g2TextStyle<PixelColorKind>>,
+    text: Text<'a>,
 }
 
 #[non_exhaustive] // not finished
@@ -36,6 +38,6 @@ pub enum WidgetKind<'a> {
 
 #[allow(unused)] // not finished
 pub struct Widget<'a> {
-    layer: CompositingLayer,
+    layer: Canvas,
     kind: WidgetKind<'a>,
 }

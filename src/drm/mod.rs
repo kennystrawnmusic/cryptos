@@ -20,7 +20,7 @@ use spin::RwLock;
 use self::avx_accel::{enable_avx, with_avx};
 
 /// Vector of compositing layers for the rendering loop to merge down as it iterates
-pub static COMPOSITING_TABLE: RwLock<Vec<CompositingLayer>> = RwLock::new(Vec::new());
+pub static COMPOSITING_TABLE: RwLock<Vec<Canvas>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
 pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
@@ -142,12 +142,12 @@ pub fn buffer_pixels(buffer: &mut FrameBuffer) -> impl Iterator<Item = Pixel<Pix
 /// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
 #[derive(Clone)]
-pub struct CompositingLayer {
+pub struct Canvas {
     pixels: Vec<Pixel<PixelColorKind>>,
     info: FrameBufferInfo,
 }
 
-impl CompositingLayer {
+impl Canvas {
     /// Creates a new `CompositingLayer` using a provided `FrameBuffer` and color values
     pub fn new(buffer: &'static mut FrameBuffer) -> Self {
         let info = buffer.info().clone();
@@ -158,7 +158,7 @@ impl CompositingLayer {
     }
 
     #[target_feature(enable = "avx")]
-    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CompositingLayer) {
+    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: Canvas) {
         if alpha > 1.0 || alpha < 0.0 {
             panic!("Alpha value must be a value between 0 and 1");
         }
@@ -230,7 +230,7 @@ impl CompositingLayer {
         }
     }
     /// Computes alpha values relative to those associated with another layer
-    pub fn alpha_blend(&mut self, alpha: f32, other: CompositingLayer) {
+    pub fn alpha_blend(&mut self, alpha: f32, other: Canvas) {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
     }
     /// Writes finished render to an existing root framebuffer after computations
@@ -266,7 +266,7 @@ impl CompositingLayer {
     }
 }
 
-impl OriginDimensions for CompositingLayer {
+impl OriginDimensions for Canvas {
     fn size(&self) -> embedded_graphics::prelude::Size {
         let horiz = self.info.width as u32;
         let vert = self.info.height as u32;
@@ -274,7 +274,7 @@ impl OriginDimensions for CompositingLayer {
     }
 }
 
-impl DrawTarget for CompositingLayer {
+impl DrawTarget for Canvas {
     type Color = PixelColorKind;
     type Error = !; //direct framebuffer writes never fail
 
@@ -313,5 +313,5 @@ impl DrawTarget for CompositingLayer {
     }
 }
 
-unsafe impl Send for CompositingLayer {}
-unsafe impl Sync for CompositingLayer {}
+unsafe impl Send for Canvas {}
+unsafe impl Sync for Canvas {}
