@@ -5,7 +5,7 @@ use super::CompositingLayer;
 #[non_exhaustive] // not finished
 pub enum WidgetClass {
     Window(RoundedRectangle),
-    MinMaxClose([Circle; 3]),
+    MinMaxClose((Rectangle, [Circle; 3])),
     TextInput(RoundedRectangle),
     TextView(RoundedRectangle),
     Search(RoundedRectangle),
