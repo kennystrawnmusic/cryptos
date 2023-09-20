@@ -137,7 +137,7 @@ pub fn buffer_pixels(buffer: &mut FrameBuffer) -> impl Iterator<Item = Pixel<Pix
         .map(|(point, color)| Pixel(point, color))
 }
 
-/// Data structure for the `embedded-graphics` crate to draw to
+/// Canvas buffer for compositing
 ///
 /// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
@@ -148,7 +148,7 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    /// Creates a new `CompositingLayer` using a provided `FrameBuffer` and color values
+    /// Creates a new canvas using a provided `FrameBuffer` and color values
     pub fn new(buffer: &'static mut FrameBuffer) -> Self {
         let info = buffer.info().clone();
         Self {
@@ -229,11 +229,11 @@ impl Canvas {
             }
         }
     }
-    /// Computes alpha values relative to those associated with another layer
+    /// Computes alpha values relative to those associated with another canvas
     pub fn alpha_blend(&mut self, alpha: f32, other: Canvas) {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
     }
-    /// Writes finished render to an existing root framebuffer after computations
+    /// Writes finished canvas render to an existing root framebuffer after computations
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
         with_avx(|| unsafe { self.merge_down_inner(root_buffer) })
     }
@@ -260,7 +260,7 @@ impl Canvas {
             chunk.copy_from_slice(new_chunk.as_mut_array());
         }
     }
-    /// Adds the given `CompositingLayer` to the compositing table
+    /// Adds the given canvas to the compositing table
     pub fn register(self) {
         COMPOSITING_TABLE.write().push(self);
     }

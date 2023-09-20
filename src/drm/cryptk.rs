@@ -88,6 +88,6 @@ pub enum WidgetKind<'a> {
 
 #[allow(unused)] // not finished
 pub struct Widget<'a> {
-    layer: Canvas,
+    canvas: Canvas,
     kind: WidgetKind<'a>,
 }
