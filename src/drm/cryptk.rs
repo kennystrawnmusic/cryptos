@@ -25,7 +25,7 @@ pub enum WidgetKind<'a> {
     MenuItem(RoundedRectangle),
     Ribbon(Rectangle),
     SystemTray(Rectangle),
-    Dock((RoundedRectangle, Vec<Rectangle>)),
+    Dock((RoundedRectangle, Vec<Rectangle>, RoundedRectangle)),
     Overview(Rectangle),
     ListView(Rectangle),
     NavView([Rectangle; 2]),
