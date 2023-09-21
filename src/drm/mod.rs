@@ -14,7 +14,7 @@ use embedded_graphics::{
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
     Pixel,
 };
-use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData};
+use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData, pixelcolor::raw::RawU24};
 use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};
@@ -60,10 +60,16 @@ impl Clone for PixelColorKind {
     }
 }
 
+impl From<RawU24> for PixelColorKind {
+    fn from(value: RawU24) -> Self {
+        Self::Rgb(Rgb888::from(value))
+    }
+}
+
 impl Copy for PixelColorKind {}
 
 impl PixelColor for PixelColorKind {
-    type Raw = RawU32; // always 4 bytes = 32 bits on UEFI systems
+    type Raw = RawU24; // as high as Rgb888/Bgr888 will go
 }
 
 /// Extracts color information from the framebuffer

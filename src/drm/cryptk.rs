@@ -1,4 +1,7 @@
-use embedded_graphics::primitives::{Rectangle, RoundedRectangle, Circle, Line};
+use byteorder::LittleEndian;
+use embedded_graphics::{primitives::{Rectangle, RoundedRectangle, Circle, Line}, image::ImageRaw};
+use embedded_layout::{layout::linear::{LinearLayout, Horizontal, FixedMargin, Vertical, spacing::{Tight, DistributeFill}}, prelude::{vertical::{Bottom, Top, Center as VCenter, TopToBottom}, horizontal::{Left, Center as HCenter, LeftToRight}, Chain}};
+use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
 use alloc::vec::Vec;
 
@@ -14,22 +17,26 @@ pub struct WindowControls {
 
 #[allow(unused)] // not finished
 pub struct WindowDecoration<'a> {
+    layout: LinearLayout<Horizontal<Top, DistributeFill>, RoundedRectangle>,
     background: RoundedRectangle,
     text: Text<'a>,
     controls: WindowControls,
+    appmenu: Menu<'a>
 }
 
 #[allow(unused)] // not finished
 pub struct Window<'a> {
+    layout: LinearLayout<Vertical<HCenter, FixedMargin>, RoundedRectangle>,
     background: RoundedRectangle,
     decoration: WindowDecoration<'a>,
 }
 
 #[allow(unused)] // not finished
-pub struct Dock {
-    start: RoundedRectangle,
-    mid: Vec<Rectangle>,
-    end: RoundedRectangle,
+pub struct Dock<'a> {
+    layout: LinearLayout<Horizontal<Bottom, FixedMargin>, Canvas>,
+    left: RoundedRectangle,
+    right: RoundedRectangle,
+    mid: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
 }
 
 #[allow(unused)] // not finished
@@ -58,11 +65,65 @@ pub struct Search<'a> {
 
 #[allow(unused)] // not finished
 pub struct Menu<'a> {
+    layout: LinearLayout<Vertical<Left, Tight>, RoundedRectangle>,
     top: RoundedRectangle,
-    selection: Option<RoundedRectangle>,
+    selection: Option<Label<'a>>,
     items: Vec<TextView<'a>>,
     bottom: RoundedRectangle,
 }
+
+#[allow(unused)] // not finished
+ pub struct Tab<'a> {
+    layout: LinearLayout<Vertical<Left, Tight>, Rectangle>,
+    header: Label<'a>,
+    body: Rectangle,
+ }
+
+ #[allow(unused)] // not finished
+ pub struct Ribbon<'a> {
+    layout: LinearLayout<Horizontal<VCenter, DistributeFill>, Canvas>,
+    system_menu: Menu<'a>,
+    global_bar: Vec<TextView<'a>>,
+    system_tray: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
+    clock: TextView<'a>
+ }
+
+ #[allow(unused)] // not finished
+ pub struct Overview<'a> {
+    layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, Canvas>, // TODO: 2D grid
+    grid: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
+ }
+
+ #[allow(unused)] // not finished
+ pub struct ListView<'a> {
+    layout: LinearLayout<Vertical<Left, FixedMargin>, Rectangle>,
+    items: Vec<TextView<'a>>,
+ }
+
+ #[allow(unused)] // not finished
+ pub struct NavView<'a> {
+    layout: LinearLayout<Horizontal<Top, FixedMargin>, Rectangle>,
+    left: ListView<'a>,
+    right: TextView<'a>, // TODO: support more view types
+ }
+
+ #[allow(unused)] // not finished
+ pub struct Slider {
+    movable: Circle,
+    axis: Line,
+ }
+
+ #[allow(unused)] // not finished
+ pub struct Toggle {
+    outline: RoundedRectangle,
+    movable: Circle,
+ }
+
+ #[allow(unused)] // not finished
+ pub struct ProgressBar {
+    outline: RoundedRectangle,
+    indicator: RoundedRectangle,
+ }
 
 #[non_exhaustive] // not finished
 pub enum WidgetKind<'a> {
@@ -72,18 +133,17 @@ pub enum WidgetKind<'a> {
     TextView(TextView<'a>),
     Label(Label<'a>),
     Search(Search<'a>),
-    Tab(Rectangle),
+    Tab(Tab<'a>),
     Scrollbar(Rectangle),
     Menu(Menu<'a>),
-    Ribbon(Rectangle),
-    SystemTray(Rectangle),
-    Dock(Dock),
-    Overview(Rectangle),
-    ListView(Rectangle),
-    NavView([Rectangle; 2]),
-    Slider((RoundedRectangle, Circle)),
-    Toggle((RoundedRectangle, Circle)),
-    ProgressBar([RoundedRectangle; 2]),
+    Ribbon(Ribbon<'a>),
+    Dock(Dock<'a>),
+    Overview(Overview<'a>),
+    ListView(ListView<'a>),
+    NavView(NavView<'a>),
+    Slider(Slider),
+    Toggle(Toggle),
+    ProgressBar(ProgressBar),
 }
 
 #[allow(unused)] // not finished

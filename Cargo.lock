@@ -461,6 +461,7 @@ dependencies = [
  "conquer-once 0.4.0",
  "embedded-graphics",
  "embedded-graphics-core",
+ "embedded-layout",
  "hashbrown",
  "itertools",
  "lazy_static",
@@ -475,6 +476,7 @@ dependencies = [
  "spin 0.9.8",
  "spinning_top",
  "strum",
+ "tinybmp",
  "u8g2-fonts",
  "unix_path",
  "usb_hid_item",
@@ -530,6 +532,27 @@ dependencies = [
  "az",
  "byteorder",
  "nalgebra 0.30.1",
+]
+
+[[package]]
+name = "embedded-layout"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b08725b7f9021377a7f84f14089b4980a30b06c5e424288b34482f17cf513369"
+dependencies = [
+ "embedded-graphics",
+ "embedded-layout-macros",
+]
+
+[[package]]
+name = "embedded-layout-macros"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "491e0adbc526da63474799123a3140523b30fc0d14739a24e023ec5cd92e651f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -1442,6 +1465,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.32",
+]
+
+[[package]]
+name = "tinybmp"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "197cc000e382175ff15abd9c54c694ef80ef20cb07e7f956c71e3ea97fc8dc60"
+dependencies = [
+ "embedded-graphics",
 ]
 
 [[package]]
