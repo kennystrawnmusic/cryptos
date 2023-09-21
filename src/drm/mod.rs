@@ -248,7 +248,7 @@ impl Canvas {
     unsafe fn merge_down_inner(&self, root_buffer: &mut FrameBuffer) {
         for (chunk, pixel) in root_buffer
             .buffer_mut()
-            .chunks_exact_mut(4)
+            .chunks_exact_mut(4) // always this on UEFI
             .zip(&self.pixels)
         {
             let mut new_chunk = match pixel.1 {
