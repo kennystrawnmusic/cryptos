@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 
-// reuse all the call numbers defined in the redox_syscall crate
+// reuse all the signal numbers defined in the redox_syscall crate
 pub use syscall::{
     SIGABRT, SIGALRM, SIGBUS, SIGCHLD, SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGIO, SIGKILL,
     SIGPIPE, SIGPROF, SIGPWR, SIGQUIT, SIGSEGV, SIGSTKFLT, SIGSTOP, SIGSYS, SIGTERM, SIGTRAP,
