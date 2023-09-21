@@ -10,6 +10,12 @@ use super::{Canvas, PixelColorKind};
 pub type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKind>>;
 
 #[allow(unused)] // not finished
+pub struct IconButton<'a> {
+    bg: Rectangle,
+    fg: Bmp<'a, PixelColorKind>,
+}
+
+#[allow(unused)] // not finished
 pub struct WindowControls {
     background: Rectangle,
     buttons: [Circle; 3],
@@ -36,7 +42,7 @@ pub struct Dock<'a> {
     layout: LinearLayout<Horizontal<Bottom, FixedMargin>, Canvas>,
     left: RoundedRectangle,
     right: RoundedRectangle,
-    mid: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
+    mid: Vec<IconButton<'a>>,
 }
 
 #[allow(unused)] // not finished
@@ -84,14 +90,14 @@ pub struct Menu<'a> {
     layout: LinearLayout<Horizontal<VCenter, DistributeFill>, Canvas>,
     system_menu: Menu<'a>,
     global_bar: Vec<TextView<'a>>,
-    system_tray: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
+    system_tray: Vec<IconButton<'a>>,
     clock: TextView<'a>
  }
 
  #[allow(unused)] // not finished
  pub struct Overview<'a> {
     layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, Canvas>, // TODO: 2D grid
-    grid: Vec<Bmp<'a, PixelColorKind>>, // TODO: icon buttons
+    grid: Vec<IconButton<'a>>,
  }
 
  #[allow(unused)] // not finished
