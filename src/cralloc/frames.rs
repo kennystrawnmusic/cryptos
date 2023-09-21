@@ -53,13 +53,16 @@ impl Falloc {
         faddrs.map(|a| PhysFrame::containing_address(PhysAddr::new(a)))
     }
 
-    pub fn allocate_multiple(&mut self, size: usize) -> Option<PhysFrameRangeInclusive<Size4KiB>> {
+    pub fn allocate_multiple(
+        &mut self,
+        size: usize,
+    ) -> Option<(PhysFrameRangeInclusive<Size4KiB>, usize)> {
         let begin = self.usable().nth(self.next)?;
         let end = self.usable().nth(self.next + size)?;
 
         self.next += size + 1;
 
-        Some(PhysFrame::range_inclusive(begin, end))
+        Some((PhysFrame::range_inclusive(begin, end), self.next.clone()))
     }
 }
 

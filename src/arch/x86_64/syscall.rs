@@ -21,17 +21,13 @@ pub fn iopl(level: usize, frame: &mut InterruptStackFrame) -> Result<usize> {
 // Physical memory allocation (necessary for usermode drivers to access device address space)
 fn physalloc_inner(size: usize, flags: PhysallocFlags) -> Result<usize> {
     if flags.contains(PhysallocFlags::SPACE_32 | PhysallocFlags::SPACE_64) {
-        if let Some(range) = FRAME_ALLOCATOR
+        if let Some((_, size)) = FRAME_ALLOCATOR
             .get()
             .unwrap()
             .write()
             .allocate_multiple(size)
         {
-            let mut c = 0usize;
-            for _ in range {
-                c += 1;
-            }
-            Ok(c)
+            Ok(size)
         } else {
             Err(Error::new(EINVAL))
         }
