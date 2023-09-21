@@ -20,6 +20,7 @@ pub mod drivers;
 pub mod drm;
 pub mod fs;
 pub mod scheme;
+pub mod process;
 
 use crate::{
     acpi_impl::KernelAcpi,
