@@ -131,6 +131,7 @@ fn physmap_inner(len: usize, flags: PhysmapFlags) -> Result<usize> {
     for f in frame_range {
         let p = Page::<Size4KiB>::containing_address(VirtAddr::new(f.start_address().as_u64()));
 
+        // Identity-map for now; will fix this later
         map_page!(
             p.start_address().as_u64(),
             f.start_address().as_u64(),
