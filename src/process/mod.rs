@@ -1,5 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use core::sync::atomic::{AtomicU8, AtomicU64, AtomicBool};
+
+use alloc::{sync::{Weak, Arc}, vec::Vec};
+use conquer_once::spin::{Once, OnceCell};
+use spin::RwLock;
+
+use crate::fs::hmfs::{FileData, Entry};
+
+use self::signal::Signal;
+
+pub mod signal;
+
 // Context status
 #[derive(Clone, Debug)]
 pub enum State {
@@ -24,4 +36,35 @@ impl From<(u8, u64)> for State {
             _ => Self::Invalid(value.0),
         }
     }
+}
+
+#[allow(dead_code)] // not finished
+pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
+
+#[allow(unused)] // not finished
+pub struct Process {
+    self_reference: Weak<Process>,
+    state: (AtomicU8, AtomicU64),
+
+    pid: usize,
+    tid: usize,
+
+    sid: AtomicU64,
+    gid: AtomicU64,
+
+    parent: RwLock<Option<Arc<Process>>>,
+
+    sleep: AtomicU64,
+    signal_received: Signal,
+
+    io_pending: AtomicBool,
+
+    open_files: Arc<Vec<FileData>>,
+    message_queue: !, // TODO: properly implement this
+
+    pwd: RwLock<Option<Entry>>,
+    exit_status: OnceCell<u64>,
+
+    parent_term: !, // TODO: properly implement this
+    systrace: AtomicBool,
 }
