@@ -1,7 +1,8 @@
+use alloc::vec::Vec;
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
 use core::ops::DerefMut;
 use spin::RwLock;
-use x86_64::structures::paging::frame::PhysFrameRangeInclusive;
+use x86_64::structures::paging::{frame::PhysFrameRangeInclusive, FrameDeallocator};
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},
@@ -64,6 +65,14 @@ impl Falloc {
 
         Some((PhysFrame::range_inclusive(begin, end), self.next.clone()))
     }
+
+    pub fn deallocate_multiple(&mut self, range: PhysFrameRangeInclusive<Size4KiB>) -> usize {
+        for frame in range {
+            unsafe { self.deallocate_frame(frame) };
+        }
+
+        range.count()
+    }
 }
 
 unsafe impl FrameAllocator<Size4KiB> for Falloc {
@@ -71,6 +80,18 @@ unsafe impl FrameAllocator<Size4KiB> for Falloc {
         let f = self.usable().nth(self.next);
         self.next += 1;
         f
+    }
+}
+
+impl FrameDeallocator<Size4KiB> for Falloc {
+    unsafe fn deallocate_frame(&mut self, mut _frame: PhysFrame<Size4KiB>) {
+        let current_addr = _frame.start_address();
+
+        let new_frame = PhysFrame::<Size4KiB>::containing_address(current_addr - 4096u64);
+        let new_addr = new_frame.start_address();
+
+        self.next -= 1;
+        _frame = PhysFrame::containing_address(new_addr);
     }
 }
 
