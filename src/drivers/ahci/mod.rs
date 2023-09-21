@@ -962,9 +962,13 @@ impl AhciProtected {
 
     fn start_hba(&mut self) {
         let mut hba = self.hba_mem();
-        let current_flags = hba.global_host_control.get();
 
-        hba.global_host_control.set(current_flags | HbaHostCont::IE); // Enable Interrupts
+        // Take back control from the firmware
+        hba.bios_handoff_ctrl_sts.set(HbaBohc::OOC | HbaBohc::OOS);
+
+        // Enable interrupts
+        let current_flags = hba.global_host_control.get();
+        hba.global_host_control.set(current_flags | HbaHostCont::IE);
 
         let version = hba.version.get();
         let major_version = version >> 16 & 0xffff;
@@ -995,9 +999,6 @@ impl AhciProtected {
                     // Workaround to get access to the HBA and still satify the
                     // borrow checker.
                     hba = self.hba_mem();
-                    self.hba_mem()
-                        .bios_handoff_ctrl_sts
-                        .set(HbaBohc::OOC | HbaBohc::OOS)
                 }
             }
         }

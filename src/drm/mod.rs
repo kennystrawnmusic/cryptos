@@ -14,7 +14,9 @@ use embedded_graphics::{
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
     Pixel,
 };
-use embedded_graphics_core::{draw_target::DrawTarget, geometry::Point, prelude::RawData, pixelcolor::raw::RawU24};
+use embedded_graphics_core::{
+    draw_target::DrawTarget, geometry::Point, pixelcolor::raw::RawU24, prelude::RawData,
+};
 use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};

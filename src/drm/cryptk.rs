@@ -1,9 +1,22 @@
+use alloc::vec::Vec;
 use byteorder::LittleEndian;
-use embedded_graphics::{primitives::{Rectangle, RoundedRectangle, Circle, Line}, image::ImageRaw};
-use embedded_layout::{layout::linear::{LinearLayout, Horizontal, FixedMargin, Vertical, spacing::{Tight, DistributeFill}}, prelude::{vertical::{Bottom, Top, Center as VCenter, TopToBottom}, horizontal::{Left, Center as HCenter, LeftToRight}, Chain}};
+use embedded_graphics::{
+    image::ImageRaw,
+    primitives::{Circle, Line, Rectangle, RoundedRectangle},
+};
+use embedded_layout::{
+    layout::linear::{
+        spacing::{DistributeFill, Tight},
+        FixedMargin, Horizontal, LinearLayout, Vertical,
+    },
+    prelude::{
+        horizontal::{Center as HCenter, Left, LeftToRight},
+        vertical::{Bottom, Center as VCenter, Top, TopToBottom},
+        Chain,
+    },
+};
 use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
-use alloc::vec::Vec;
 
 use super::{Canvas, PixelColorKind};
 
@@ -27,7 +40,7 @@ pub struct WindowDecoration<'a> {
     background: RoundedRectangle,
     text: Text<'a>,
     controls: WindowControls,
-    appmenu: Menu<'a>
+    appmenu: Menu<'a>,
 }
 
 #[allow(unused)] // not finished
@@ -79,57 +92,57 @@ pub struct Menu<'a> {
 }
 
 #[allow(unused)] // not finished
- pub struct Tab<'a> {
+pub struct Tab<'a> {
     layout: LinearLayout<Vertical<Left, Tight>, Rectangle>,
     header: Label<'a>,
     body: Rectangle,
- }
+}
 
- #[allow(unused)] // not finished
- pub struct Ribbon<'a> {
+#[allow(unused)] // not finished
+pub struct Ribbon<'a> {
     layout: LinearLayout<Horizontal<VCenter, DistributeFill>, Canvas>,
     system_menu: Menu<'a>,
     global_bar: Vec<TextView<'a>>,
     system_tray: Vec<IconButton<'a>>,
-    clock: TextView<'a>
- }
+    clock: TextView<'a>,
+}
 
- #[allow(unused)] // not finished
- pub struct Overview<'a> {
+#[allow(unused)] // not finished
+pub struct Overview<'a> {
     layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, Canvas>, // TODO: 2D grid
     grid: Vec<IconButton<'a>>,
- }
+}
 
- #[allow(unused)] // not finished
- pub struct ListView<'a> {
+#[allow(unused)] // not finished
+pub struct ListView<'a> {
     layout: LinearLayout<Vertical<Left, FixedMargin>, Rectangle>,
     items: Vec<TextView<'a>>,
- }
+}
 
- #[allow(unused)] // not finished
- pub struct NavView<'a> {
+#[allow(unused)] // not finished
+pub struct NavView<'a> {
     layout: LinearLayout<Horizontal<Top, FixedMargin>, Rectangle>,
     left: ListView<'a>,
     right: TextView<'a>, // TODO: support more view types
- }
+}
 
- #[allow(unused)] // not finished
- pub struct Slider {
+#[allow(unused)] // not finished
+pub struct Slider {
     movable: Circle,
     axis: Line,
- }
+}
 
- #[allow(unused)] // not finished
- pub struct Toggle {
+#[allow(unused)] // not finished
+pub struct Toggle {
     outline: RoundedRectangle,
     movable: Circle,
- }
+}
 
- #[allow(unused)] // not finished
- pub struct ProgressBar {
+#[allow(unused)] // not finished
+pub struct ProgressBar {
     outline: RoundedRectangle,
     indicator: RoundedRectangle,
- }
+}
 
 #[non_exhaustive] // not finished
 pub enum WidgetKind<'a> {
