@@ -1,13 +1,15 @@
-use syscall::{Error, PhysallocFlags, Result, EINVAL, ENOMEM, PhysmapFlags, MapFlags};
+use syscall::{Error, MapFlags, PhysallocFlags, PhysmapFlags, Result, EINVAL, ENOMEM};
 use x86_64::{
     structures::{
         idt::InterruptStackFrame,
-        paging::{Mapper, PhysFrame, Size4KiB, PageTableFlags, Page, frame::PhysFrameRangeInclusive},
+        paging::{
+            frame::PhysFrameRangeInclusive, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB,
+        },
     },
     PhysAddr, VirtAddr,
 };
 
-use crate::{FRAME_ALLOCATOR, map_page};
+use crate::{map_page, FRAME_ALLOCATOR};
 
 // Compatibility
 pub(crate) fn translate_flags(physmap: PhysmapFlags, map: MapFlags) -> PageTableFlags {
@@ -15,35 +17,35 @@ pub(crate) fn translate_flags(physmap: PhysmapFlags, map: MapFlags) -> PageTable
 
     // TODO: find a better way than this mess
     match map {
-        MapFlags::PROT_NONE => {},
+        MapFlags::PROT_NONE => {}
         MapFlags::PROT_READ => new_flags.set(PageTableFlags::PRESENT, true),
         MapFlags::PROT_WRITE => {
             new_flags.set(PageTableFlags::PRESENT, true);
             new_flags.set(PageTableFlags::WRITABLE, true);
-        },
+        }
         MapFlags::PROT_EXEC => new_flags.set(PageTableFlags::NO_EXECUTE, false),
         MapFlags::MAP_FIXED => new_flags.set(PageTableFlags::GLOBAL, true),
         MapFlags::MAP_FIXED_NOREPLACE => new_flags.set(PageTableFlags::GLOBAL, true),
         MapFlags::MAP_LAZY => new_flags.set(PageTableFlags::WRITE_THROUGH, true),
         MapFlags::MAP_PRIVATE => new_flags.set(PageTableFlags::USER_ACCESSIBLE, false),
         MapFlags::MAP_SHARED => new_flags.set(PageTableFlags::USER_ACCESSIBLE, true),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 
     match physmap {
         PhysmapFlags::PHYSMAP_WRITE => {
             new_flags.set(PageTableFlags::PRESENT, true);
             new_flags.set(PageTableFlags::WRITABLE, true);
-        },
+        }
         PhysmapFlags::PHYSMAP_WRITE_COMBINE => {
             new_flags.set(PageTableFlags::PRESENT, true);
             new_flags.set(PageTableFlags::WRITABLE, true);
-        },
+        }
         PhysmapFlags::PHYSMAP_NO_CACHE => {
             new_flags.set(PageTableFlags::PRESENT, true);
             new_flags.set(PageTableFlags::NO_CACHE, true);
-        },
-        _ => unreachable!()
+        }
+        _ => unreachable!(),
     }
 
     new_flags
@@ -65,10 +67,14 @@ pub fn iopl(level: usize, frame: &mut InterruptStackFrame) -> Result<usize> {
 }
 
 // Physical memory allocation (necessary for usermode drivers to access device address space)
-fn physalloc_inner(size: usize, flags: PhysallocFlags) -> Result<(usize, PhysFrameRangeInclusive<Size4KiB>)> {
+fn physalloc_inner(
+    size: usize,
+    flags: PhysallocFlags,
+) -> Result<(usize, PhysFrameRangeInclusive<Size4KiB>)> {
     if flags.contains(PhysallocFlags::SPACE_32 | PhysallocFlags::SPACE_64)
-    || flags.contains(PhysallocFlags::SPACE_32)
-    || flags.contains(PhysallocFlags::SPACE_64) {
+        || flags.contains(PhysallocFlags::SPACE_32)
+        || flags.contains(PhysallocFlags::SPACE_64)
+    {
         if let Some((frame_range, size)) = FRAME_ALLOCATOR
             .get()
             .unwrap()
@@ -114,7 +120,10 @@ pub fn physfree(addr: usize, count: usize) -> Result<usize> {
 
 fn physmap_inner(len: usize, flags: PhysmapFlags) -> Result<usize> {
     let mut map_flags = MapFlags::MAP_SHARED | MapFlags::PROT_READ;
-    map_flags.set(MapFlags::PROT_WRITE, flags.contains(PhysmapFlags::PHYSMAP_WRITE));
+    map_flags.set(
+        MapFlags::PROT_WRITE,
+        flags.contains(PhysmapFlags::PHYSMAP_WRITE),
+    );
 
     let pt_flags = translate_flags(flags, map_flags);
     let (_, frame_range) = physalloc_inner(len, PhysallocFlags::SPACE_64)?;
