@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use core::sync::atomic::{AtomicU8, AtomicU64, AtomicBool};
+use core::sync::atomic::{AtomicBool, AtomicU64, AtomicU8};
 
-use alloc::{sync::{Weak, Arc}, vec::Vec};
+use alloc::{
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 use conquer_once::spin::{Once, OnceCell};
 use spin::RwLock;
 
-use crate::fs::hmfs::{FileData, Entry};
+use crate::fs::hmfs::{Entry, FileData};
 
 use self::signal::Signal;
 
