@@ -71,3 +71,6 @@ pub struct Process {
     parent_term: !, // TODO: properly implement this
     systrace: AtomicBool,
 }
+
+unsafe impl Send for Process {}
+unsafe impl Sync for Process {}

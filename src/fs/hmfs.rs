@@ -185,9 +185,6 @@ impl Entry {
     }
 }
 
-unsafe impl Send for Entry {}
-unsafe impl Sync for Entry {}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[non_exhaustive]
 pub struct Properties {
