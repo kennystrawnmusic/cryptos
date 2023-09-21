@@ -1,4 +1,4 @@
-use syscall::{Error, PhysallocFlags, Result, EINVAL};
+use syscall::{Error, PhysallocFlags, Result, EINVAL, ENOMEM};
 use x86_64::structures::idt::InterruptStackFrame;
 
 use crate::FRAME_ALLOCATOR;
@@ -29,7 +29,7 @@ fn physalloc_inner(size: usize, flags: PhysallocFlags) -> Result<usize> {
         {
             Ok(size)
         } else {
-            Err(Error::new(EINVAL))
+            Err(Error::new(ENOMEM))
         }
     } else {
         Err(Error::new(EINVAL))
