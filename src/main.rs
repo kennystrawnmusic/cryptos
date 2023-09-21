@@ -25,7 +25,7 @@ use crate::{
     acpi_impl::KernelAcpi,
     ahci::{ahci_init, get_ahci, ABAR},
     cralloc::heap_init,
-    drm::avx_accel::enable_avx,
+    drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::{PciDeviceHandle, PCI_TABLE},
     scheme::acpi::DATA,
@@ -295,7 +295,13 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
 
-    loop {}
+    loop {
+        if !(COMPOSITING_TABLE.read().is_empty()) {
+            for canvas in COMPOSITING_TABLE.read().iter() {
+                canvas.merge_down(get_boot_info().framebuffer.as_mut().unwrap());
+            }
+        }
+    }
 }
 
 #[alloc_error_handler]
