@@ -27,7 +27,11 @@ fn physalloc_inner(size: usize, flags: PhysallocFlags) -> Result<usize> {
             .write()
             .allocate_multiple(size)
         {
-            Ok(range.count())
+            let mut c = 0usize;
+            for _ in range {
+                c += 1;
+            }
+            Ok(c)
         } else {
             Err(Error::new(EINVAL))
         }
