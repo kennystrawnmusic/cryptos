@@ -1,6 +1,7 @@
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
 use core::ops::DerefMut;
 use spin::RwLock;
+use x86_64::structures::paging::frame::PhysFrameRangeInclusive;
 #[allow(unused_imports)] //future-proof
 use x86_64::{
     registers::control::{Cr3, Cr3Flags},
@@ -50,6 +51,15 @@ impl Falloc {
         let ranges = usable.map(|r| r.start..r.end);
         let faddrs = ranges.flat_map(|r| r.step_by(4096));
         faddrs.map(|a| PhysFrame::containing_address(PhysAddr::new(a)))
+    }
+
+    pub fn allocate_multiple(&mut self, size: usize) -> Option<PhysFrameRangeInclusive<Size4KiB>> {
+        let begin = self.usable().nth(self.next)?;
+        let end = self.usable().nth(self.next + size)?;
+
+        self.next += size + 1;
+
+        Some(PhysFrame::range_inclusive(begin, end))
     }
 }
 
