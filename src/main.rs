@@ -19,8 +19,8 @@ pub mod cralloc;
 pub mod drivers;
 pub mod drm;
 pub mod fs;
-pub mod scheme;
 pub mod process;
+pub mod scheme;
 
 use crate::{
     acpi_impl::KernelAcpi,
