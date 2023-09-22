@@ -208,7 +208,7 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
     }
 }
 
-extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
+extern "x86-interrupt" fn breakpoint(_frame: InterruptStackFrame) {
     debug!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
         let int3_ip = read_rip().as_u64();
