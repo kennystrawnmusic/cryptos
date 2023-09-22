@@ -12,7 +12,8 @@ use x86_64::{
         segmentation::{Segment, CS},
     },
     structures::{
-        idt::{DescriptorTable, SelectorErrorCode},
+        gdt::SegmentSelector,
+        idt::{DescriptorTable, InterruptStackFrameValue, SelectorErrorCode},
         paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
     PrivilegeLevel, VirtAddr,
@@ -41,6 +42,13 @@ use {
 pub fn init() {
     super::exceptions::init();
     IDT.load();
+}
+
+pub fn current_priority_level(frame: InterruptStackFrameValue) -> PrivilegeLevel {
+    // TODO: from what end is the SegmentSelector padded with zeros? Ask @phil-opp for advice on this
+    let sel = SegmentSelector(frame.code_segment as u16);
+
+    sel.rpl()
 }
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
@@ -171,20 +179,33 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
-    panic!("Bound range exceeded\nStack frame: {:#?}", frame);
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        panic!("Bound range exceeded\nStack frame: {:#?}", frame);
+    } else {
+        todo!("send SIGFPE to offending process");
+    }
 }
 
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64()) as *const u32) };
-    panic!(
-        "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
-        offender.to_be_bytes(),
-        frame
-    );
+
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        panic!(
+            "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
+            offender.to_be_bytes(),
+            frame
+        );
+    } else {
+        todo!("send SIGILL to offending process");
+    }
 }
 
 extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
-    panic!("Device not available\nStack frame: {:#?}", frame);
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        panic!("Device not available\nStack frame: {:#?}", frame);
+    } else {
+        todo!("send SIGSYS to offending process");
+    }
 }
 
 extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
@@ -206,7 +227,7 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
         "Double fault at address {:#x}\nBacktrace: {:#?}",
         frame.instruction_pointer.as_u64(),
         frame
-    )
+    );
 }
 
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
@@ -247,9 +268,12 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
 }
 
 extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
-    error!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        panic!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
+    } else {
+        todo!("send SIGFPE to offending process");
+    }
 }
-
 extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
     error!(
         "Invalid TSS at segment selector {:#?}\nBacktrace: {:#?}",
@@ -259,72 +283,10 @@ extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
 
 extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
     let selector = SelectorErrorCode::new_truncate(code);
-    panic!(
-        "Segment selector at index {:#?} is not present\n\
-        Descriptor table involved: {:#?}\n\
-        Is external? {}\n\
-        Is null? {}\n\
-        Backtrace: {:#?}",
-        match CpuId::new().get_hypervisor_info() {
-            Some(hypervisor) =>
-                if let Hypervisor::QEMU = hypervisor.identify() {
-                    selector.index() / 2
-                } else {
-                    selector.index()
-                },
-            None => selector.index(),
-        },
-        selector.descriptor_table(),
-        match selector.external() {
-            true => "Yes",
-            false => "No",
-        },
-        match selector.is_null() {
-            true => "Yes",
-            false => "No",
-        },
-        frame
-    );
-}
 
-extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
-    let is_caused_by_np = match code {
-        0 => None,
-        sel => Some(sel),
-    };
-
-    if let Some(code) = is_caused_by_np {
-        let selector = SelectorErrorCode::new_truncate(code);
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
         panic!(
-            "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
-            match CpuId::new().get_hypervisor_info() {
-                Some(hypervisor) =>
-                    if let Hypervisor::QEMU = hypervisor.identify() {
-                        selector.index() / 2
-                    } else {
-                        selector.index()
-                    },
-                None => selector.index(),
-            },
-            frame
-        );
-    } else {
-        panic!(
-            "Stack segment fault of unknown cause\nBacktrace: {:#?}",
-            frame
-        );
-    }
-}
-
-extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u64) {
-    let is_seg_related = match code {
-        0 => None,
-        sel => Some(sel),
-    };
-    if let Some(code) = is_seg_related {
-        let selector = SelectorErrorCode::new_truncate(code);
-        panic!(
-            "Segment selector at index {:#?} caused a general protection fault\n\
+            "Segment selector at index {:#?} is not present\n\
             Descriptor table involved: {:#?}\n\
             Is external? {}\n\
             Is null? {}\n\
@@ -350,10 +312,86 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
             frame
         );
     } else {
-        panic!(
-            "General protection fault of unknown cause\nBacktrace: {:#?}",
-            frame
-        )
+        todo!("send SIGBUS to offending process");
+    }
+}
+
+extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
+    let is_caused_by_np = match code {
+        0 => None,
+        sel => Some(sel),
+    };
+
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        if let Some(code) = is_caused_by_np {
+            let selector = SelectorErrorCode::new_truncate(code);
+            panic!(
+                "Segment selector at index {:#?} caused a stack segment fault\nBacktrace: {:#?}",
+                match CpuId::new().get_hypervisor_info() {
+                    Some(hypervisor) =>
+                        if let Hypervisor::QEMU = hypervisor.identify() {
+                            selector.index() / 2
+                        } else {
+                            selector.index()
+                        },
+                    None => selector.index(),
+                },
+                frame
+            );
+        } else {
+            panic!(
+                "Stack segment fault of unknown cause\nBacktrace: {:#?}",
+                frame
+            );
+        }
+    } else {
+        todo!("send SIGSEGV to offending process");
+    }
+}
+
+extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u64) {
+    let is_seg_related = match code {
+        0 => None,
+        sel => Some(sel),
+    };
+
+    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+        if let Some(code) = is_seg_related {
+            let selector = SelectorErrorCode::new_truncate(code);
+            panic!(
+                "Segment selector at index {:#?} caused a general protection fault\n\
+                Descriptor table involved: {:#?}\n\
+                Is external? {}\n\
+                Is null? {}\n\
+                Backtrace: {:#?}",
+                match CpuId::new().get_hypervisor_info() {
+                    Some(hypervisor) =>
+                        if let Hypervisor::QEMU = hypervisor.identify() {
+                            selector.index() / 2
+                        } else {
+                            selector.index()
+                        },
+                    None => selector.index(),
+                },
+                selector.descriptor_table(),
+                match selector.external() {
+                    true => "Yes",
+                    false => "No",
+                },
+                match selector.is_null() {
+                    true => "Yes",
+                    false => "No",
+                },
+                frame
+            );
+        } else {
+            panic!(
+                "General protection fault of unknown cause\nBacktrace: {:#?}",
+                frame
+            )
+        }
+    } else {
+        todo!("send SIGABRT to offending process");
     }
 }
 
