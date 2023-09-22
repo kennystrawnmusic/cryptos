@@ -212,10 +212,9 @@ extern "x86-interrupt" fn breakpoint(frame: InterruptStackFrame) {
     debug!("Reached breakpoint; waiting for debugger to give the all-clear");
     loop {
         let int3_ip = read_rip().as_u64();
-        let ret_ip = frame.instruction_pointer.as_u64();
 
         // 0xcc is the INT3 opcode
-        if unsafe { *(int3_ip as *const u8) != *(ret_ip as *const u8) } {
+        if unsafe { *(int3_ip as *const u8) != 0xcc } {
             debug!("Resuming");
             break;
         }
