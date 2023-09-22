@@ -46,7 +46,7 @@ usb_hid_item = { git = "https://github.com/rust-osdev/usb" }
 usb_hid_usage = { git = "https://github.com/rust-osdev/usb" }
 usb_request = { git = "https://github.com/rust-osdev/usb" }
 x2apic = "0.4.1"
-x86_64 = "0.14.10"
+x86_64 = "0.14.11"
 xhci = "0.9.1"
 xmas-elf = "^0.9.0"
 

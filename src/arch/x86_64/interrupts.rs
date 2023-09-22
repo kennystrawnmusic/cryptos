@@ -137,20 +137,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
-extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
-    unsafe {
-        // execute the instruction that the IP points to
-        (*(frame.instruction_pointer.as_ptr::<fn() -> ()>()))();
-
-        // stack grows downwards, so decrement the IP by 1
-        frame
-            .as_mut()
-            .extract_inner()
-            .instruction_pointer
-            .as_u64()
-            .sub_assign(1);
-    }
-
+extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
     if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
         ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::Relaxed);
@@ -175,7 +162,10 @@ extern "x86-interrupt" fn wake_ipi(mut frame: InterruptStackFrame) {
         }
     }
 
-    unsafe { get_active_lapic().end_of_interrupt() };
+    unsafe {
+        // after sending itself to the next core, iretq from the current core
+        frame.iretq();
+    };
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
