@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use core::sync::atomic::{AtomicBool, AtomicU64, AtomicU8};
+use core::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize};
 
 use alloc::{
     sync::{Arc, Weak},
@@ -43,6 +43,7 @@ impl From<(u8, u64)> for State {
 
 #[allow(dead_code)] // not finished
 pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
+pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
 #[allow(unused)] // not finished
 pub struct Process {
@@ -70,6 +71,16 @@ pub struct Process {
 
     parent_term: !, // TODO: properly implement this
     systrace: AtomicBool,
+}
+
+impl Process {
+    pub fn new(_data: FileData) -> Self {
+        todo!()
+    }
+
+    pub fn run(&self) -> syscall::Result<usize> {
+        todo!()
+    }
 }
 
 unsafe impl Send for Process {}

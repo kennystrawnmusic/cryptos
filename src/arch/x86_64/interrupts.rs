@@ -24,6 +24,7 @@ use crate::{
     apic_impl::{get_active_lapic, get_lapic_ids},
     get_phys_offset, map_page,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
+    process::{PTABLE, PTABLE_IDX},
     PRINTK,
 };
 
@@ -138,6 +139,15 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
+    // use index of an atomic to ensure that only one process is being woken at a time
+    (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        .read()
+        .run()
+        .unwrap();
+
+    // ensure that the next CPU core runs the next process when it receives this interrupt
+    PTABLE_IDX.fetch_add(1, Ordering::SeqCst);
+
     if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
         ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::Relaxed);
