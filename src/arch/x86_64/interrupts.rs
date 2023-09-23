@@ -147,7 +147,11 @@ extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
         .unwrap();
 
     // ensure that the next CPU core runs the next process when it receives this interrupt
-    PTABLE_IDX.fetch_add(1, Ordering::SeqCst);
+    if PTABLE_IDX.load(Ordering::SeqCst) < (PTABLE.read().len() - 1) {
+        PTABLE_IDX.fetch_add(1, Ordering::SeqCst);
+    } else {
+        PTABLE_IDX.store(0, Ordering::SeqCst);
+    }
 
     if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
         // initialize with first LAPIC ID
