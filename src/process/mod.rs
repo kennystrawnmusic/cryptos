@@ -81,6 +81,10 @@ impl Process {
     pub fn run(&self) -> syscall::Result<usize> {
         todo!()
     }
+
+    pub fn kill(&self) {
+        todo!()
+    }
 }
 
 unsafe impl Send for Process {}
