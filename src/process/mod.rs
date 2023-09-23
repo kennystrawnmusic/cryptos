@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use core::{sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize}, ops::Generator, pin::Pin};
+use core::{
+    ops::Generator,
+    pin::Pin,
+    sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize},
+};
 
 use alloc::{
+    boxed::Box,
     sync::{Arc, Weak},
-    vec::Vec, boxed::Box,
+    vec::Vec,
 };
 use conquer_once::spin::{Once, OnceCell};
 use spin::RwLock;
@@ -72,7 +77,7 @@ pub struct Process {
     parent_term: !, // TODO: properly implement this
     systrace: AtomicBool,
 
-    main_loop: Pin<Box<dyn Generator<Yield = (), Return = ()>>>,
+    main_loop: Pin<Box<dyn Generator<Yield = u64, Return = ()>>>,
 }
 
 impl Process {
