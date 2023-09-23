@@ -11,6 +11,8 @@
 #![feature(const_option)]
 #![feature(const_trait_impl)]
 #![allow(unused_imports)]
+#![feature(generators)]
+#![feature(generator_trait)]
 
 extern crate alloc;
 
