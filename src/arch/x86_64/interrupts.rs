@@ -142,7 +142,7 @@ extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being woken at a time
     // TODO: handle error cases
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-        .read()
+        .write()
         .run()
         .unwrap();
 
