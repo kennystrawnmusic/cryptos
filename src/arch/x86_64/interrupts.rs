@@ -138,7 +138,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
-extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
+extern "x86-interrupt" fn wake_ipi(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being woken at a time
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
         .write()
@@ -178,8 +178,6 @@ extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
 
     unsafe {
         get_active_lapic().end_of_interrupt();
-        // after sending self to next core, iretq from the current core
-        frame.iretq();
     };
 }
 
