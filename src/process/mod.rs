@@ -78,7 +78,7 @@ impl Process {
         todo!()
     }
 
-    pub fn run(&self) -> syscall::Result<usize> {
+    pub fn run(&mut self) -> syscall::Result<usize> {
         todo!()
     }
 
