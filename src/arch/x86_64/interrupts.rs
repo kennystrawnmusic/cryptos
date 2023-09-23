@@ -174,6 +174,7 @@ extern "x86-interrupt" fn wake_ipi(frame: InterruptStackFrame) {
     }
 
     unsafe {
+        get_active_lapic().end_of_interrupt();
         // after sending self to next core, iretq from the current core
         frame.iretq();
     };
