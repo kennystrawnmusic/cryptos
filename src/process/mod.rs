@@ -82,7 +82,7 @@ impl Process {
         todo!()
     }
 
-    pub fn kill(&self) {
+    pub fn kill(&mut self, _signal: Signal) {
         todo!();
     }
 }
