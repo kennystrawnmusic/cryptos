@@ -4,6 +4,7 @@ use alloc::boxed::Box;
 use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
+use mr_mime::Mime;
 use core::convert::TryInto;
 use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
 use sha3::{Digest, Sha3_512};
@@ -42,13 +43,13 @@ pub type FileData = Vec<u8>;
 // work around Box not implementing Hash
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum EntryKind {
-    Directory(Rc<HashMap<Properties, Rc<Entry>>>),
+pub enum EntryKind<'a> {
+    Directory(Rc<HashMap<Properties<'a>, Rc<Entry<'a>>>>),
     File(FileData),
-    Root(Rc<RootEntry>),
+    Root(Rc<RootEntry<'a>>),
 }
 
-impl Hash for EntryKind {
+impl Hash for EntryKind<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Self::Directory(map) => {
@@ -67,19 +68,19 @@ impl Hash for EntryKind {
     }
 }
 
-pub fn new_map_shorthand() -> HashMap<Properties, Rc<Entry>> {
-    HashMap::<Properties, Rc<Entry>>::default()
+pub fn new_map_shorthand<'a>() -> HashMap<Properties<'a>, Rc<Entry<'a>>> {
+    HashMap::<Properties<'a>, Rc<Entry>>::default()
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Entry {
-    kind: EntryKind,
+pub struct Entry<'a> {
+    kind: EntryKind<'a>,
     checksum: u64,
-    parent: Option<EntryKind>,
+    parent: Option<EntryKind<'a>>,
 }
 
-impl Entry {
-    pub fn new(kind: EntryKind, parent: Option<EntryKind>) -> Self {
+impl<'a> Entry<'a> {
+    pub fn new(kind: EntryKind<'a>, parent: Option<EntryKind<'a>>) -> Self {
         let mut new = Self {
             kind,
             checksum: 0x0,
@@ -93,7 +94,8 @@ impl Entry {
                 }
                 EntryKind::File(_) => panic!("Parent must be a directory"),
                 EntryKind::Root(root) => {
-                    let root = Rc::clone(&root).get_root_dir();
+                    let root = Rc::clone(&root);
+                    let root = root.get_root_dir();
 
                     if let EntryKind::Directory(dir) = root.kind {
                         new.checksum = dir.hasher().hash_one(&new);
@@ -183,14 +185,17 @@ impl Entry {
             EntryKind::File(_) => panic!("Not a directory"),
         }
     }
+    pub fn mknod(&self, _mime: Mime, _name: String, _timestamp: time_t) -> Self {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[non_exhaustive]
-pub struct Properties {
+pub struct Properties<'a> {
     name: String,
-    entry_kind: EntryKind,
-    mime_type: Option<String>,
+    entry_kind: EntryKind<'a>,
+    mime_type: Option<Mime<'a>>,
     mode: u32,
     created_by: String,
     date_created: time_t,
@@ -198,11 +203,11 @@ pub struct Properties {
     owner: String,
 }
 
-impl Properties {
+impl<'a> Properties<'a> {
     pub fn new(
         name: String,
-        entry_kind: EntryKind,
-        mime_type: Option<String>,
+        entry_kind: EntryKind<'a>,
+        mime_type: Option<Mime<'a>>,
         mode: u32,
         created_by: String,
         date_created: time_t,
@@ -232,15 +237,15 @@ pub fn root_entry_bytes(entry: RootEntry) -> &'static mut [u8] {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[allow(dead_code)]
-pub struct RootEntry {
+pub struct RootEntry<'a> {
     magic: u32,
     system_clock: time_t,
     entry_count: usize,
     checksum: u64,
-    dir: Entry,
+    dir: Entry<'a>,
 }
 
-impl RootEntry {
+impl<'a> RootEntry<'a> {
     pub fn new(timestamp: time_t) -> Self {
         let mut root_map_inner = new_map_shorthand();
         let root_map = Rc::new(root_map_inner.clone());

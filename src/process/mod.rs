@@ -51,8 +51,8 @@ pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::n
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
 #[allow(unused)] // not finished
-pub struct Process {
-    self_reference: Weak<Process>,
+pub struct Process<'a> {
+    self_reference: Weak<Process<'a>>,
     state: (AtomicU8, AtomicU64),
 
     pid: usize,
@@ -61,7 +61,7 @@ pub struct Process {
     sid: AtomicU64,
     gid: AtomicU64,
 
-    parent: RwLock<Option<Arc<Process>>>,
+    parent: RwLock<Option<Arc<Process<'a>>>>,
 
     sleep: AtomicU64,
     signal_received: Signal,
@@ -71,7 +71,7 @@ pub struct Process {
     open_files: Arc<Vec<FileData>>,
     message_queue: !, // TODO: properly implement this
 
-    pwd: RwLock<Option<Entry>>,
+    pwd: RwLock<Option<Entry<'a>>>,
     exit_status: OnceCell<u64>,
 
     parent_term: !, // TODO: properly implement this
@@ -80,7 +80,7 @@ pub struct Process {
     main_loop: Pin<Box<dyn Generator<Yield = u64, Return = ()>>>,
 }
 
-impl Process {
+impl<'a> Process<'a> {
     pub fn new(_data: FileData) -> Self {
         let _main = |builder: (u64, Signal)| {
             let mut exit_status = builder.0;
@@ -108,5 +108,5 @@ impl Process {
     }
 }
 
-unsafe impl Send for Process {}
-unsafe impl Sync for Process {}
+unsafe impl<'a> Send for Process<'a> {}
+unsafe impl<'a> Sync for Process<'a> {}

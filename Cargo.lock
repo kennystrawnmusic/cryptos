@@ -466,6 +466,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "log",
+ "mr-mime",
  "nalgebra 0.32.3",
  "noto-sans-mono-bitmap",
  "pcics",
@@ -811,6 +812,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "intern-str"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea1096b3b10801e41fec98063d46095dc9446e226a5b86545c4e805a226eed9e"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -918,6 +928,16 @@ name = "micromath"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39617bc909d64b068dcffd0e3e31679195b5576d0c83fadc52690268cc2b2b55"
+
+[[package]]
+name = "mr-mime"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c694549649fc0a52a8c360087b2f6c13192e35b04e02fa5d5515ce961b045e9d"
+dependencies = [
+ "intern-str",
+ "memchr",
+]
 
 [[package]]
 name = "nalgebra"
