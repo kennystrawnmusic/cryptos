@@ -10,7 +10,7 @@ pub use syscall::{
 // not defined upstream, so adding here
 pub const SIGINFO: usize = 32;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Signal {
     Unknown,
     SIGHUP,

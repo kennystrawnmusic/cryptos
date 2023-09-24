@@ -1,18 +1,23 @@
 #![no_std]
 #![no_main]
-#![feature(allocator_api)]
-#![feature(alloc_error_handler)]
-#![feature(abi_x86_interrupt)]
-#![feature(maybe_uninit_slice)]
-#![feature(never_type)]
-#![feature(target_feature_11)]
-#![feature(portable_simd)]
-#![feature(const_mut_refs)]
-#![feature(const_option)]
-#![feature(const_trait_impl)]
+
+#![feature(
+    allocator_api,
+    alloc_error_handler,
+    abi_x86_interrupt,
+    maybe_uninit_slice,
+    never_type,
+    target_feature_11,
+    portable_simd,
+    const_mut_refs,
+    const_option,
+    const_trait_impl,
+    generators,
+    generator_trait,
+    generator_clone,
+)]
+
 #![allow(unused_imports)]
-#![feature(generators)]
-#![feature(generator_trait)]
 
 extern crate alloc;
 
