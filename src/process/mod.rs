@@ -82,14 +82,15 @@ pub struct Process {
 
 impl Process {
     pub fn new(_data: FileData) -> Self {
-        let _main = |_builder: (u64, Signal)| {
-            let exit_status = _builder.0;
-            let signal_received = _builder.1;
+        let _main = |builder: (u64, Signal)| {
+            let mut exit_status = builder.0;
+            let signal_received = builder.1;
 
             loop {
-                yield exit_status;
-                
-                if _builder.1 != signal_received {
+                if builder.0 != exit_status || builder.1 != signal_received {
+                    exit_status = u64::from(builder.1);
+                    yield exit_status;
+
                     // TODO: more parameters
                     break;
                 }
