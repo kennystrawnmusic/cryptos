@@ -118,12 +118,12 @@ impl<'a> Process<'a> {
                         let status = self.exit_status.get().cloned().unwrap();
 
                         if status == 0 {
-                            return Ok(());
+                            break Ok(());
                         } else {
-                            return Err(Error::new(status as i32));
+                            break Err(Error::new(status as i32));
                         }
                     }
-                    State::Invalid(_) => return Err(Error::new(ESRCH)),
+                    State::Invalid(_) => break Err(Error::new(ESRCH)),
                     State::Zombie => self.kill(Signal::SIGKILL),
                 }
             }
