@@ -301,6 +301,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
 
+    // Use the loop at the end of main as the rendering loop
     loop {
         if !(COMPOSITING_TABLE.read().is_empty()) {
             for canvas in COMPOSITING_TABLE.read().iter() {
