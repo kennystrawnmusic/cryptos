@@ -137,15 +137,15 @@ impl<'a> Process<'a> {
 
         loop {
             match Pin::new(&mut main).resume(()) {
-                GeneratorState::Yielded(_) => Ok(()),
+                GeneratorState::Yielded(_) => continue,
                 GeneratorState::Complete(status) => {
                     match status {
                         Ok(()) => Ok(()),
                         Err(code) => Err(code),
                     }?;
                     break;
-                },
-            }?;
+                }
+            };
         }
 
         Ok(0)
