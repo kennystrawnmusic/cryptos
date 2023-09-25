@@ -1095,7 +1095,7 @@ impl AhciDriver {
     }
 }
 
-impl PciDeviceHandle for AhciDriver {
+impl OSSPciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool {
         match (vendor_id, device_id) {
             (Vendor::Intel, DeviceType::SataController) => true,

@@ -35,7 +35,7 @@ use crate::{
     cralloc::heap_init,
     drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::{PciDeviceHandle, PCI_TABLE},
+    pci_impl::{OSSPciDeviceHandle, PCI_TABLE},
     scheme::acpi::DATA,
 };
 use acpi::{
