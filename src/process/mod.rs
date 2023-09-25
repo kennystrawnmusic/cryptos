@@ -107,7 +107,7 @@ impl<'a> Process<'a> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
-                // Run the process's main() function
+                // Call the process's main() function
                 State::Runnable => (self.main_loop)(),
 
                 // Yield until changed to Runnable
