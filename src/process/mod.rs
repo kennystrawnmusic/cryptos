@@ -107,13 +107,12 @@ impl<'a> Process<'a> {
 
     pub fn run(&mut self) -> syscall::Result<usize> {
         let mut main = || {
-            // TODO: Figure out how to add this as a struct property without pissing off borrowck
             loop {
                 match self.state {
                     State::Runnable => (self.main_loop)(),
-                    State::Blocked => yield (self.pid as u64),
-                    State::AwaitingIo => yield (self.pid as u64),
-                    State::Stopped(_) => yield (self.pid as u64),
+                    State::Blocked => yield (),
+                    State::AwaitingIo => yield (),
+                    State::Stopped(_) => yield (),
                     State::Exited(status) => {
                         self.exit_status.get_or_init(move || status);
                         let status = self.exit_status.get().cloned().unwrap();
@@ -131,9 +130,9 @@ impl<'a> Process<'a> {
         };
 
         match Pin::new(&mut main).resume(()) {
-            GeneratorState::Yielded(pid) => Ok(pid),
+            GeneratorState::Yielded(_) => Ok(()),
             GeneratorState::Complete(status) => match status {
-                Ok(()) => Ok(0),
+                Ok(()) => Ok(()),
                 Err(code) => Err(code),
             },
         }?;
