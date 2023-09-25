@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-
 #![feature(
     allocator_api,
     alloc_error_handler,
@@ -14,9 +13,8 @@
     const_trait_impl,
     generators,
     generator_trait,
-    generator_clone,
+    generator_clone
 )]
-
 #![allow(unused_imports)]
 
 extern crate alloc;

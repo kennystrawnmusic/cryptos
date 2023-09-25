@@ -4,9 +4,9 @@ use alloc::boxed::Box;
 use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::vec::Vec;
-use mr_mime::Mime;
 use core::convert::TryInto;
 use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
+use mr_mime::Mime;
 use sha3::{Digest, Sha3_512};
 use unix_path::PathBuf;
 
