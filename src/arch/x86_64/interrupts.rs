@@ -99,7 +99,7 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
-        idt[132].set_handler_fn(wake_ipi);
+        idt[132].set_handler_fn(task_sched);
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
@@ -138,7 +138,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
-extern "x86-interrupt" fn wake_ipi(_: InterruptStackFrame) {
+extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being woken at a time
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
         .write()
