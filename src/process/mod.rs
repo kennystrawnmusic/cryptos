@@ -104,6 +104,7 @@ impl<'a> Process<'a> {
     }
 
     pub fn run(&mut self) -> syscall::Result<usize> {
+        // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
                 // Run the process's main() function
