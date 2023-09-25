@@ -14,7 +14,7 @@ use alloc::{
 };
 use conquer_once::spin::{Once, OnceCell};
 use spin::RwLock;
-use syscall::{Error, ESRCH};
+use syscall::{Error, EBADF};
 
 use crate::fs::hmfs::{Entry, FileData};
 
@@ -120,7 +120,7 @@ impl<'a> Process<'a> {
                         break Err(Error::new(status as i32));
                     }
                 }
-                State::Invalid(_) => break Err(Error::new(ESRCH)),
+                State::Invalid(_) => break Err(Error::new(EBADF)),
                 State::Zombie => self.kill(Signal::SIGKILL),
             }
         };
