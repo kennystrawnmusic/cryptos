@@ -248,9 +248,11 @@ impl Canvas {
 
     #[target_feature(enable = "avx")]
     unsafe fn merge_down_inner(&self, root_buffer: &mut FrameBuffer) {
+        let bpp = root_buffer.info().bytes_per_pixel;
+        
         for (chunk, pixel) in root_buffer
             .buffer_mut()
-            .chunks_exact_mut(4) // always this on UEFI
+            .chunks_exact_mut(bpp)
             .zip(&self.pixels)
         {
             let mut new_chunk = match pixel.1 {
