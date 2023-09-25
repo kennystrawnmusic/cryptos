@@ -106,10 +106,15 @@ impl<'a> Process<'a> {
     pub fn run(&mut self) -> syscall::Result<usize> {
         let mut main = || loop {
             match self.state {
+                // Run the process's main() function
                 State::Runnable => (self.main_loop)(),
+
+                // Yield until changed to Runnable
                 State::Blocked => yield (),
                 State::AwaitingIo => yield (),
                 State::Stopped(_) => yield (),
+
+                // Check exit status, then return an error containing it if nonzero
                 State::Exited(status) => {
                     self.exit_status.get_or_init(move || status);
                     let status = self.exit_status.get().cloned().unwrap();
@@ -120,7 +125,11 @@ impl<'a> Process<'a> {
                         break Err(Error::new(status as i32));
                     }
                 }
+
+                // All invalid states are erroneous
                 State::Invalid(_) => break Err(Error::new(EBADF)),
+
+                // Zombie process slair
                 State::Zombie => self.kill(Signal::SIGKILL),
             }
         };
