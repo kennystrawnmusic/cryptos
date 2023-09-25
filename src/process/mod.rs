@@ -104,7 +104,7 @@ impl<'a> Process<'a> {
     }
 
     pub fn run(&mut self) -> syscall::Result<usize> {
-        let mut main = || loop {
+        let mut main = || {
             match self.state {
                 // Run the process's main() function
                 State::Runnable => (self.main_loop)(),
@@ -120,27 +120,33 @@ impl<'a> Process<'a> {
                     let status = self.exit_status.get().cloned().unwrap();
 
                     if status == 0 {
-                        break Ok(());
+                        return Ok(());
                     } else {
-                        break Err(Error::new(status as i32));
+                        return Err(Error::new(status as i32));
                     }
                 }
 
                 // All invalid states are erroneous
-                State::Invalid(_) => break Err(Error::new(EBADF)),
+                State::Invalid(_) => return Err(Error::new(EBADF)),
 
                 // Zombie process slair
                 State::Zombie => self.kill(Signal::SIGKILL),
             }
+            Ok(())
         };
 
-        match Pin::new(&mut main).resume(()) {
-            GeneratorState::Yielded(_) => Ok(()),
-            GeneratorState::Complete(status) => match status {
-                Ok(()) => Ok(()),
-                Err(code) => Err(code),
-            },
-        }?;
+        loop {
+            match Pin::new(&mut main).resume(()) {
+                GeneratorState::Yielded(_) => Ok(()),
+                GeneratorState::Complete(status) => {
+                    match status {
+                        Ok(()) => Ok(()),
+                        Err(code) => Err(code),
+                    }?;
+                    break;
+                },
+            }?;
+        }
 
         Ok(0)
     }
