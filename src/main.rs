@@ -13,8 +13,12 @@
     const_trait_impl,
     generators,
     generator_trait,
-    generator_clone
+    generator_clone,
+    core_intrinsics,
+    intrinsics,
 )]
+
+#![allow(internal_features)]
 #![allow(unused_imports)]
 
 extern crate alloc;
