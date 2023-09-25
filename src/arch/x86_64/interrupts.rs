@@ -99,7 +99,7 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
-        idt[132].set_handler_fn(task_sched);
+        idt[132].set_handler_fn(task_sched); // IRQ 100 = the wakeup IPI
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
@@ -157,7 +157,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
         ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::Relaxed);
 
         // get the ball rolling
-        unsafe { get_active_lapic().send_ipi(100, get_lapic_ids().cycle().nth(1).unwrap()) };
+        unsafe { get_active_lapic().send_sipi(100, get_lapic_ids().cycle().nth(1).unwrap()) };
     } else {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = get_lapic_ids().cycle();
@@ -170,7 +170,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
             ACTIVE_LAPIC_ID.store(id, Ordering::Relaxed);
 
             // send the very IPI that this handler handles to the next available CPU core on the system
-            unsafe { get_active_lapic().send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) };
+            unsafe { get_active_lapic().send_sipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) };
         } else {
             unreachable!()
         }
