@@ -72,7 +72,6 @@ pub struct Process<'a> {
 
     open_files: Arc<Vec<FileData>>,
     // message_queue: !, // TODO: properly implement this
-
     pwd: RwLock<Option<Entry<'a>>>,
     exit_status: OnceCell<u64>,
 
@@ -102,12 +101,13 @@ impl<'a> Process<'a> {
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
-            main_loop
+            main_loop,
         }
     }
 
     pub fn run(&mut self) -> syscall::Result<usize> {
         let mut main = || {
+            // TODO: Figure out how to add this as a struct property without pissing off borrowck
             loop {
                 match self.state {
                     State::Runnable => (self.main_loop)(),
@@ -116,14 +116,14 @@ impl<'a> Process<'a> {
                     State::Stopped(_) => yield (self.pid as u64),
                     State::Exited(status) => {
                         self.exit_status.get_or_init(move || status);
-                        let status = self.exit_status.get().unwrap().clone();
+                        let status = self.exit_status.get().cloned().unwrap();
 
                         if status == 0 {
                             return Ok(());
                         } else {
                             return Err(Error::new(status as i32));
                         }
-                    },
+                    }
                     State::Invalid(_) => return Err(Error::new(ESRCH)),
                     State::Zombie => self.kill(Signal::SIGKILL),
                 }

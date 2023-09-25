@@ -242,7 +242,7 @@ impl Canvas {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
     }
     /// Writes finished canvas render to an existing root framebuffer after computations
-    /// 
+    ///
     /// Automatically called by the rendering loop at the end of maink
     pub fn merge_down(&self, root_buffer: &mut FrameBuffer) {
         with_avx(|| unsafe { self.merge_down_inner(root_buffer) })
