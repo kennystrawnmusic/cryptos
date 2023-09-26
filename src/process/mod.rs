@@ -168,11 +168,14 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
+                            PTABLE.write().remove(self.pid);
                             return Ok(());
                         } else {
+                            PTABLE.write().remove(self.pid);
                             return Err(Error::new(status as i32));
                         }
                     } else {
+                        PTABLE.write().remove(self.pid);
                         return Err(Error::new(u64::from(self.signal_received) as i32));
                     }
                 }
