@@ -175,7 +175,7 @@ impl<'a> Process<'a> {
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        panic!("Received signal {:?}", self.signal_received); // TODO: handle more gracefully using `FailKind` enum
+                        return Err(Error::new(u64::from(self.signal_received) as i32));
                     }
                 }
 
