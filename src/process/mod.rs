@@ -53,7 +53,7 @@ pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::n
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
 /// Enum of `main()` fn signatures for the kernel to accept
-/// 
+///
 /// Implements `From` for easy signature parsing
 pub enum MainLoop {
     WithoutResult(fn() -> ()),
