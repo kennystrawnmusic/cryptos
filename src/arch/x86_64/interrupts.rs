@@ -3,6 +3,7 @@ use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 use alloc::sync::Arc;
 use log::warn;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
+use syscall::ESKMSG;
 use x2apic::lapic::{xapic_base, LocalApic};
 use x86_64::{
     instructions::interrupts,
@@ -140,7 +141,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // Remove processes from the table that have finished running
-    for exit_code in 0..256 {
+    for exit_code in 0..(ESKMSG as u64) {
         let _ = PTABLE
             .write()
             .extract_if(|p| p.read().state == State::Exited(exit_code));
