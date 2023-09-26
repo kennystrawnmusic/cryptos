@@ -188,10 +188,10 @@ impl<'a> Entry<'a> {
     }
     pub fn create_file(
         &self,
-        _mime: Mime<'a>,
-        _name: String,
-        _timestamp: time_t,
-        _data: FileData,
+        mime: Mime<'a>,
+        name: String,
+        timestamp: time_t,
+        data: FileData,
     ) -> syscall::Result<Self> {
         match self.kind.clone() {
             EntryKind::Directory(ref mut dir) => {
@@ -201,13 +201,13 @@ impl<'a> Entry<'a> {
                 let duplicate = parent.clone();
 
                 let props = Properties::new(
-                    _name,
+                    name,
                     parent.unwrap(),
-                    Some(_mime),
+                    Some(mime),
                     0777,                 // TODO: users and permissions
                     String::from("root"), // TODO: users and permissions
-                    _timestamp,
-                    _timestamp,
+                    timestamp,
+                    timestamp,
                     String::from("root"), // TODO: users and permissions
                 );
 
@@ -216,7 +216,7 @@ impl<'a> Entry<'a> {
                 // borrow checker
                 let parent = duplicate;
 
-                let kind = EntryKind::File(_data);
+                let kind = EntryKind::File(data);
                 let checksum = dir.hasher().hash_one(&kind);
 
                 let to_insert = Self {
