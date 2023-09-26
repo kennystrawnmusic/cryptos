@@ -193,6 +193,8 @@ impl<'a> Process<'a> {
                         }
                     } else {
                         PTABLE.write().remove(self.pid - 1);
+
+                        // TODO: implement a `Signal::handle()` function for proper behavior
                         return Err(Error::new(i32::from(self.signal_received)));
                     }
                 }
