@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 use alloc::alloc::Global;
 use alloc::boxed::Box;
-use alloc::rc::Rc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::convert::TryInto;
 use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
@@ -44,9 +44,9 @@ pub type FileData = Vec<u8>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum EntryKind<'a> {
-    Directory(Rc<HashMap<Properties<'a>, Rc<Entry<'a>>>>),
+    Directory(Arc<HashMap<Properties<'a>, Arc<Entry<'a>>>>),
     File(FileData),
-    Root(Rc<RootEntry<'a>>),
+    Root(Arc<RootEntry<'a>>),
 }
 
 impl Hash for EntryKind<'_> {
@@ -68,8 +68,8 @@ impl Hash for EntryKind<'_> {
     }
 }
 
-pub fn new_map_shorthand<'a>() -> HashMap<Properties<'a>, Rc<Entry<'a>>> {
-    HashMap::<Properties<'a>, Rc<Entry>>::default()
+pub fn new_map_shorthand<'a>() -> HashMap<Properties<'a>, Arc<Entry<'a>>> {
+    HashMap::<Properties<'a>, Arc<Entry<'a>>>::default()
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -94,7 +94,7 @@ impl<'a> Entry<'a> {
                 }
                 EntryKind::File(_) => panic!("Parent must be a directory"),
                 EntryKind::Root(root) => {
-                    let root = Rc::clone(&root);
+                    let root = Arc::clone(&root);
                     let root = root.get_root_dir();
 
                     if let EntryKind::Directory(dir) = root.kind {
@@ -117,7 +117,7 @@ impl<'a> Entry<'a> {
                 let parent = Some(EntryKind::Directory(dir.clone()));
 
                 let new_map_inner = new_map_shorthand();
-                let new_map = Rc::new(new_map_inner);
+                let new_map = Arc::new(new_map_inner);
 
                 let props = Properties::new(
                     name,
@@ -139,19 +139,19 @@ impl<'a> Entry<'a> {
                     parent,
                 };
 
-                let mut_dir = Rc::get_mut(&mut dir).unwrap();
-                mut_dir.insert(props.clone(), Rc::new(to_insert));
+                let mut_dir = Arc::get_mut(&mut dir).unwrap();
+                mut_dir.insert(props.clone(), Arc::new(to_insert));
 
                 let ret = dir.get(&props).clone().unwrap();
                 ret.clone().as_ref().clone()
             }
             EntryKind::Root(mut root) => {
-                if let EntryKind::Directory(ref mut dir) = Rc::get_mut(&mut root).unwrap().dir.kind
+                if let EntryKind::Directory(ref mut dir) = Arc::get_mut(&mut root).unwrap().dir.kind
                 {
                     let parent = Some(EntryKind::Directory(dir.clone()));
 
                     let new_map_inner = new_map_shorthand();
-                    let new_map = Rc::new(new_map_inner);
+                    let new_map = Arc::new(new_map_inner);
 
                     let props = Properties::new(
                         name,
@@ -173,8 +173,8 @@ impl<'a> Entry<'a> {
                         parent,
                     };
 
-                    let mut_dir = Rc::get_mut(dir).unwrap();
-                    mut_dir.insert(props.clone(), Rc::new(to_insert));
+                    let mut_dir = Arc::get_mut(dir).unwrap();
+                    mut_dir.insert(props.clone(), Arc::new(to_insert));
 
                     let ret = dir.get(&props).clone().unwrap();
                     ret.clone().as_ref().clone()
@@ -248,11 +248,11 @@ pub struct RootEntry<'a> {
 impl<'a> RootEntry<'a> {
     pub fn new(timestamp: time_t) -> Self {
         let mut root_map_inner = new_map_shorthand();
-        let root_map = Rc::new(root_map_inner.clone());
+        let root_map = Arc::new(root_map_inner.clone());
 
         let root_props = Properties::new(
             String::from("/"),
-            EntryKind::Directory(Rc::clone(&root_map)),
+            EntryKind::Directory(Arc::clone(&root_map)),
             None,
             0777,
             String::from("root"),
@@ -263,30 +263,30 @@ impl<'a> RootEntry<'a> {
 
         root_map_inner.insert(
             root_props.clone(),
-            Rc::new(Entry::new(EntryKind::Directory(Rc::clone(&root_map)), None)),
+            Arc::new(Entry::new(EntryKind::Directory(Arc::clone(&root_map)), None)),
         );
 
         drop(root_map);
 
-        let new_root_map = Rc::new(root_map_inner);
+        let new_root_map = Arc::new(root_map_inner);
         let old_entry = Entry::new(EntryKind::Directory(new_root_map.clone()), None);
 
         let mut new_entry_parent = Self {
             magic: 0x90a7cafe,
             system_clock: timestamp,
-            entry_count: Rc::strong_count(&new_root_map),
+            entry_count: Arc::strong_count(&new_root_map),
             checksum: new_root_map.hasher().hash_one(&old_entry),
             dir: old_entry,
         };
 
         let new_entry = Entry::new(
             EntryKind::Directory(new_root_map.clone()),
-            Some(EntryKind::Root(Rc::new(new_entry_parent.clone()))),
+            Some(EntryKind::Root(Arc::new(new_entry_parent.clone()))),
         );
         new_entry_parent.dir = new_entry.clone();
 
         // keep these values up-to-date
-        new_entry_parent.dir.parent = Some(EntryKind::Root(Rc::new(new_entry_parent.clone())));
+        new_entry_parent.dir.parent = Some(EntryKind::Root(Arc::new(new_entry_parent.clone())));
         new_entry_parent.dir.kind = EntryKind::Directory(new_root_map.clone());
         new_entry_parent.checksum = new_root_map.hasher().hash_one(&new_entry);
 
@@ -295,10 +295,10 @@ impl<'a> RootEntry<'a> {
 
         // keep HashMap up-to-date
         if let EntryKind::Directory(ref mut dir) = &mut new_entry_parent.dir.kind {
-            Rc::get_mut(dir).unwrap().remove_entry(&root_props);
-            Rc::get_mut(dir)
+            Arc::get_mut(dir).unwrap().remove_entry(&root_props);
+            Arc::get_mut(dir)
                 .unwrap()
-                .insert(root_props, Rc::new(new_entry));
+                .insert(root_props, Arc::new(new_entry));
         } else {
             unreachable!()
         }
