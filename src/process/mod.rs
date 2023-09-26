@@ -15,6 +15,7 @@ use alloc::{
 use conquer_once::spin::{Once, OnceCell};
 use spin::RwLock;
 use syscall::{Error, EBADF, ESRCH};
+use xmas_elf::ElfFile;
 
 use crate::fs::hmfs::{Entry, FileData};
 
@@ -103,6 +104,7 @@ pub struct Process<'a> {
     signal_received: Signal,
 
     io_pending: AtomicBool,
+    executable: OnceCell<ElfFile<'a>>,
 
     open_files: Arc<Vec<FileData>>,
     pwd: RwLock<Option<Entry<'a>>>,
@@ -129,6 +131,7 @@ impl<'a> Process<'a> {
             sleep: AtomicU64::new(PTABLE.read().len() as u64),
             signal_received: Signal::Success,
             io_pending: AtomicBool::new(false),
+            executable: OnceCell::uninit(),
             open_files: Arc::new(open_files),
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
