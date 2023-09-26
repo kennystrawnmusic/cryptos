@@ -52,9 +52,24 @@ impl From<(u8, u64)> for State {
 pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
-pub enum MainLoopKind {
+/// Enum of `main()` fn signatures for the kernel to accept
+/// 
+/// Implements `From` for easy signature parsing
+pub enum MainLoop {
     WithoutResult(fn() -> ()),
     WithResult(fn() -> syscall::Result<()>),
+}
+
+impl From<fn() -> ()> for MainLoop {
+    fn from(value: fn() -> ()) -> Self {
+        Self::WithoutResult(value)
+    }
+}
+
+impl From<fn() -> syscall::Result<()>> for MainLoop {
+    fn from(value: fn() -> syscall::Result<()>) -> Self {
+        Self::WithResult(value)
+    }
 }
 
 #[allow(unused)] // not finished
@@ -81,11 +96,11 @@ pub struct Process<'a> {
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
 
-    main: MainLoopKind,
+    main: MainLoop,
 }
 
 impl<'a> Process<'a> {
-    fn new(data: FileData, main: MainLoopKind) -> Self {
+    fn new(data: FileData, main: MainLoop) -> Self {
         let mut open_files = Vec::new();
         open_files.push(data);
 
@@ -108,7 +123,7 @@ impl<'a> Process<'a> {
         }
     }
 
-    pub fn create(data: FileData, main: MainLoopKind) {
+    pub fn create(data: FileData, main: MainLoop) {
         PTABLE
             .write()
             .push(Arc::new(RwLock::new(Process::<'static>::new(data, main))));
@@ -120,11 +135,11 @@ impl<'a> Process<'a> {
             match self.state {
                 // Call the process's main() function
                 State::Runnable => match self.main {
-                    MainLoopKind::WithoutResult(main) => {
+                    MainLoop::WithoutResult(main) => {
                         main();
                         self.state = State::Exited(0);
                     }
-                    MainLoopKind::WithResult(main) => {
+                    MainLoop::WithResult(main) => {
                         self.state = match main() {
                             Ok(()) => State::Exited(0),
                             Err(e) => State::Exited(e.errno as u64),
