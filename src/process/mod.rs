@@ -168,15 +168,15 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
-                            // Setting the PID to match the index in the PTABLE makes it very easy to clean up
-                            PTABLE.write().remove(self.pid);
+                            // Setting the PID relative to the index in the PTABLE makes it very easy to clean up
+                            PTABLE.write().remove(self.pid - 1);
                             return Ok(());
                         } else {
-                            PTABLE.write().remove(self.pid);
+                            PTABLE.write().remove(self.pid - 1);
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        PTABLE.write().remove(self.pid);
+                        PTABLE.write().remove(self.pid - 1);
                         return Err(Error::new(u64::from(self.signal_received) as i32));
                     }
                 }
