@@ -100,6 +100,9 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
+
+        // Vector 100 = IPI_WAKE handler as task scheduler
+        // performance is the obvious reason why I'm doing this
         idt[132].set_handler_fn(task_sched);
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
