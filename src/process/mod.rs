@@ -85,7 +85,7 @@ pub struct Process<'a> {
 }
 
 impl<'a> Process<'a> {
-    pub fn new(data: FileData, main: MainLoopKind) -> Self {
+    fn new(data: FileData, main: MainLoopKind) -> Self {
         let mut open_files = Vec::new();
         open_files.push(data);
 
