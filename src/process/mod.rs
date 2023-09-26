@@ -152,7 +152,8 @@ impl<'a> Process<'a> {
                         // Call the process's main() function
                         main();
 
-                        // Processes that need to constantly run (i.e. daemons) always use infinite loops anyway,
+                        // Processes that need to constantly run (i.e. daemons) always
+                        // use infinite loops within their own main() bodies anyway,
                         // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
                     }
