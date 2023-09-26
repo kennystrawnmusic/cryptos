@@ -140,6 +140,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being woken at a time
+    // TODO: handle case of one-element-long PTABLE
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
         .write()
         .set_state(State::Blocked);
