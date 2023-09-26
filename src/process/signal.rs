@@ -114,7 +114,10 @@ impl Signal {
             Self::SIGALRM => Err(Error::new(EDQUOT)),
             Self::SIGTERM => Ok(()), // sent by user and terminates gracefully
             Self::SIGSTKFLT => Err(Error::new(ESPIPE)),
-            Self::SIGCHLD => Ok(()),
+            Self::SIGCHLD => {
+                p.state = State::Zombie;
+                Ok(())
+            }
             Self::SIGSTOP => {
                 p.state = State::Stopped(u64::from(self.clone()));
                 Ok(())
