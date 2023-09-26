@@ -14,7 +14,7 @@ use alloc::{
 };
 use conquer_once::spin::{Once, OnceCell};
 use spin::RwLock;
-use syscall::{Error, EBADF};
+use syscall::{Error, EBADF, ESRCH};
 
 use crate::fs::hmfs::{Entry, FileData};
 
@@ -142,10 +142,14 @@ impl<'a> Process<'a> {
                     self.exit_status.get_or_init(move || status);
                     let status = self.exit_status.get().cloned().unwrap();
 
-                    if status == 0 {
-                        return Ok(());
+                    if self.signal_received == Signal::Success {
+                        if status == 0 {
+                            return Ok(());
+                        } else {
+                            return Err(Error::new(status as i32));
+                        }
                     } else {
-                        return Err(Error::new(status as i32));
+                        return Err(Error::new(ESRCH)); // TODO: handle these special signal cases
                     }
                 }
 
