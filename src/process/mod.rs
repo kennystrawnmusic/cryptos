@@ -108,6 +108,12 @@ impl<'a> Process<'a> {
         }
     }
 
+    pub fn create(data: FileData, main: MainLoopKind) {
+        PTABLE
+            .write()
+            .push(Arc::new(RwLock::new(Process::<'static>::new(data, main))));
+    }
+
     pub fn run(&mut self) -> syscall::Result<usize> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
