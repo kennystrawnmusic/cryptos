@@ -110,8 +110,8 @@ impl<'a> Process<'a> {
             state: State::Runnable,
             pid: PTABLE.read().len(),
             tid: PTABLE.read().len(),
-            sid: AtomicU64::new(PTABLE.read().len() as u64), // TODO: proper ID management
-            gid: AtomicU64::new(PTABLE.read().len() as u64), // TODO: proper ID management
+            sid: AtomicU64::new(PTABLE.read().len() as u64),
+            gid: AtomicU64::new(PTABLE.read().len() as u64),
             parent: RwLock::new(None),
             sleep: AtomicU64::new(PTABLE.read().len() as u64),
             signal_received: Signal::Success,
