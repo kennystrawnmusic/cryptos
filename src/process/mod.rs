@@ -185,7 +185,8 @@ impl<'a> Process<'a> {
                             // Setting the PID relative to the index in the PTABLE makes it very easy to clean up
                             PTABLE.write().remove(self.pid - 1);
 
-                            // Note: if we return here then we don't need to where `State::Exited` is set
+                            // Note: if we return here then we don't need to from the `Runnable` arm
+                            // as that's the arm that this variant is set from
                             return Ok(());
                         } else {
                             PTABLE.write().remove(self.pid - 1);
