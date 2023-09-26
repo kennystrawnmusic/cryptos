@@ -4,11 +4,11 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use syscall::{Error, ENOTDIR, EACCES};
 use core::convert::TryInto;
 use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
 use mr_mime::Mime;
 use sha3::{Digest, Sha3_512};
+use syscall::{Error, EACCES, ENOTDIR};
 use unix_path::PathBuf;
 
 // return the first 64 bits of a 512-bit hash
@@ -186,11 +186,17 @@ impl<'a> Entry<'a> {
             EntryKind::File(_) => Err(Error::new(ENOTDIR)),
         }
     }
-    pub fn create_file(&self, _mime: Mime<'a>, _name: String, _timestamp: time_t, _data: FileData) -> syscall::Result<Self> {
+    pub fn create_file(
+        &self,
+        _mime: Mime<'a>,
+        _name: String,
+        _timestamp: time_t,
+        _data: FileData,
+    ) -> syscall::Result<Self> {
         match self.kind.clone() {
             EntryKind::Directory(ref mut dir) => {
                 let parent = Some(EntryKind::Directory(dir.clone()));
-                
+
                 // borrow checker
                 let duplicate = parent.clone();
 
@@ -198,7 +204,7 @@ impl<'a> Entry<'a> {
                     _name,
                     parent.unwrap(),
                     Some(_mime),
-                    0777, // TODO: users and permissions
+                    0777,                 // TODO: users and permissions
                     String::from("root"), // TODO: users and permissions
                     _timestamp,
                     _timestamp,
@@ -219,15 +225,20 @@ impl<'a> Entry<'a> {
                     parent,
                 };
 
-                Arc::get_mut(dir).unwrap().insert(Arc::get_mut(&mut props_arc).cloned().unwrap(), Arc::new(to_insert));
-                
-                let ret = dir.get(Arc::get_mut(&mut props_arc).unwrap()).cloned().unwrap();
+                Arc::get_mut(dir).unwrap().insert(
+                    Arc::get_mut(&mut props_arc).cloned().unwrap(),
+                    Arc::new(to_insert),
+                );
+
+                let ret = dir
+                    .get(Arc::get_mut(&mut props_arc).unwrap())
+                    .cloned()
+                    .unwrap();
                 Ok(ret.as_ref().clone())
-            },
+            }
             EntryKind::File(_) => Err(Error::new(ENOTDIR)), // Not a directory
             EntryKind::Root(_) => Err(Error::new(EACCES)),  // TODO: give root an exception to this
         }
-
     }
 }
 
