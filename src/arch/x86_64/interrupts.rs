@@ -143,9 +143,11 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
         .write()
         .set_state(State::Blocked);
+
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
         .write()
         .set_state(State::Runnable);
+
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
         .write()
         .run()
