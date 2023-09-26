@@ -141,7 +141,9 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being run at a time
-    if PTABLE.read().len() == 1 {
+    if PTABLE.read().is_empty() {
+        // not ready to do anything
+    } else if PTABLE.read().len() == 1 {
         // always runnable as only one process exists
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
