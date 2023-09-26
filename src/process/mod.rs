@@ -60,6 +60,7 @@ pub enum MainLoop {
     WithResult(fn() -> syscall::Result<()>),
 }
 
+// Necessary for function signature parsing
 impl From<fn() -> ()> for MainLoop {
     fn from(value: fn() -> ()) -> Self {
         Self::WithoutResult(value)
