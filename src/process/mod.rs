@@ -22,7 +22,7 @@ use self::signal::Signal;
 
 pub mod signal;
 
-// Context status
+/// State that the context is left in
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum State {
     /// Ready to run
@@ -89,9 +89,9 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
-    pub(crate) state: State,
+    state: State,
 
-    pub(crate) pid: usize,
+    pid: usize,
     tid: usize,
 
     sid: AtomicU64,
