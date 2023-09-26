@@ -168,6 +168,7 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
+                            // Setting the PID to match the index in the PTABLE makes it very easy to clean up
                             PTABLE.write().remove(self.pid);
                             return Ok(());
                         } else {
