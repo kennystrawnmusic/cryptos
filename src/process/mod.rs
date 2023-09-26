@@ -25,12 +25,19 @@ pub mod signal;
 // Context status
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum State {
+    // Ready to run
     Runnable,
+
+    // Preempted
     Blocked,
     Zombie,
     AwaitingIo,
     Stopped(u64),
+
+    // Finished
     Exited(u64),
+
+    // error!
     Invalid(u8),
 }
 
