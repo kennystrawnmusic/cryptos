@@ -141,32 +141,32 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being run at a time
-    if PTABLE.read().is_empty() {
-        // not ready to do anything
-    } else if PTABLE.read().len() == 1 {
-        // always runnable as only one process exists
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-            .write()
-            .set_state(State::Runnable);
+    if !(PTABLE.read().is_empty()) {
+        if PTABLE.read().len() == 1 {
+            // always runnable as only one process exists
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+                .write()
+                .set_state(State::Runnable);
 
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-            .write()
-            .run()
-            .unwrap(); // TODO: handle error cases
-    } else {
-        // need to preempt previous process in the table
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
-            .write()
-            .set_state(State::Blocked);
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+                .write()
+                .run()
+                .unwrap(); // TODO: handle error cases
+        } else {
+            // need to preempt previous process in the table
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
+                .write()
+                .set_state(State::Blocked);
 
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-            .write()
-            .set_state(State::Runnable);
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+                .write()
+                .set_state(State::Runnable);
 
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-            .write()
-            .run()
-            .unwrap(); // TODO: handle error cases
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+                .write()
+                .run()
+                .unwrap(); // TODO: handle error cases
+        }
     }
 
     // ensure that the next CPU core runs the next process when it receives this interrupt

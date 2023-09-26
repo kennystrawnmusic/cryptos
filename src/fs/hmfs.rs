@@ -263,7 +263,10 @@ impl<'a> RootEntry<'a> {
 
         root_map_inner.insert(
             root_props.clone(),
-            Arc::new(Entry::new(EntryKind::Directory(Arc::clone(&root_map)), None)),
+            Arc::new(Entry::new(
+                EntryKind::Directory(Arc::clone(&root_map)),
+                None,
+            )),
         );
 
         drop(root_map);
