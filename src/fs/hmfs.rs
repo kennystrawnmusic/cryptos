@@ -4,6 +4,7 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use syscall::{Error, ENOTDIR, EACCES};
 use core::convert::TryInto;
 use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
 use mr_mime::Mime;
@@ -111,7 +112,7 @@ impl<'a> Entry<'a> {
     pub fn parent(&self) -> Option<EntryKind> {
         self.parent.clone()
     }
-    pub fn mkdir(&self, name: String, timestamp: time_t) -> Self {
+    pub fn mkdir(&self, name: String, timestamp: time_t) -> syscall::Result<Self> {
         match self.kind.clone() {
             EntryKind::Directory(mut dir) => {
                 let parent = Some(EntryKind::Directory(dir.clone()));
@@ -143,7 +144,7 @@ impl<'a> Entry<'a> {
                 mut_dir.insert(props.clone(), Arc::new(to_insert));
 
                 let ret = dir.get(&props).clone().unwrap();
-                ret.clone().as_ref().clone()
+                Ok(ret.clone().as_ref().clone())
             }
             EntryKind::Root(mut root) => {
                 if let EntryKind::Directory(ref mut dir) = Arc::get_mut(&mut root).unwrap().dir.kind
@@ -176,17 +177,57 @@ impl<'a> Entry<'a> {
                     let mut_dir = Arc::get_mut(dir).unwrap();
                     mut_dir.insert(props.clone(), Arc::new(to_insert));
 
-                    let ret = dir.get(&props).clone().unwrap();
-                    ret.clone().as_ref().clone()
+                    let ret = dir.get(&props).cloned().unwrap();
+                    Ok(ret.clone().as_ref().clone())
                 } else {
                     unreachable!("root entry is always a directory")
                 }
             }
-            EntryKind::File(_) => panic!("Not a directory"),
+            EntryKind::File(_) => Err(Error::new(ENOTDIR)),
         }
     }
-    pub fn mknod(&self, _mime: Mime, _name: String, _timestamp: time_t) -> Self {
-        todo!()
+    pub fn create_file(&self, _mime: Mime<'a>, _name: String, _timestamp: time_t, _data: FileData) -> syscall::Result<Self> {
+        match self.kind.clone() {
+            EntryKind::Directory(ref mut dir) => {
+                let parent = Some(EntryKind::Directory(dir.clone()));
+                
+                // borrow checker
+                let duplicate = parent.clone();
+
+                let props = Properties::new(
+                    _name,
+                    parent.unwrap(),
+                    Some(_mime),
+                    0777, // TODO: users and permissions
+                    String::from("root"), // TODO: users and permissions
+                    _timestamp,
+                    _timestamp,
+                    String::from("root"), // TODO: users and permissions
+                );
+
+                let mut props_arc = Arc::new(props);
+
+                // borrow checker
+                let parent = duplicate;
+
+                let kind = EntryKind::File(_data);
+                let checksum = dir.hasher().hash_one(&kind);
+
+                let to_insert = Self {
+                    kind,
+                    checksum,
+                    parent,
+                };
+
+                Arc::get_mut(dir).unwrap().insert(Arc::get_mut(&mut props_arc).cloned().unwrap(), Arc::new(to_insert));
+                
+                let ret = dir.get(Arc::get_mut(&mut props_arc).unwrap()).cloned().unwrap();
+                Ok(ret.as_ref().clone())
+            },
+            EntryKind::File(_) => Err(Error::new(ENOTDIR)), // Not a directory
+            EntryKind::Root(_) => Err(Error::new(EACCES)),  // TODO: give root an exception to this
+        }
+
     }
 }
 
