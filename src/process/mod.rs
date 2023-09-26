@@ -152,6 +152,7 @@ impl<'a> Process<'a> {
             Ok(())
         };
 
+        // Listen indefinitely for the process to exit
         loop {
             match Pin::new(&mut main).resume(()) {
                 GeneratorState::Yielded(_) => continue,
