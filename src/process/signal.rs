@@ -1,11 +1,16 @@
 use bitflags::bitflags;
 
+use syscall::{
+    Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE, ESRCH,
+};
 // reuse all the signal numbers defined in the redox_syscall crate
 pub use syscall::{
     SIGABRT, SIGALRM, SIGBUS, SIGCHLD, SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGIO, SIGKILL,
     SIGPIPE, SIGPROF, SIGPWR, SIGQUIT, SIGSEGV, SIGSTKFLT, SIGSTOP, SIGSYS, SIGTERM, SIGTRAP,
     SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGUSR1, SIGUSR2, SIGVTALRM, SIGWINCH, SIGXCPU, SIGXFSZ,
 };
+
+use super::{Process, State};
 
 // not defined upstream, so adding here
 pub const SIGINFO: usize = 32;
@@ -87,8 +92,60 @@ impl Signal {
         }
     }
 
-    pub fn handle(&self) -> syscall::Result<()> {
-        todo!()
+    pub fn handle<'a>(&self, p: &mut Process<'a>) -> syscall::Result<()> {
+        match self {
+            Self::Success => Ok(()),
+            Self::SIGHUP => Err(Error::new(EPIPE)),
+            Self::SIGINT => {
+                // TODO: stderr
+                Err(Error::new(ECANCELED))
+            }
+            Self::SIGQUIT => Err(Error::new(ECANCELED)),
+            Self::SIGILL => Err(Error::new(EILSEQ)),
+            Self::SIGTRAP => Err(Error::new(EPERM)),
+            Self::SIGABRT => Err(Error::new(ECANCELED)),
+            Self::SIGBUS => Err(Error::new(EFAULT)),
+            Self::SIGFPE => Err(Error::new(EDOM)),
+            Self::SIGKILL => Err(Error::new(ECANCELED)),
+            Self::SIGUSR1 => Ok(()), // def by user
+            Self::SIGSEGV => Err(Error::new(EFAULT)),
+            Self::SIGUSR2 => Ok(()), // def by user
+            Self::SIGPIPE => Err(Error::new(EPIPE)),
+            Self::SIGALRM => Err(Error::new(EDQUOT)),
+            Self::SIGTERM => Ok(()), // sent by user and terminates gracefully
+            Self::SIGSTKFLT => Err(Error::new(ESPIPE)),
+            Self::SIGCHLD => Ok(()),
+            Self::SIGSTOP => {
+                p.state = State::Stopped(u64::from(self.clone()));
+                Ok(())
+            }
+            Self::SIGTSTP => {
+                p.state = State::Stopped(u64::from(self.clone()));
+                Ok(())
+            }
+            Self::SIGTTIN => {
+                p.state = State::Blocked;
+                Ok(())
+            }
+            Self::SIGTTOU => {
+                p.state = State::Blocked;
+                Ok(())
+            }
+            Self::SIGCONT => {
+                p.state = State::Runnable;
+                Ok(())
+            }
+            Self::SIGURG => Ok(()),
+            Self::SIGXCPU => Err(Error::new(EDQUOT)),
+            Self::SIGXFSZ => Err(Error::new(EDQUOT)),
+            Self::SIGVTALRM => Err(Error::new(EDQUOT)),
+            Self::SIGPROF => Err(Error::new(EDQUOT)),
+            Self::SIGWINCH => Ok(()),
+            Self::SIGIO => Err(Error::new(EIO)),
+            Self::SIGPWR => Ok(()),
+            Self::SIGSYS => Err(Error::new(EINTR)),
+            Self::SIGINFO => Ok(()),
+        }
     }
 }
 

@@ -25,7 +25,7 @@ use crate::{
     apic_impl::{get_active_lapic, get_lapic_ids},
     get_phys_offset, map_page,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    process::{State, PTABLE, PTABLE_IDX, signal::Signal},
+    process::{signal::Signal, State, PTABLE, PTABLE_IDX},
     PRINTK,
 };
 
@@ -209,7 +209,9 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
         panic!("Bound range exceeded\nStack frame: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGFPE);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGFPE);
     }
 }
 
@@ -223,7 +225,9 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
             frame
         );
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGILL);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGILL);
     }
 }
 
@@ -231,7 +235,9 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
         panic!("Device not available\nStack frame: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGSYS);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGSYS);
     }
 }
 
@@ -282,7 +288,9 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
             );
         } else {
             // user mode
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGSEGV);
+            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+                .write()
+                .kill(Signal::SIGSEGV);
         }
     }
 }
@@ -291,7 +299,9 @@ extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
         panic!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGFPE);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGFPE);
     }
 }
 extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
@@ -332,7 +342,9 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
             frame
         );
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGBUS);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGBUS);
     }
 }
 
@@ -365,7 +377,9 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
             );
         }
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGSEGV);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGSEGV);
     }
 }
 
@@ -411,7 +425,9 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
             )
         }
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)].write().kill(Signal::SIGABRT);
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGABRT);
     }
 }
 

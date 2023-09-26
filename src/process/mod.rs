@@ -194,8 +194,9 @@ impl<'a> Process<'a> {
                     } else {
                         PTABLE.write().remove(self.pid - 1);
 
-                        // TODO: implement a `Signal::handle()` function for proper behavior
-                        return Err(Error::new(i32::from(self.signal_received)));
+                        // borrow checker
+                        let signal = self.signal_received.clone();
+                        signal.handle(self)?;
                     }
                 }
 
@@ -235,7 +236,6 @@ impl<'a> Process<'a> {
     }
 
     pub fn kill(&mut self, signal: Signal) {
-        self.state = State::Exited(u64::from(signal));
         self.signal_received = signal;
     }
 }
