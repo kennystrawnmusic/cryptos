@@ -149,7 +149,7 @@ impl<'a> Process<'a> {
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        panic!("Received signal {:?}", self.signal_received); // TODO: handle more gracefully
+                        panic!("Received signal {:?}", self.signal_received); // TODO: handle more gracefully using `FailKind` enum
                     }
                 }
 
