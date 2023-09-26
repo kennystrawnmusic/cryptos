@@ -149,7 +149,7 @@ impl<'a> Process<'a> {
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        return Err(Error::new(ESRCH)); // TODO: handle these special signal cases
+                        panic!("Received signal {:?}", self.signal_received); // TODO: handle more gracefully
                     }
                 }
 
