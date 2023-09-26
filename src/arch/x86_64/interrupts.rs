@@ -139,6 +139,13 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
+    // Remove processes from the table that have finished running
+    for exit_code in 0..256 {
+        let _ = PTABLE
+            .write()
+            .extract_if(|p| p.read().state == State::Exited(exit_code));
+    }
+
     // use index of an atomic to ensure that only one process is being woken at a time
     if PTABLE.read().len() == 1 {
         // always runnable as only one process exists

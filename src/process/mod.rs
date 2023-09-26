@@ -23,7 +23,7 @@ use self::signal::Signal;
 pub mod signal;
 
 // Context status
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum State {
     Runnable,
     Blocked,
@@ -76,9 +76,9 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
-    state: State,
+    pub(crate) state: State,
 
-    pid: usize,
+    pub(crate) pid: usize,
     tid: usize,
 
     sid: AtomicU64,
@@ -142,20 +142,18 @@ impl<'a> Process<'a> {
                         // Processes that need to constantly run (i.e. daemons) always use infinite loops anyway,
                         // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
-                        return Ok(())
+                        return Ok(());
                     }
-                    MainLoop::WithResult(main) => {
-                        match main() {
-                            Ok(()) => {
-                                self.state = State::Exited(0);
-                                return Ok(())
-                            },
-                            Err(e) => {
-                                self.state = State::Exited(e.errno as u64);
-                                return Err(e)
-                            },
+                    MainLoop::WithResult(main) => match main() {
+                        Ok(()) => {
+                            self.state = State::Exited(0);
+                            return Ok(());
                         }
-                    }
+                        Err(e) => {
+                            self.state = State::Exited(e.errno as u64);
+                            return Err(e);
+                        }
+                    },
                 },
 
                 // Yield until changed to Runnable

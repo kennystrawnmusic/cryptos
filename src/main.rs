@@ -15,7 +15,8 @@
     generator_trait,
     generator_clone,
     core_intrinsics,
-    intrinsics
+    intrinsics,
+    extract_if
 )]
 #![allow(internal_features)]
 #![allow(unused_imports)]
