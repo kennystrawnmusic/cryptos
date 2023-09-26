@@ -169,6 +169,10 @@ impl<'a> Process<'a> {
         Ok(0)
     }
 
+    pub(crate) fn set_state(&mut self, state: State) {
+        self.state = state;
+    }
+
     pub fn exit(&mut self, code: u64) -> ! {
         self.state = State::Exited(code);
         abort();

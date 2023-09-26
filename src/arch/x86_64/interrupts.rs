@@ -24,7 +24,7 @@ use crate::{
     apic_impl::{get_active_lapic, get_lapic_ids},
     get_phys_offset, map_page,
     pci_impl::{DeviceType, Vendor, PCI_TABLE},
-    process::{PTABLE, PTABLE_IDX},
+    process::{State, PTABLE, PTABLE_IDX},
     PRINTK,
 };
 
@@ -140,6 +140,12 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being woken at a time
+    (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
+        .write()
+        .set_state(State::Blocked);
+    (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        .write()
+        .set_state(State::Runnable);
     (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
         .write()
         .run()
