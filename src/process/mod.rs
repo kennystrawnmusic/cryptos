@@ -176,7 +176,7 @@ impl<'a> Process<'a> {
                         }
                     } else {
                         PTABLE.write().remove(self.pid - 1);
-                        return Err(Error::new(u64::from(self.signal_received) as i32));
+                        return Err(Error::new(i32::from(self.signal_received)));
                     }
                 }
 

@@ -95,6 +95,13 @@ impl From<u64> for Signal {
     }
 }
 
+// Compatibility
+impl From<i32> for Signal {
+    fn from(value: i32) -> Self {
+        Self::from(value as u64)
+    }
+}
+
 impl From<Signal> for u64 {
     fn from(value: Signal) -> Self {
         match value {
@@ -132,5 +139,12 @@ impl From<Signal> for u64 {
             Signal::SIGSYS => 31,
             Signal::SIGINFO => 32,
         }
+    }
+}
+
+// Compatibility
+impl From<Signal> for i32 {
+    fn from(value: Signal) -> Self {
+        u64::from(value) as Self
     }
 }
