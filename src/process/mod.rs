@@ -52,6 +52,11 @@ impl From<(u8, u64)> for State {
 pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
+pub enum MainLoopKind {
+    WithoutResult(fn() -> ()),
+    WithResult(fn() -> syscall::Result<()>),
+}
+
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
@@ -76,11 +81,11 @@ pub struct Process<'a> {
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
 
-    main_loop: fn() -> (),
+    main: MainLoopKind,
 }
 
 impl<'a> Process<'a> {
-    pub fn new(data: FileData, main_loop: fn() -> ()) -> Self {
+    pub fn new(data: FileData, main: MainLoopKind) -> Self {
         let mut open_files = Vec::new();
         open_files.push(data);
 
@@ -99,7 +104,7 @@ impl<'a> Process<'a> {
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
-            main_loop,
+            main,
         }
     }
 
@@ -108,7 +113,18 @@ impl<'a> Process<'a> {
         let mut main = || {
             match self.state {
                 // Call the process's main() function
-                State::Runnable => (self.main_loop)(),
+                State::Runnable => match self.main {
+                    MainLoopKind::WithoutResult(main) => {
+                        main();
+                        self.state = State::Exited(0);
+                    }
+                    MainLoopKind::WithResult(main) => {
+                        self.state = match main() {
+                            Ok(()) => State::Exited(0),
+                            Err(e) => State::Exited(e.errno as u64),
+                        }
+                    }
+                },
 
                 // Yield until changed to Runnable
                 State::Blocked => yield (),
