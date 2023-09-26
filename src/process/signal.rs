@@ -86,6 +86,10 @@ impl Signal {
             _ => Self::Success,
         }
     }
+
+    pub fn handle(&self) -> syscall::Result<()> {
+        todo!()
+    }
 }
 
 // Needed for ensuring that exit status matches signal received, if any
