@@ -133,10 +133,13 @@ impl<'a> Process<'a> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
-                // Call the process's main() function
                 State::Runnable => match self.main {
                     MainLoop::WithoutResult(main) => {
+                        // Call the process's main() function
                         main();
+
+                        // Processes that need to constantly run (i.e. daemons) always use infinite loops anyway,
+                        // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
                     }
                     MainLoop::WithResult(main) => {
