@@ -142,16 +142,13 @@ impl<'a> Process<'a> {
                         // Processes that need to constantly run (i.e. daemons) always use infinite loops anyway,
                         // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
-                        return Ok(());
                     }
                     MainLoop::WithResult(main) => match main() {
                         Ok(()) => {
                             self.state = State::Exited(0);
-                            return Ok(());
                         }
                         Err(e) => {
                             self.state = State::Exited(e.errno as u64);
-                            return Err(e);
                         }
                     },
                 },
