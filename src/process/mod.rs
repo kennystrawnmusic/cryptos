@@ -185,6 +185,7 @@ impl<'a> Process<'a> {
     }
 
     pub fn kill(&mut self, signal: Signal) {
+        self.state = State::Exited(u64::from(signal));
         self.signal_received = signal;
     }
 }
