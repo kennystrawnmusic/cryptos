@@ -19,6 +19,10 @@ use {
     },
 };
 
+/// Function returning an Iterator of all XAPIC IDs present on the system
+///
+/// Uses `raw_cpuid::ExtendedTopologyIter` to extract this information at runtime,
+/// so this should work on pretty much all hardware
 pub fn get_lapic_ids() -> impl Iterator<Item = u32> + Clone {
     let mut id_vec = Vec::new();
 
@@ -34,7 +38,7 @@ pub fn get_lapic_ids() -> impl Iterator<Item = u32> + Clone {
     id_vec.into_iter()
 }
 
-pub fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
+pub(crate) fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
     unsafe {
         // Disable 8259 immediately
 
@@ -126,7 +130,7 @@ macro_rules! ioapic_irq {
     };
 }
 
-pub fn init_all_available_apics() {
+pub(crate) fn init_all_available_apics() {
     let (lapic, ioapics) = build_all_available_apics().expect("Legacy 8259 PIC not supported");
 
     unsafe {

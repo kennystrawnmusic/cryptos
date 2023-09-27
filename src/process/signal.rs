@@ -107,7 +107,7 @@ impl Signal {
             Self::SIGBUS => Err(Error::new(EFAULT)),
             Self::SIGFPE => Err(Error::new(EDOM)),
             Self::SIGKILL => core::intrinsics::abort(), // cannot be caught
-            Self::SIGUSR1 => Ok(()), // def by user
+            Self::SIGUSR1 => Ok(()),                    // def by user
             Self::SIGSEGV => Err(Error::new(EFAULT)),
             Self::SIGUSR2 => Ok(()), // def by user
             Self::SIGPIPE => Err(Error::new(EPIPE)),

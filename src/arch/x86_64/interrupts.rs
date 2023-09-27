@@ -127,8 +127,8 @@ pub enum IrqIndex {
 }
 
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
-    TICK_COUNT.fetch_add(1, Ordering::Relaxed);
-    debug!("{:#?}", &TICK_COUNT.load(Ordering::Relaxed));
+    TICK_COUNT.fetch_add(1, Ordering::SeqCst);
+    debug!("{:#?}", &TICK_COUNT.load(Ordering::SeqCst));
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
@@ -180,9 +180,9 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
         PTABLE_IDX.store(0, Ordering::SeqCst);
     }
 
-    if ACTIVE_LAPIC_ID.load(Ordering::Relaxed) == 0 {
+    if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
         // initialize with first LAPIC ID
-        ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::Relaxed);
+        ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::SeqCst);
 
         // get the ball rolling
         unsafe { get_active_lapic().send_ipi(100, get_lapic_ids().cycle().nth(1).unwrap()) };
@@ -190,15 +190,16 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = get_lapic_ids().cycle();
 
-        if let Some(_) = lapic_iter.find(|&id| id == ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) {
+        if let Some(_) = lapic_iter.find(|&id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
             // find the next LAPIC ID after the current one
+            // Note that because we're using `.cycle` this will never be None
             let id = lapic_iter.next().unwrap();
 
             // update active LAPIC ID to match the next one
-            ACTIVE_LAPIC_ID.store(id, Ordering::Relaxed);
+            ACTIVE_LAPIC_ID.store(id, Ordering::SeqCst);
 
             // send the very IPI that this handler handles to the next available CPU core on the system
-            unsafe { get_active_lapic().send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::Relaxed)) };
+            unsafe { get_active_lapic().send_ipi(100, ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) };
         } else {
             unreachable!()
         }
