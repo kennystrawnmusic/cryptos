@@ -165,6 +165,7 @@ pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 pub static MAPPER: OnceCell<RwLock<OffsetPageTable>> = OnceCell::uninit();
 pub static FRAME_ALLOCATOR: OnceCell<RwLock<Falloc>> = OnceCell::uninit();
 
+/// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {
     FRAME_ALLOCATOR
         .get()
