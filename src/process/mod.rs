@@ -125,7 +125,7 @@ impl<'a> Process<'a> {
         Self {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: PTABLE.read().len(),
+            pid: PTABLE.read().len(), // necessary for cleanup
             tid: PTABLE.read().len(),
             sid: AtomicU64::new(PTABLE.read().len() as u64),
             gid: AtomicU64::new(PTABLE.read().len() as u64),
