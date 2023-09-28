@@ -24,7 +24,7 @@ use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
     get_phys_offset, map_page,
-    pci_impl::{DeviceType, Vendor, PCI_TABLE},
+    pci_impl::{DeviceKind, Vendor, PCI_TABLE},
     process::{signal::Signal, State, PTABLE, PTABLE_IDX},
     PRINTK,
 };

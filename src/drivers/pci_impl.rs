@@ -359,7 +359,7 @@ impl Vendor {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum DeviceType {
+pub enum DeviceKind {
     Unknown,
 
     /*
@@ -537,130 +537,130 @@ pub enum DeviceType {
     OtherSignalProcessingController,
 }
 
-impl DeviceType {
+impl DeviceKind {
     pub fn new(base_class: u32, sub_class: u32) -> Self {
         match (base_class, sub_class) {
-            (0x00, 0x00) => DeviceType::LegacyNotVgaCompatible,
-            (0x00, 0x01) => DeviceType::LegacyVgaCompatible,
+            (0x00, 0x00) => DeviceKind::LegacyNotVgaCompatible,
+            (0x00, 0x01) => DeviceKind::LegacyVgaCompatible,
 
-            (0x01, 0x00) => DeviceType::ScsiBusController,
-            (0x01, 0x01) => DeviceType::IdeController,
-            (0x01, 0x02) => DeviceType::FloppyController,
-            (0x01, 0x03) => DeviceType::IpiBusController,
-            (0x01, 0x04) => DeviceType::RaidController,
-            (0x01, 0x05) => DeviceType::AtaController,
-            (0x01, 0x06) => DeviceType::SataController,
-            (0x01, 0x07) => DeviceType::SasController,
-            (0x01, 0x08) => DeviceType::NvmeController,
-            (0x01, 0x80) => DeviceType::OtherMassStorageController,
+            (0x01, 0x00) => DeviceKind::ScsiBusController,
+            (0x01, 0x01) => DeviceKind::IdeController,
+            (0x01, 0x02) => DeviceKind::FloppyController,
+            (0x01, 0x03) => DeviceKind::IpiBusController,
+            (0x01, 0x04) => DeviceKind::RaidController,
+            (0x01, 0x05) => DeviceKind::AtaController,
+            (0x01, 0x06) => DeviceKind::SataController,
+            (0x01, 0x07) => DeviceKind::SasController,
+            (0x01, 0x08) => DeviceKind::NvmeController,
+            (0x01, 0x80) => DeviceKind::OtherMassStorageController,
 
-            (0x02, 0x00) => DeviceType::EthernetController,
-            (0x02, 0x01) => DeviceType::TokenRingController,
-            (0x02, 0x02) => DeviceType::FddiController,
-            (0x02, 0x03) => DeviceType::AtmController,
-            (0x02, 0x04) => DeviceType::IsdnController,
-            (0x02, 0x06) => DeviceType::PicmgController,
-            (0x02, 0x80) => DeviceType::OtherNetworkController,
+            (0x02, 0x00) => DeviceKind::EthernetController,
+            (0x02, 0x01) => DeviceKind::TokenRingController,
+            (0x02, 0x02) => DeviceKind::FddiController,
+            (0x02, 0x03) => DeviceKind::AtmController,
+            (0x02, 0x04) => DeviceKind::IsdnController,
+            (0x02, 0x06) => DeviceKind::PicmgController,
+            (0x02, 0x80) => DeviceKind::OtherNetworkController,
 
-            (0x03, 0x00) => DeviceType::VgaCompatibleController,
-            (0x03, 0x01) => DeviceType::XgaController,
-            (0x03, 0x02) => DeviceType::ThreeDController,
-            (0x03, 0x80) => DeviceType::OtherDisplayController,
+            (0x03, 0x00) => DeviceKind::VgaCompatibleController,
+            (0x03, 0x01) => DeviceKind::XgaController,
+            (0x03, 0x02) => DeviceKind::ThreeDController,
+            (0x03, 0x80) => DeviceKind::OtherDisplayController,
 
-            (0x04, 0x00) => DeviceType::VideoDevice,
-            (0x04, 0x01) => DeviceType::AudioDevice,
-            (0x04, 0x02) => DeviceType::TelephonyDevice,
-            (0x04, 0x03) => DeviceType::OtherMultimediaDevice,
+            (0x04, 0x00) => DeviceKind::VideoDevice,
+            (0x04, 0x01) => DeviceKind::AudioDevice,
+            (0x04, 0x02) => DeviceKind::TelephonyDevice,
+            (0x04, 0x03) => DeviceKind::OtherMultimediaDevice,
 
-            (0x05, 0x00) => DeviceType::RamController,
-            (0x05, 0x01) => DeviceType::FlashController,
-            (0x05, 0x02) => DeviceType::OtherMemoryController,
+            (0x05, 0x00) => DeviceKind::RamController,
+            (0x05, 0x01) => DeviceKind::FlashController,
+            (0x05, 0x02) => DeviceKind::OtherMemoryController,
 
-            (0x06, 0x00) => DeviceType::HostBridge,
-            (0x06, 0x01) => DeviceType::IsaBridge,
-            (0x06, 0x02) => DeviceType::EisaBridge,
-            (0x06, 0x03) => DeviceType::McaBridge,
-            (0x06, 0x04) => DeviceType::PciPciBridge,
-            (0x06, 0x05) => DeviceType::PcmciaBridge,
-            (0x06, 0x06) => DeviceType::NuBusBridge,
-            (0x06, 0x07) => DeviceType::CardBusBridge,
-            (0x06, 0x08) => DeviceType::RacewayBridge,
-            (0x06, 0x09) => DeviceType::SemiTransparentPciPciBridge,
-            (0x06, 0x0a) => DeviceType::InfinibandPciHostBridge,
-            (0x06, 0x80) => DeviceType::OtherBridgeDevice,
+            (0x06, 0x00) => DeviceKind::HostBridge,
+            (0x06, 0x01) => DeviceKind::IsaBridge,
+            (0x06, 0x02) => DeviceKind::EisaBridge,
+            (0x06, 0x03) => DeviceKind::McaBridge,
+            (0x06, 0x04) => DeviceKind::PciPciBridge,
+            (0x06, 0x05) => DeviceKind::PcmciaBridge,
+            (0x06, 0x06) => DeviceKind::NuBusBridge,
+            (0x06, 0x07) => DeviceKind::CardBusBridge,
+            (0x06, 0x08) => DeviceKind::RacewayBridge,
+            (0x06, 0x09) => DeviceKind::SemiTransparentPciPciBridge,
+            (0x06, 0x0a) => DeviceKind::InfinibandPciHostBridge,
+            (0x06, 0x80) => DeviceKind::OtherBridgeDevice,
 
-            (0x07, 0x00) => DeviceType::SerialController,
-            (0x07, 0x01) => DeviceType::ParallelPort,
-            (0x07, 0x02) => DeviceType::MultiportSerialController,
-            (0x07, 0x03) => DeviceType::Modem,
-            (0x07, 0x04) => DeviceType::GpibController,
-            (0x07, 0x05) => DeviceType::SmartCard,
-            (0x07, 0x80) => DeviceType::OtherCommunicationsDevice,
+            (0x07, 0x00) => DeviceKind::SerialController,
+            (0x07, 0x01) => DeviceKind::ParallelPort,
+            (0x07, 0x02) => DeviceKind::MultiportSerialController,
+            (0x07, 0x03) => DeviceKind::Modem,
+            (0x07, 0x04) => DeviceKind::GpibController,
+            (0x07, 0x05) => DeviceKind::SmartCard,
+            (0x07, 0x80) => DeviceKind::OtherCommunicationsDevice,
 
-            (0x08, 0x00) => DeviceType::InterruptController,
-            (0x08, 0x01) => DeviceType::DmaController,
-            (0x08, 0x02) => DeviceType::SystemTimer,
-            (0x08, 0x03) => DeviceType::RtcController,
-            (0x08, 0x04) => DeviceType::GenericPciHotPlugController,
-            (0x08, 0x05) => DeviceType::SdHostController,
-            (0x08, 0x80) => DeviceType::OtherSystemPeripheral,
+            (0x08, 0x00) => DeviceKind::InterruptController,
+            (0x08, 0x01) => DeviceKind::DmaController,
+            (0x08, 0x02) => DeviceKind::SystemTimer,
+            (0x08, 0x03) => DeviceKind::RtcController,
+            (0x08, 0x04) => DeviceKind::GenericPciHotPlugController,
+            (0x08, 0x05) => DeviceKind::SdHostController,
+            (0x08, 0x80) => DeviceKind::OtherSystemPeripheral,
 
-            (0x09, 0x00) => DeviceType::KeyboardController,
-            (0x09, 0x01) => DeviceType::Digitizer,
-            (0x09, 0x02) => DeviceType::MouseController,
-            (0x09, 0x03) => DeviceType::ScannerController,
-            (0x09, 0x04) => DeviceType::GameportController,
-            (0x09, 0x80) => DeviceType::OtherInputController,
+            (0x09, 0x00) => DeviceKind::KeyboardController,
+            (0x09, 0x01) => DeviceKind::Digitizer,
+            (0x09, 0x02) => DeviceKind::MouseController,
+            (0x09, 0x03) => DeviceKind::ScannerController,
+            (0x09, 0x04) => DeviceKind::GameportController,
+            (0x09, 0x80) => DeviceKind::OtherInputController,
 
-            (0x0a, 0x00) => DeviceType::GenericDockingStation,
-            (0x0a, 0x80) => DeviceType::OtherDockingStation,
+            (0x0a, 0x00) => DeviceKind::GenericDockingStation,
+            (0x0a, 0x80) => DeviceKind::OtherDockingStation,
 
-            (0x0b, 0x00) => DeviceType::Processor386,
-            (0x0b, 0x01) => DeviceType::Processor486,
-            (0x0b, 0x02) => DeviceType::ProcessorPentium,
-            (0x0b, 0x10) => DeviceType::ProcessorAlpha,
-            (0x0b, 0x20) => DeviceType::ProcessorPowerPc,
-            (0x0b, 0x30) => DeviceType::ProcessorMips,
-            (0x0b, 0x40) => DeviceType::CoProcessor,
+            (0x0b, 0x00) => DeviceKind::Processor386,
+            (0x0b, 0x01) => DeviceKind::Processor486,
+            (0x0b, 0x02) => DeviceKind::ProcessorPentium,
+            (0x0b, 0x10) => DeviceKind::ProcessorAlpha,
+            (0x0b, 0x20) => DeviceKind::ProcessorPowerPc,
+            (0x0b, 0x30) => DeviceKind::ProcessorMips,
+            (0x0b, 0x40) => DeviceKind::CoProcessor,
 
-            (0x0c, 0x00) => DeviceType::FirewireController,
-            (0x0c, 0x01) => DeviceType::AccessBusController,
-            (0x0c, 0x02) => DeviceType::SsaBusController,
-            (0x0c, 0x03) => DeviceType::UsbController,
-            (0x0c, 0x04) => DeviceType::FibreChannelController,
-            (0x0c, 0x05) => DeviceType::SmBusController,
-            (0x0c, 0x06) => DeviceType::InfiniBandController,
-            (0x0c, 0x07) => DeviceType::IpmiController,
-            (0x0c, 0x08) => DeviceType::SercosController,
-            (0x0c, 0x09) => DeviceType::CanBusController,
+            (0x0c, 0x00) => DeviceKind::FirewireController,
+            (0x0c, 0x01) => DeviceKind::AccessBusController,
+            (0x0c, 0x02) => DeviceKind::SsaBusController,
+            (0x0c, 0x03) => DeviceKind::UsbController,
+            (0x0c, 0x04) => DeviceKind::FibreChannelController,
+            (0x0c, 0x05) => DeviceKind::SmBusController,
+            (0x0c, 0x06) => DeviceKind::InfiniBandController,
+            (0x0c, 0x07) => DeviceKind::IpmiController,
+            (0x0c, 0x08) => DeviceKind::SercosController,
+            (0x0c, 0x09) => DeviceKind::CanBusController,
 
-            (0x0d, 0x00) => DeviceType::IrdaController,
-            (0x0d, 0x01) => DeviceType::ConsumerIrController,
-            (0x0d, 0x10) => DeviceType::RfController,
-            (0x0d, 0x11) => DeviceType::BluetoothController,
-            (0x0d, 0x12) => DeviceType::BroadbandController,
-            (0x0d, 0x20) => DeviceType::Ethernet5GHzController,
-            (0x0d, 0x21) => DeviceType::Ethernet24GHzController,
-            (0x0d, 0x80) => DeviceType::OtherWirelessController,
+            (0x0d, 0x00) => DeviceKind::IrdaController,
+            (0x0d, 0x01) => DeviceKind::ConsumerIrController,
+            (0x0d, 0x10) => DeviceKind::RfController,
+            (0x0d, 0x11) => DeviceKind::BluetoothController,
+            (0x0d, 0x12) => DeviceKind::BroadbandController,
+            (0x0d, 0x20) => DeviceKind::Ethernet5GHzController,
+            (0x0d, 0x21) => DeviceKind::Ethernet24GHzController,
+            (0x0d, 0x80) => DeviceKind::OtherWirelessController,
 
-            (0x0e, 0x00) => DeviceType::IntelligentIoController,
+            (0x0e, 0x00) => DeviceKind::IntelligentIoController,
 
-            (0x0f, 0x00) => DeviceType::TvSatelliteCommunicationsController,
-            (0x0f, 0x01) => DeviceType::AudioSatelliteCommunicationsController,
-            (0x0f, 0x02) => DeviceType::VoiceSatelliteCommunicationsController,
-            (0x0f, 0x03) => DeviceType::DataSatelliteCommunicationsController,
+            (0x0f, 0x00) => DeviceKind::TvSatelliteCommunicationsController,
+            (0x0f, 0x01) => DeviceKind::AudioSatelliteCommunicationsController,
+            (0x0f, 0x02) => DeviceKind::VoiceSatelliteCommunicationsController,
+            (0x0f, 0x03) => DeviceKind::DataSatelliteCommunicationsController,
 
-            (0x10, 0x00) => DeviceType::NetworkCryptionController,
-            (0x10, 0x10) => DeviceType::EntertainmentCryptionController,
-            (0x10, 0x80) => DeviceType::OtherCryptionController,
+            (0x10, 0x00) => DeviceKind::NetworkCryptionController,
+            (0x10, 0x10) => DeviceKind::EntertainmentCryptionController,
+            (0x10, 0x80) => DeviceKind::OtherCryptionController,
 
-            (0x11, 0x00) => DeviceType::DpioModule,
-            (0x11, 0x01) => DeviceType::PerformanceCounter,
-            (0x11, 0x10) => DeviceType::CommunicationsSynchronizationController,
-            (0x11, 0x20) => DeviceType::ManagementCard,
-            (0x11, 0x80) => DeviceType::OtherSignalProcessingController,
+            (0x11, 0x00) => DeviceKind::DpioModule,
+            (0x11, 0x01) => DeviceKind::PerformanceCounter,
+            (0x11, 0x10) => DeviceKind::CommunicationsSynchronizationController,
+            (0x11, 0x20) => DeviceKind::ManagementCard,
+            (0x11, 0x80) => DeviceKind::OtherSignalProcessingController,
 
-            _ => DeviceType::Unknown,
+            _ => DeviceKind::Unknown,
         }
     }
 }
@@ -669,7 +669,7 @@ impl DeviceType {
 ///
 /// Proprietary drivers must use `redox_syscall` instead, since usermode isn't beholden to GPLv3 the way kernel mode is
 pub trait FOSSPciDeviceHandle: Send + Sync {
-    fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
+    fn handles(&self, vendor_id: Vendor, device_id: DeviceKind) -> bool;
     fn start(&self, header: &mut pcics::Header);
 }
 
@@ -723,8 +723,8 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
             let mut header = pcics::Header::from(raw_header);
 
-            if let DeviceType::Unknown =
-                DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32)
+            if let DeviceKind::Unknown =
+                DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
             {
                 continue; // don't print unknown devices
             } else {
@@ -732,7 +732,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
                     header.vendor_id,
                     header.device_id,
-                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32),
+                    DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
                     Vendor::new(header.vendor_id as u32),
                 );
             }
@@ -744,7 +744,7 @@ pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
 
                 if driver.handle.handles(
                     Vendor::new(header.vendor_id as u32),
-                    DeviceType::new(header.class_code.base as u32, header.class_code.sub as u32),
+                    DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
                 ) {
                     driver.handle.start(&mut header);
                     unsafe {
