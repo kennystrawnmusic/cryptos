@@ -565,6 +565,12 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
     let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
     let mut aml_ctx = aml_clone.write();
 
+    let no_value = [None, None, None, None, None, None, None];
+
+    if let Ok(pkg) = aml_ctx.invoke_method(&AmlName::from_str("\\_S5").unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)), Args(no_value)) {
+        info!("S5 state information: {:?}", pkg);
+    };
+
     if let Ok(prt) =
         PciRoutingTable::from_prt_path(&AmlName::from_str("\\_SB.PCI0._PRT").unwrap(), &mut aml_ctx)
     {
