@@ -92,6 +92,7 @@ impl Signal {
         }
     }
 
+    /// Convenient method for handling signals (experimental)
     pub fn handle<'a>(&self, p: &mut Process<'a>) -> syscall::Result<()> {
         match self {
             Self::Success => Ok(()),
