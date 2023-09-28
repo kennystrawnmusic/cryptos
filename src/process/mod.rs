@@ -19,7 +19,7 @@ use xmas_elf::ElfFile;
 
 use crate::fs::hmfs::{Entry, FileData};
 
-use self::signal::Signal;
+pub use self::signal::Signal;
 
 pub mod signal;
 
