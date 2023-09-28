@@ -194,10 +194,7 @@ pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
     PCI_CONFIG.get().clone().unwrap()
 }
 
-/// Returns an Iterator of all possible `Option<u64>` in the PCIe extended address space
-///
-/// Use the `.filter(|i| i.is_some())` method of the resulting iterator to get the PCI devices present on the system
-pub fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
+fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
     (0x0u32..0x00ffffffu32).map(|i: u32| match get_mcfg() {
         Some(mcfg) => match mcfg.physical_address(
             i.to_be_bytes()[0] as u16,
@@ -212,6 +209,7 @@ pub fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
     })
 }
 
+/// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
 pub fn mcfg_brute_force() -> impl Itertools<Item = u64> {
     mcfg_brute_force_inner()
         .filter(|i| i.is_some())
