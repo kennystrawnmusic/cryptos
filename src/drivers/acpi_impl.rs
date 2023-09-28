@@ -562,15 +562,29 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             info!("SMI command port: {:#x?}", smi_cmd);
             info!("ACPI enable value: {:?}", acpi_en);
 
-            info!(
-                "PM1a control block: {:#x?}",
-                match fadt.pm1a_control_block() {
-                    Ok(addr) => Some(addr.address),
-                    Err(_) => None,
-                }
-            );
+            let pm1a_block = match fadt.pm1a_control_block() {
+                Ok(addr) => Some(addr.address),
+                Err(_) => None,
+            };
 
-            info!("PM1b control block: {:?}", fadt.pm1b_control_block());
+            if let Some(addr) = pm1a_block {
+                info!("PM1a control address: {:#x?}", addr);
+            }
+
+            let pm1b_block = match fadt.pm1b_control_block() {
+                Ok(addr) => {
+                    if let Some(addr) = addr {
+                        Some(addr.address)
+                    } else {
+                        None
+                    }
+                }
+                Err(_) => None,
+            };
+
+            if let Some(addr) = pm1b_block {
+                info!("PM1b control address: {:?}", addr);
+            }
 
             let mut smi_port = Port::new(smi_cmd as u16);
             unsafe { smi_port.write(acpi_en) };
