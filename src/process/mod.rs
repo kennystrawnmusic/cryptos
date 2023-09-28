@@ -24,7 +24,7 @@ use self::signal::Signal;
 pub mod signal;
 
 /// State that the context is left in
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum State {
     /// Ready to run
     Runnable,
