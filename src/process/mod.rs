@@ -62,7 +62,7 @@ impl From<(u8, u64)> for State {
     }
 }
 
-#[allow(dead_code)] // not finished
+
 pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
@@ -87,6 +87,9 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
     }
 }
 
+/// Process object
+/// 
+/// Uses `core::ops::Generator` behind the scenes for easy preemption
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
@@ -140,12 +143,14 @@ impl<'a> Process<'a> {
         }
     }
 
+    /// Creates a new process and automatically adds it to `PTABLE` 
     pub fn create(data: FileData, main: MainLoop) {
         PTABLE
             .write()
             .push(Arc::new(RwLock::new(Process::<'static>::new(data, main))));
     }
 
+    /// Runs this process
     pub fn run(&mut self) -> syscall::Result<usize> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
@@ -227,15 +232,20 @@ impl<'a> Process<'a> {
         Ok(0)
     }
 
+    /// Sets this process's state
+    /// 
+    /// This paves the way for proper preemption
     pub(crate) fn set_state(&mut self, state: State) {
         self.state = state;
     }
 
+    /// Exits this process
     pub fn exit(&mut self, code: u64) -> ! {
         self.state = State::Exited(code);
         abort();
     }
 
+    /// Sends signal
     pub fn kill(&mut self, signal: Signal) {
         self.signal_received = signal;
     }
