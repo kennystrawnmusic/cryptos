@@ -563,7 +563,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             info!("ACPI enable value: {:?}", acpi_en);
 
             let pm1a_block = match fadt.pm1a_control_block() {
-                Ok(addr) => Some(addr.address),
+                Ok(block) => Some(block.address),
                 Err(_) => None,
             };
 
@@ -572,9 +572,9 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             }
 
             let pm1b_block = match fadt.pm1b_control_block() {
-                Ok(addr) => {
-                    if let Some(addr) = addr {
-                        Some(addr.address)
+                Ok(block_opt) => {
+                    if let Some(block) = block_opt {
+                        Some(block.address)
                     } else {
                         None
                     }
