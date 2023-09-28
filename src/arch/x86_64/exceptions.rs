@@ -113,6 +113,7 @@ lazy_static! {
     };
 }
 
+/// GDT initializer
 pub fn init() {
     GDT.0.load();
     unsafe {

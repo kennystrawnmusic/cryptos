@@ -41,6 +41,7 @@ use {
     },
 };
 
+/// Initializes both the GDT (by calling the initializer function thereof) and the IDT
 pub fn init() {
     super::exceptions::init();
     IDT.load();
