@@ -710,3 +710,23 @@ impl Clone for UserAcpi {
 
 unsafe impl Send for UserAcpi {}
 unsafe impl Sync for UserAcpi {}
+
+pub fn system_shutdown() -> ! {
+    let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
+    let mut aml_ctx = aml_clone.write();
+
+    let _ = aml_ctx.invoke_method(
+        &AmlName::from_str("\\_PTS").unwrap(),
+        Args([
+            Some(AmlValue::Integer(5)),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ]),
+    );
+
+    todo!()
+}
