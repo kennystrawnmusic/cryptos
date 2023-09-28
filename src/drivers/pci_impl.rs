@@ -665,6 +665,9 @@ impl DeviceType {
     }
 }
 
+/// Device handle for open source drivers
+///
+/// Proprietary drivers must use `redox_syscall` instead, since usermode isn't beholden to GPLv3 the way kernel mode is
 pub trait FOSSPciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
     fn start(&self, header: &mut pcics::Header);
