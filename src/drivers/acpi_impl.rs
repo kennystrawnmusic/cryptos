@@ -558,8 +558,8 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             // Check the SMI command port
             let copy_1 = fadt.smi_cmd_port;
             let copy_2 = fadt.acpi_enable;
-            info!("SMI command port: {:#x?}", copy_1);
 
+            info!("SMI command port: {:#x?}", copy_1);
             info!("ACPI enable value: {:?}", copy_2);
 
             let mut smi_port = Port::new(copy_1 as u16);
