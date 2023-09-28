@@ -34,7 +34,7 @@ nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
 pcics = "0.3.1"
 raw-cpuid = "11.0.1"
-redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall" }
+redox_syscall = "^0.4"
 sha3 = { version = "0.10.6", default-features = false }
 slab_allocator_rs = "1.0.1"
 spin = "0.9.4"
@@ -67,3 +67,4 @@ bootloader = { git = "https://github.com/kennystrawnmusic/bootloader" }
 bootloader-boot-config = { git = "https://github.com/kennystrawnmusic/bootloader" }
 bootloader-x86_64-common = { git = "https://github.com/kennystrawnmusic/bootloader" }
 bootloader_api = { git = "https://github.com/kennystrawnmusic/bootloader" }
+redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall" }
