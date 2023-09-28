@@ -190,7 +190,7 @@ impl<'a> Process<'a> {
                             PTABLE.write().remove(self.pid - 1);
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
-                            // as that's the arm that this variant is set from
+                            // as that's the arm that the exit status is set from
                             return Ok(());
                         } else {
                             PTABLE.write().remove(self.pid - 1);
