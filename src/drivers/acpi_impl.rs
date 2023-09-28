@@ -556,14 +556,14 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             );
 
             // Check the SMI command port
-            let copy_1 = fadt.smi_cmd_port;
-            let copy_2 = fadt.acpi_enable;
+            let smi_cmd = fadt.smi_cmd_port;
+            let acpi_en = fadt.acpi_enable;
 
-            info!("SMI command port: {:#x?}", copy_1);
-            info!("ACPI enable value: {:?}", copy_2);
+            info!("SMI command port: {:#x?}", smi_cmd);
+            info!("ACPI enable value: {:?}", acpi_en);
 
-            let mut smi_port = Port::new(copy_1 as u16);
-            unsafe { smi_port.write(copy_2) };
+            let mut smi_port = Port::new(smi_cmd as u16);
+            unsafe { smi_port.write(acpi_en) };
 
             AML_CONTEXT.get_or_init(move || Arc::new(RwLock::new(aml_ctx)));
             DSDT_MAPPED.store(aml_virt, Ordering::SeqCst);
