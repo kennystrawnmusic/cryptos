@@ -1070,7 +1070,7 @@ impl AhciProtected {
                     let sector = 2000;
 
                     if let Some(_) = port.read(sector, buffer) {
-                        info!("Read sector {:?}: {:?}", sector, buffer);
+                        debug!("Read sector {:?}: {:?}", sector, buffer);
                     } else {
                         warn!("Couldn't read any data")
                     }
@@ -1095,7 +1095,7 @@ impl AhciDriver {
     }
 }
 
-impl OSSPciDeviceHandle for AhciDriver {
+impl FOSSPciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool {
         match (vendor_id, device_id) {
             (Vendor::Intel, DeviceType::SataController) => true,

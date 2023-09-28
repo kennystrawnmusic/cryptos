@@ -62,7 +62,6 @@ impl From<(u8, u64)> for State {
     }
 }
 
-
 pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
@@ -88,7 +87,7 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 }
 
 /// Process object
-/// 
+///
 /// Uses `core::ops::Generator` behind the scenes for easy preemption
 #[allow(unused)] // not finished
 pub struct Process<'a> {
@@ -143,7 +142,7 @@ impl<'a> Process<'a> {
         }
     }
 
-    /// Creates a new process and automatically adds it to `PTABLE` 
+    /// Creates a new process and automatically adds it to `PTABLE`
     pub fn create(data: FileData, main: MainLoop) {
         PTABLE
             .write()
@@ -233,7 +232,7 @@ impl<'a> Process<'a> {
     }
 
     /// Sets this process's state
-    /// 
+    ///
     /// This paves the way for proper preemption
     pub(crate) fn set_state(&mut self, state: State) {
         self.state = state;

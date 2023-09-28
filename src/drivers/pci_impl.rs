@@ -665,13 +665,13 @@ impl DeviceType {
     }
 }
 
-pub trait OSSPciDeviceHandle: Send + Sync {
+pub trait FOSSPciDeviceHandle: Send + Sync {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceType) -> bool;
     fn start(&self, header: &mut pcics::Header);
 }
 
 pub struct PciDevice {
-    pub handle: Arc<dyn OSSPciDeviceHandle>,
+    pub handle: Arc<dyn FOSSPciDeviceHandle>,
 }
 
 pub struct PciTable {
@@ -684,7 +684,7 @@ impl PciTable {
     }
 }
 
-pub fn register_device_driver(handle: Arc<dyn OSSPciDeviceHandle>) {
+pub fn register_device_driver(handle: Arc<dyn FOSSPciDeviceHandle>) {
     PCI_TABLE.lock().inner.push(PciDevice { handle });
     unsafe {
         *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().inner.len();
