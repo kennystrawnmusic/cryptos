@@ -808,8 +808,8 @@ pub fn system_shutdown() -> ! {
                 let mut p = Port::new(pm1a as u16);
 
                 if let AmlValue::Integer(value) = pkg[0] {
-                    let sleep_a = value;
-                    let out = (sleep_a | 1 << 13) as u16;
+                    let sleep_a = value as u16;
+                    let out = sleep_a | 1 << 13;
 
                     unsafe { p.write(out) };
                 }
@@ -818,8 +818,8 @@ pub fn system_shutdown() -> ! {
                     let mut p = Port::new(pm1b as u16);
 
                     if let AmlValue::Integer(value) = pkg[1] {
-                        let sleep_b = value;
-                        let out = (sleep_b | 1 << 13) as u16;
+                        let sleep_b = value as u16;
+                        let out = sleep_b | 1 << 13;
 
                         unsafe { p.write(out) };
                     }
