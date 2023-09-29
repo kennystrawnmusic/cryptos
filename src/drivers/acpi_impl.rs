@@ -760,6 +760,8 @@ impl Clone for UserAcpi {
 unsafe impl Send for UserAcpi {}
 unsafe impl Sync for UserAcpi {}
 
+
+/// Invokes the ACPI shutdown command
 pub fn system_shutdown() -> ! {
     let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
     let mut aml_ctx = aml_clone.write();
