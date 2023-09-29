@@ -781,10 +781,6 @@ pub fn system_shutdown() -> ! {
     let fadt_lock = Arc::clone(&FADT.get().unwrap());
     let fadt = fadt_lock.write();
 
-    // Check the SMI command port
-    let _smi_cmd = fadt.smi_cmd_port;
-    let _acpi_en = fadt.acpi_enable;
-
     let pm1a_block = match fadt.pm1a_control_block() {
         Ok(block) => Some(block.address),
         Err(_) => None,
