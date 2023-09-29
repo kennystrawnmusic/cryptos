@@ -568,7 +568,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             };
 
             if let Some(addr) = pm1a_block {
-                info!("PM1a control address: {:#x?}", addr);
+                info!("Found PM1a control address: {:#x?}", addr);
             }
 
             let pm1b_block = match fadt.pm1b_control_block() {
@@ -583,7 +583,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             };
 
             if let Some(addr) = pm1b_block {
-                info!("PM1b control address: {:?}", addr);
+                info!("Found PM1b control address: {:?}", addr);
             }
 
             let mut smi_port = Port::new(smi_cmd as u16);
