@@ -1063,6 +1063,10 @@ impl AhciProtected {
                 self.enable_interrupts(header);
             });
 
+            // Test code: can confirm this actually works
+            // info!("Powering off");
+            // crate::drivers::acpi_impl::system_shutdown();
+
             // Test code
             for port in self.ports.iter().filter(|p| p.is_some()) {
                 if let Some(port) = port {
