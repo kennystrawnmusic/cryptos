@@ -825,8 +825,6 @@ pub fn system_shutdown() -> ! {
                     }
                 }
             }
-        } else {
-            unreachable!()
         }
     };
 
