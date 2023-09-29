@@ -786,7 +786,7 @@ pub fn system_shutdown() -> ! {
         Err(_) => None,
     };
 
-    let _pm1b_block = match fadt.pm1b_control_block() {
+    let pm1b_block = match fadt.pm1b_control_block() {
         Ok(block_opt) => {
             if let Some(block) = block_opt {
                 Some(block.address)
@@ -814,7 +814,7 @@ pub fn system_shutdown() -> ! {
                     unsafe { p.write(out) };
                 }
 
-                if let Some(pm1b) = _pm1b_block {
+                if let Some(pm1b) = pm1b_block {
                     let mut p = Port::new(pm1b as u16);
 
                     if let AmlValue::Integer(value) = pkg[1] {
