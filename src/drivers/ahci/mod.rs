@@ -1065,7 +1065,7 @@ impl AhciProtected {
 
             // Test code: can confirm this actually works
             // info!("Powering off");
-            // crate::drivers::acpi_impl::system_shutdown();
+            // super::acpi_impl::system_shutdown();
 
             // Test code
             for port in self.ports.iter().filter(|p| p.is_some()) {
