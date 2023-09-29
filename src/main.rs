@@ -32,7 +32,7 @@ pub mod process;
 pub mod scheme;
 
 use crate::{
-    acpi_impl::KernelAcpi,
+    acpi_impl::{system_shutdown, KernelAcpi},
     ahci::{ahci_init, get_ahci, ABAR},
     cralloc::heap_init,
     drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
@@ -303,6 +303,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         }
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
+
+    info!("Powering off");
+    system_shutdown();
 
     // Use the loop at the end of main as the rendering loop
     loop {
