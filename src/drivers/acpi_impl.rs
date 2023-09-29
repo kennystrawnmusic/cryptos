@@ -500,14 +500,19 @@ impl aml::Handler for KernelAcpi {
 unsafe impl Send for KernelAcpi {}
 unsafe impl Sync for KernelAcpi {}
 
-pub static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uninit();
-pub static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
+pub(crate) static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uninit();
+pub(crate) static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
+pub(crate) static FADT: OnceCell<Arc<RwLock<Fadt>>> = OnceCell::uninit();
 
 pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
     let fadt = &mut tables.find_table::<Fadt>().unwrap();
+
+    // borrow checker
+    let clone = fadt.clone();
+    FADT.get_or_init(move || Arc::new(RwLock::new(clone)));
 
     // Properly reintroduce the size/length of the header
     let dsdt_addr = fadt.dsdt_address().unwrap();
@@ -586,6 +591,16 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
                 info!("Found PM1b control address: {:?}", addr);
             }
 
+            let no_value = [None, None, None, None, None, None, None];
+
+            if let Ok(pkg) = aml_ctx.invoke_method(
+                &AmlName::from_str("\\_S5")
+                    .unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)),
+                Args(no_value),
+            ) {
+                info!("S5 Controls: {:#?}", pkg)
+            };
+
             let mut smi_port = Port::new(smi_cmd as u16);
             unsafe { smi_port.write(acpi_en) };
 
@@ -598,13 +613,6 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
 pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
     let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
     let mut aml_ctx = aml_clone.write();
-
-    // Debug
-    // let no_value = [None, None, None, None, None, None, None];
-
-    // if let Ok(pkg) = aml_ctx.invoke_method(&AmlName::from_str("\\_S5").unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)), Args(no_value)) {
-    //     info!("S5 state information: {:?}", pkg);
-    // };
 
     if let Ok(prt) =
         PciRoutingTable::from_prt_path(&AmlName::from_str("\\_SB.PCI0._PRT").unwrap(), &mut aml_ctx)
@@ -769,5 +777,61 @@ pub fn system_shutdown() -> ! {
         ]),
     );
 
-    todo!()
+    let fadt_lock = Arc::clone(&FADT.get().unwrap());
+    let fadt = fadt_lock.write();
+
+    // Check the SMI command port
+    let _smi_cmd = fadt.smi_cmd_port;
+    let _acpi_en = fadt.acpi_enable;
+
+    let pm1a_block = match fadt.pm1a_control_block() {
+        Ok(block) => Some(block.address),
+        Err(_) => None,
+    };
+
+    let _pm1b_block = match fadt.pm1b_control_block() {
+        Ok(block_opt) => {
+            if let Some(block) = block_opt {
+                Some(block.address)
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    };
+
+    let no_value = [None, None, None, None, None, None, None];
+
+    if let Ok(pkg) = aml_ctx.invoke_method(
+        &AmlName::from_str("\\_S5").unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)),
+        Args(no_value),
+    ) {
+        if let AmlValue::Package(pkg) = pkg {
+            if let Some(pm1a) = pm1a_block {
+                let mut p = Port::new(pm1a as u16);
+
+                if let AmlValue::Integer(value) = pkg[0] {
+                    let sleep_a = value;
+                    let out = (sleep_a | 1 << 13) as u16;
+
+                    unsafe { p.write(out) };
+                }
+
+                if let Some(pm1b) = _pm1b_block {
+                    let mut p = Port::new(pm1b as u16);
+
+                    if let AmlValue::Integer(value) = pkg[1] {
+                        let sleep_b = value;
+                        let out = (sleep_b | 1 << 13) as u16;
+
+                        unsafe { p.write(out) };
+                    }
+                }
+            }
+        } else {
+            unreachable!()
+        }
+    };
+
+    unreachable!()
 }
