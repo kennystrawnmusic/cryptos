@@ -124,7 +124,7 @@ impl<'a> Entry<'a> {
                     name,
                     EntryKind::Directory(dir.clone()),
                     None,
-                    0777,
+                    0o777,
                     String::from("root"), // TODO: users
                     timestamp,
                     timestamp,
@@ -143,7 +143,7 @@ impl<'a> Entry<'a> {
                 let mut_dir = Arc::get_mut(&mut dir).unwrap();
                 mut_dir.insert(props.clone(), Arc::new(to_insert));
 
-                let ret = dir.get(&props).clone().unwrap();
+                let ret = dir.get(&props).unwrap();
                 Ok(ret.clone().as_ref().clone())
             }
             EntryKind::Root(mut root) => {
@@ -158,7 +158,7 @@ impl<'a> Entry<'a> {
                         name,
                         EntryKind::Directory(dir.clone()),
                         None,
-                        0777,
+                        0o777,
                         String::from("root"), // TODO: users
                         timestamp,
                         timestamp,
@@ -195,16 +195,16 @@ impl<'a> Entry<'a> {
     ) -> syscall::Result<Self> {
         match self.kind.clone() {
             EntryKind::Directory(ref mut dir) => {
-                let parent = Some(EntryKind::Directory(dir.clone()));
+                let parent = EntryKind::Directory(dir.clone());
 
                 // borrow checker
                 let duplicate = parent.clone();
 
                 let props = Properties::new(
                     name,
-                    parent.unwrap(),
+                    parent,
                     Some(mime),
-                    0777,                 // TODO: users and permissions
+                    0o777,                 // TODO: users and permissions
                     String::from("root"), // TODO: users and permissions
                     timestamp,
                     timestamp,
@@ -222,7 +222,7 @@ impl<'a> Entry<'a> {
                 let to_insert = Self {
                     kind,
                     checksum,
-                    parent,
+                    parent: Some(parent),
                 };
 
                 Arc::get_mut(dir).unwrap().insert(
@@ -255,6 +255,7 @@ pub struct Properties<'a> {
     owner: String,
 }
 
+#[allow(clippy::too_many_arguments)]
 impl<'a> Properties<'a> {
     pub fn new(
         name: String,
@@ -306,7 +307,7 @@ impl<'a> RootEntry<'a> {
             String::from("/"),
             EntryKind::Directory(Arc::clone(&root_map)),
             None,
-            0777,
+            0o777,
             String::from("root"),
             timestamp,
             timestamp,

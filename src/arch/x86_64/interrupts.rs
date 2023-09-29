@@ -183,7 +183,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
         // initialize with first LAPIC ID
-        ACTIVE_LAPIC_ID.store(get_lapic_ids().nth(0).unwrap(), Ordering::SeqCst);
+        ACTIVE_LAPIC_ID.store(get_lapic_ids().next().unwrap(), Ordering::SeqCst);
 
         // get the ball rolling
         unsafe { get_active_lapic().send_ipi(100, get_lapic_ids().cycle().nth(1).unwrap()) };
@@ -191,7 +191,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
         // need to store this in a variable in order to ensure that `.next()` matches the correct core ID
         let mut lapic_iter = get_lapic_ids().cycle();
 
-        if let Some(_) = lapic_iter.find(|&id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
+        if lapic_iter.any(|id| id == ACTIVE_LAPIC_ID.load(Ordering::SeqCst)) {
             // find the next LAPIC ID after the current one
             // Note that because we're using `.cycle` this will never be None
             let id = lapic_iter.next().unwrap();
@@ -212,7 +212,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         panic!("Bound range exceeded\nStack frame: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -224,7 +224,7 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64()) as *const u32) };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         panic!(
             "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
             offender.to_be_bytes(),
@@ -238,7 +238,7 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         panic!("Device not available\nStack frame: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -283,26 +283,24 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::NO_CACHE
                 | PageTableFlags::WRITE_THROUGH
         );
+    } else if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
+        // kernel mode
+        panic!(
+            "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
+            Cr2::read(),
+            code,
+            frame
+        );
     } else {
-        if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
-            // kernel mode
-            panic!(
-                "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
-                Cr2::read(),
-                code,
-                frame
-            );
-        } else {
-            // user mode
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
-                .write()
-                .kill(Signal::SIGSEGV);
-        }
+        // user mode
+        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            .write()
+            .kill(Signal::SIGSEGV);
     }
 }
 
 extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         panic!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -320,7 +318,7 @@ extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
 extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
     let selector = SelectorErrorCode::new_truncate(code);
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         panic!(
             "Segment selector at index {:#?} is not present\n\
             Descriptor table involved: {:#?}\n\
@@ -360,7 +358,7 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         sel => Some(sel),
     };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         if let Some(code) = is_caused_by_np {
             let selector = SelectorErrorCode::new_truncate(code);
             panic!(
@@ -395,7 +393,7 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
         sel => Some(sel),
     };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(frame.clone()) {
+    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         if let Some(code) = is_seg_related {
             let selector = SelectorErrorCode::new_truncate(code);
             panic!(
@@ -472,23 +470,21 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     get_hba().interrupt_status.set(status);
 
     // Read and write back port interrupt status
-    for port in get_ahci().lock().ports.as_mut() {
-        if let Some(port) = port {
-            let port_status = port.inner.lock().hba_port().is.get();
+    for port in get_ahci().lock().ports.as_mut().iter_mut().flatten() {
+        let port_status = port.inner.lock().hba_port().is.get();
 
-            // Check error bit and debug if set
-            if port_status.contains(HbaPortIS::HBDS) {
-                warn!("AHCI: Host bus data error");
-            } else if port_status.contains(HbaPortIS::HBFS) {
-                warn!("AHCI: Host bus file error");
-            } else if port_status.contains(HbaPortIS::TFES) {
-                warn!("AHCI: Task file error");
-            } else if port_status.contains(HbaPortIS::CPDS) {
-                warn!("AHCI: Cold port detected");
-            }
-
-            port.inner.lock().hba_port().is.set(port_status);
+        // Check error bit and debug if set
+        if port_status.contains(HbaPortIS::HBDS) {
+            warn!("AHCI: Host bus data error");
+        } else if port_status.contains(HbaPortIS::HBFS) {
+            warn!("AHCI: Host bus file error");
+        } else if port_status.contains(HbaPortIS::TFES) {
+            warn!("AHCI: Task file error");
+        } else if port_status.contains(HbaPortIS::CPDS) {
+            warn!("AHCI: Cold port detected");
         }
+
+        port.inner.lock().hba_port().is.set(port_status);
     }
 
     unsafe { get_active_lapic().end_of_interrupt() };
@@ -500,11 +496,11 @@ pub fn is_enabled() -> bool {
 }
 
 #[inline(always)]
-pub unsafe fn disable_interrupts() {
+pub(crate) unsafe fn disable_interrupts() {
     interrupts::disable();
 }
 
 #[inline(always)]
-pub unsafe fn enable_interrupts() {
+pub(crate) unsafe fn enable_interrupts() {
     interrupts::enable();
 }

@@ -246,7 +246,7 @@ impl aml::Handler for KernelAcpi {
         unsafe {
             asm!("in al, dx", in("dx") port, out("al") res);
         }
-        return res;
+        res
     }
 
     fn read_io_u16(&self, port: u16) -> u16 {
@@ -254,7 +254,7 @@ impl aml::Handler for KernelAcpi {
         unsafe {
             asm!("in ax, dx", in("dx") port, out("ax") res);
         }
-        return res;
+        res
     }
 
     fn read_io_u32(&self, port: u16) -> u32 {
@@ -262,7 +262,7 @@ impl aml::Handler for KernelAcpi {
         unsafe {
             asm!("in eax, dx", in("dx") port, out("eax") res);
         }
-        return res;
+        res
     }
 
     fn write_io_u8(&self, port: u16, value: u8) {
@@ -509,23 +509,23 @@ pub(crate) static AML_CONTEXT: OnceCell<Arc<RwLock<AmlContext>>> = OnceCell::uni
 pub(crate) static DSDT_MAPPED: AtomicU64 = AtomicU64::new(0);
 pub(crate) static FADT: OnceCell<Arc<RwLock<Fadt>>> = OnceCell::uninit();
 
-pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
+pub fn aml_init(tables: &AcpiTables<KernelAcpi>) {
     info!("Parsing AML");
     let mut aml_ctx = AmlContext::new(Box::new(KernelAcpi), aml::DebugVerbosity::Scopes);
 
     let fadt = &mut tables.find_table::<Fadt>().unwrap();
 
     // borrow checker
-    let clone = fadt.clone();
+    let clone = **fadt;
     FADT.get_or_init(move || Arc::new(RwLock::new(clone)));
 
     // Properly reintroduce the size/length of the header
     let dsdt_addr = fadt.dsdt_address().unwrap();
     info!("DSDT address: {:#x}", dsdt_addr.clone());
-    let dsdt_len = tables.dsdt().as_ref().unwrap().length.clone() as usize;
+    let dsdt_len = tables.dsdt().as_ref().unwrap().length as usize;
 
     let aml_test_page =
-        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr.clone() as u64));
+        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr as u64));
     let aml_virt = aml_test_page.start_address().as_u64() + get_phys_offset();
 
     info!("Virtual DSDT address: {:#x}", &aml_virt);
@@ -543,13 +543,13 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     let raw_table = unsafe {
         core::slice::from_raw_parts_mut(
             aml_virt as *mut u8,
-            dsdt_len.clone() + core::mem::size_of::<SdtHeader>(),
+            dsdt_len + core::mem::size_of::<SdtHeader>(),
         )
     };
 
     if let Ok(()) = aml_ctx.initialize_objects() {
         if let Ok(()) =
-            aml_ctx.parse_table(&raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
+            aml_ctx.parse_table(raw_table.split_at_mut(core::mem::size_of::<SdtHeader>()).1)
         {
             // Make sure AML knows that the APIC, not the legacy PIC, is what's being used
             let _ = aml_ctx.invoke_method(
@@ -578,7 +578,7 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
     }
 }
 
-pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
+pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
     let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
     let mut aml_ctx = aml_clone.write();
 
@@ -598,7 +598,7 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
             &mut aml_ctx,
         ) {
             debug!("IntA IRQ number: {:#?}", desc.irq.clone());
-            INTA_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
+            INTA_IRQ.store((desc.irq + 32) as u64, Ordering::SeqCst);
             a[0] = (desc.irq, InterruptPin::IntA);
         }
         if let Ok(desc) = prt.route(
@@ -608,7 +608,7 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
             &mut aml_ctx,
         ) {
             debug!("IntB IRQ number: {:#?}", desc.irq.clone());
-            INTB_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
+            INTB_IRQ.store((desc.irq + 32) as u64, Ordering::SeqCst);
             a[1] = (desc.irq, InterruptPin::IntB);
         }
         if let Ok(desc) = prt.route(
@@ -618,7 +618,7 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
             &mut aml_ctx,
         ) {
             debug!("IntC IRQ number: {:#?}", desc.irq.clone());
-            INTC_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
+            INTC_IRQ.store((desc.irq + 32) as u64, Ordering::SeqCst);
             a[2] = (desc.irq, InterruptPin::IntC);
         }
         if let Ok(desc) = prt.route(
@@ -628,12 +628,12 @@ pub fn aml_route(header: &mut Header) -> Option<[(u32, InterruptPin); 4]> {
             &mut aml_ctx,
         ) {
             debug!("IntD IRQ number: {:#?}", desc.irq.clone());
-            INTD_IRQ.store((desc.irq.clone() + 32) as u64, Ordering::SeqCst);
+            INTD_IRQ.store((desc.irq + 32) as u64, Ordering::SeqCst);
             a[3] = (desc.irq, InterruptPin::IntD);
         }
         return Some(a);
     }
-    return None;
+    None
 }
 
 // Needed for cloning the ACPI tables into an abstraction for usermode use
@@ -648,31 +648,24 @@ pub struct UserAcpi {
 }
 
 impl UserAcpi {
-    pub fn new(tables: &mut AcpiTables<KernelAcpi>) -> Self {
+    pub fn new(tables: &AcpiTables<KernelAcpi>) -> Self {
         Self {
-            bgrt: tables
+            bgrt: *tables
                 .find_table::<Bgrt>()
-                .unwrap_or_else(|e| panic!("Failed to find BGRT table: {:#?}", e))
-                .clone(),
-            fadt: tables
+                .unwrap_or_else(|e| panic!("Failed to find BGRT table: {:#?}", e)),
+            fadt: *tables
                 .find_table::<Fadt>()
-                .unwrap_or_else(|e| panic!("Failed to find FADT table: {:#?}", e))
-                .clone(),
-            hpet: tables
+                .unwrap_or_else(|e| panic!("Failed to find FADT table: {:#?}", e)),
+            hpet: *tables
                 .find_table::<HpetTable>()
-                .unwrap_or_else(|e| panic!("Failed to find HPET table: {:#?}", e))
-                .clone(),
-            madt: tables
+                .unwrap_or_else(|e| panic!("Failed to find HPET table: {:#?}", e)),
+            madt: *tables
                 .find_table::<Madt>()
-                .unwrap_or_else(|e| panic!("Failed to find MADT table: {:#?}", e))
-                .clone(),
+                .unwrap_or_else(|e| panic!("Failed to find MADT table: {:#?}", e)),
             mcfg: tables
                 .find_table::<Mcfg>()
                 .unwrap_or_else(|e| panic!("Failed to find MCFG table: {:#?}", e))
-                .entries()
-                .iter()
-                .map(|&entry| entry.clone())
-                .collect::<Vec<_>>(),
+                .entries().to_vec(),
             dsdt: if let Ok(dsdt) = tables.dsdt() {
                 Some(AmlTable {
                     address: dsdt.address,
@@ -698,19 +691,15 @@ impl UserAcpi {
 impl Clone for UserAcpi {
     fn clone(&self) -> Self {
         Self {
-            bgrt: self.bgrt.clone(),
-            fadt: self.fadt.clone(),
-            hpet: self.hpet.clone(),
-            madt: self.madt.clone(),
+            bgrt: self.bgrt,
+            fadt: self.fadt,
+            hpet: self.hpet,
+            madt: self.madt,
             mcfg: self.mcfg.clone(),
-            dsdt: if let Some(dsdt) = &self.dsdt {
-                Some(AmlTable {
+            dsdt: self.dsdt.as_ref().map(|dsdt| AmlTable {
                     address: dsdt.address,
                     length: dsdt.length,
-                })
-            } else {
-                None
-            },
+                }),
             ssdts: {
                 let mut v = Vec::new();
                 for table in self.ssdts.iter() {
@@ -730,7 +719,8 @@ unsafe impl Sync for UserAcpi {}
 
 /// Invokes the ACPI shutdown command
 /// 
-/// Safety: doesn't save anything before shutting down! Equivalent to straight-up unplugging your system.
+/// # Safety
+/// Doesn't save anything before shutting down! Equivalent to straight-up unplugging your system.
 pub unsafe fn system_shutdown() -> ! {
     let aml_clone = Arc::clone(AML_CONTEXT.get().expect("AML context failed to initialize"));
     let mut aml_ctx = aml_clone.write();
@@ -748,7 +738,7 @@ pub unsafe fn system_shutdown() -> ! {
         ]),
     );
 
-    let fadt_lock = Arc::clone(&FADT.get().unwrap());
+    let fadt_lock = Arc::clone(FADT.get().unwrap());
     let fadt = fadt_lock.write();
 
     let pm1a_block = match fadt.pm1a_control_block() {
@@ -757,42 +747,34 @@ pub unsafe fn system_shutdown() -> ! {
     };
 
     let pm1b_block = match fadt.pm1b_control_block() {
-        Ok(block_opt) => {
-            if let Some(block) = block_opt {
-                Some(block.address)
-            } else {
-                None
-            }
-        }
+        Ok(block_opt) => block_opt.map(|block| block.address),
         Err(_) => None,
     };
 
     let no_value = [None, None, None, None, None, None, None];
 
-    if let Ok(pkg) = aml_ctx.invoke_method(
+    if let Ok(AmlValue::Package(pkg)) = aml_ctx.invoke_method(
         &AmlName::from_str("\\_S5").unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)),
         Args(no_value),
     ) {
-        if let AmlValue::Package(pkg) = pkg {
-            if let Some(pm1a) = pm1a_block {
-                let mut p = Port::new(pm1a as u16);
+        if let Some(pm1a) = pm1a_block {
+            let mut p = Port::new(pm1a as u16);
 
-                if let AmlValue::Integer(value) = pkg[0] {
-                    let sleep_a = value as u16;
-                    let out = sleep_a | 1 << 13;
+            if let AmlValue::Integer(value) = pkg[0] {
+                let sleep_a = value as u16;
+                let out = sleep_a | 1 << 13;
+
+                unsafe { p.write(out) };
+            }
+
+            if let Some(pm1b) = pm1b_block {
+                let mut p = Port::new(pm1b as u16);
+
+                if let AmlValue::Integer(value) = pkg[1] {
+                    let sleep_b = value as u16;
+                    let out = sleep_b | 1 << 13;
 
                     unsafe { p.write(out) };
-                }
-
-                if let Some(pm1b) = pm1b_block {
-                    let mut p = Port::new(pm1b as u16);
-
-                    if let AmlValue::Integer(value) = pkg[1] {
-                        let sleep_b = value as u16;
-                        let out = sleep_b | 1 << 13;
-
-                        unsafe { p.write(out) };
-                    }
                 }
             }
         }

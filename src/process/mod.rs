@@ -119,8 +119,7 @@ pub struct Process<'a> {
 
 impl<'a> Process<'a> {
     fn new(data: FileData, main: MainLoop) -> Self {
-        let mut open_files = Vec::new();
-        open_files.push(data);
+        let open_files = alloc::vec![data];
 
         Self {
             self_reference: Weak::new(),
@@ -200,7 +199,7 @@ impl<'a> Process<'a> {
                         PTABLE.write().remove(self.pid - 1);
 
                         // borrow checker
-                        let signal = self.signal_received.clone();
+                        let signal = self.signal_received;
                         signal.handle(self)?;
                     }
                 }

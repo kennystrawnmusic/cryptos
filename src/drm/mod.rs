@@ -25,8 +25,8 @@ use self::avx_accel::{enable_avx, with_avx};
 pub(crate) static COMPOSITING_TABLE: RwLock<Vec<Canvas>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
-pub fn buffer_points(buffer: &mut FrameBuffer) -> impl Iterator<Item = Point> {
-    let info = buffer.info().clone();
+pub fn buffer_points(buffer: &FrameBuffer) -> impl Iterator<Item = Point> {
+    let info = buffer.info();
     (0..info.width).flat_map(move |x| (0..info.height).map(move |y| Point::new(x as i32, y as i32)))
 }
 
@@ -42,10 +42,10 @@ pub enum PixelColorKind {
 
 impl PixelColorKind {
     pub fn new(info: FrameBufferInfo, red: u8, green: u8, blue: u8) -> Self {
-        let luma = ((red.clone() as u32 * green.clone() as u32 * blue.clone() as u32) / 3) as u8;
+        let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match info.pixel_format {
-            PixelFormat::Rgb => Self::Rgb(Rgb888::new(red.clone(), green.clone(), blue.clone())),
-            PixelFormat::Bgr => Self::Bgr(Bgr888::new(red.clone(), green.clone(), blue.clone())),
+            PixelFormat::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
+            PixelFormat::Bgr => Self::Bgr(Bgr888::new(red, green, blue)),
             PixelFormat::U8 => Self::U8(Gray8::new(luma)),
             _ => panic!("Unknown pixel format"),
         }
@@ -53,13 +53,7 @@ impl PixelColorKind {
 }
 
 impl Clone for PixelColorKind {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Bgr(bgr) => Self::Bgr(Bgr888::new(bgr.r(), bgr.g(), bgr.b())),
-            Self::Rgb(rgb) => Self::Rgb(Rgb888::new(rgb.r(), rgb.g(), rgb.b())),
-            Self::U8(g) => Self::U8(Gray8::new(g.luma())),
-        }
-    }
+    fn clone(&self) -> Self { *self }
 }
 
 impl From<RawU24> for PixelColorKind {
@@ -76,70 +70,63 @@ impl PixelColor for PixelColorKind {
 
 /// Extracts color information from the framebuffer
 pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorKind> + '_> {
-    let info = buffer.info().clone();
+    let info = buffer.info();
     match info.pixel_format {
         PixelFormat::Rgb => {
             let red = buffer
                 .buffer()
                 .iter()
-                .step_by(info.bytes_per_pixel)
-                .map(|r| r.clone());
+                .step_by(info.bytes_per_pixel);
             let green = buffer
                 .buffer()
                 .iter()
                 .skip(1)
-                .step_by(info.bytes_per_pixel)
-                .map(|g| g.clone());
+                .step_by(info.bytes_per_pixel);
             let blue = buffer
                 .buffer()
                 .iter()
                 .skip(2)
-                .step_by(info.bytes_per_pixel)
-                .map(|b| b.clone());
+                .step_by(info.bytes_per_pixel);
             Box::new(
                 red.zip(green)
                     .zip(blue)
-                    .map(move |((r, g), b)| PixelColorKind::new(info, r, g, b)),
+                    .map(move |((r, g), b)| PixelColorKind::new(info, *r, *g, *b)),
             )
         }
         PixelFormat::Bgr => {
             let blue = buffer
                 .buffer()
                 .iter()
-                .step_by(info.bytes_per_pixel)
-                .map(|b| b.clone());
+                .step_by(info.bytes_per_pixel);
             let green = buffer
                 .buffer()
                 .iter()
                 .skip(1)
-                .step_by(info.bytes_per_pixel)
-                .map(|g| g.clone());
+                .step_by(info.bytes_per_pixel);
             let red = buffer
                 .buffer()
                 .iter()
                 .skip(2)
-                .step_by(info.bytes_per_pixel)
-                .map(|r| r.clone());
+                .step_by(info.bytes_per_pixel);
             Box::new(
                 red.zip(green)
                     .zip(blue)
-                    .map(move |((r, g), b)| PixelColorKind::new(info, r, g, b)),
+                    .map(move |((r, g), b)| PixelColorKind::new(info, *r, *g, *b)),
             )
         }
         PixelFormat::U8 => {
             let gray = buffer
                 .buffer()
                 .iter()
-                .step_by(info.bytes_per_pixel)
-                .map(|g| g.clone());
-            Box::new(gray.map(move |g| PixelColorKind::new(info, g, g, g)))
+                .step_by(info.bytes_per_pixel);
+            Box::new(gray.map(move |g| PixelColorKind::new(info, *g, *g, *g)))
         }
         _ => panic!("Unknown pixel format"),
     }
 }
 
 /// Converts a raw framebuffer byte stream into an iterator over pixels
-pub fn buffer_pixels(buffer: &mut FrameBuffer) -> impl Iterator<Item = Pixel<PixelColorKind>> + '_ {
+pub fn buffer_pixels(buffer: &FrameBuffer) -> impl Iterator<Item = Pixel<PixelColorKind>> + '_ {
     buffer_points(buffer)
         .zip(buffer_color(buffer))
         .map(|(point, color)| Pixel(point, color))
@@ -157,8 +144,8 @@ pub struct Canvas {
 
 impl Canvas {
     /// Creates a new canvas using a provided `FrameBuffer` and color values
-    pub fn new(buffer: &'static mut FrameBuffer) -> Self {
-        let info = buffer.info().clone();
+    pub fn new(buffer: &'static FrameBuffer) -> Self {
+        let info = buffer.info();
         Self {
             pixels: buffer_pixels(buffer).collect::<Vec<_>>(),
             info,
@@ -167,12 +154,12 @@ impl Canvas {
 
     #[target_feature(enable = "avx")]
     unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: Canvas) {
-        if alpha > 1.0 || alpha < 0.0 {
+        if !(0.0..=1.0).contains(&alpha) {
             panic!("Alpha value must be a value between 0 and 1");
         }
 
-        let own_colors = self.pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
-        let other_colors = other.pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
+        let own_colors = self.pixels.iter().map(|p| p.1).collect::<Vec<_>>();
+        let other_colors = other.pixels.iter().map(|p| p.1).collect::<Vec<_>>();
 
         let pixels = self.pixels.clone(); // borrow checker
 
@@ -182,12 +169,12 @@ impl Canvas {
             // first, copy all color values from layer we're currently on
             let mut this_simd = match own_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
+                    Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0])
                 }
                 PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
+                    Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0])
                 }
-                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
                     grayscale.luma(),
                     grayscale.luma(),
                     grayscale.luma(),
@@ -198,12 +185,12 @@ impl Canvas {
             // next, copy all color values from layer we want to blend with
             let other_simd = match other_colors[i] {
                 PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
+                    Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0])
                 }
                 PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
+                    Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0])
                 }
-                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&mut [
+                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
                     grayscale.luma(),
                     grayscale.luma(),
                     grayscale.luma(),
@@ -215,9 +202,9 @@ impl Canvas {
             let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
 
             // here's where the magic happens
-            this_simd = ((alpha_simd * (this_simd.clone().cast::<f32>()))
+            this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
                 + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                    * (other_simd.clone().cast::<f32>())))
+                    * (other_simd.cast::<f32>())))
             .cast::<u8>();
 
             // extract result of the alpha-blend formula
@@ -259,13 +246,13 @@ impl Canvas {
         {
             let mut new_chunk = match pixel.1 {
                 PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&mut [bgr.b(), bgr.g(), bgr.r(), 0])
+                    Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0])
                 }
                 PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&mut [rgb.r(), rgb.g(), rgb.b(), 0])
+                    Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0])
                 }
                 PixelColorKind::U8(grayscale) => {
-                    Simd::<u8, 4>::from_slice(&mut [grayscale.luma(), 0, 0, 0])
+                    Simd::<u8, 4>::from_slice(&[grayscale.luma(), 0, 0, 0])
                 }
             };
 
@@ -295,7 +282,7 @@ impl DrawTarget for Canvas {
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {
         let pixels = pixels.into_iter().collect::<Vec<_>>();
-        let colors = pixels.iter().map(|p| p.1.clone()).collect::<Vec<_>>();
+        let colors = pixels.iter().map(|p| p.1).collect::<Vec<_>>();
 
         for (index, point) in pixels.iter().map(|p| p.0).enumerate() {
             let pixel_offset = point.y as usize * self.info.stride + point.x as usize;

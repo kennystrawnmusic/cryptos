@@ -93,7 +93,7 @@ impl Signal {
     }
 
     /// Convenient method for handling signals (experimental)
-    pub fn handle<'a>(&self, p: &mut Process<'a>) -> syscall::Result<()> {
+    pub fn handle(&self, p: &mut Process<'_>) -> syscall::Result<()> {
         match self {
             Self::Success => Ok(()),
             Self::SIGHUP => Err(Error::new(EPIPE)),
@@ -120,11 +120,11 @@ impl Signal {
                 Ok(())
             }
             Self::SIGSTOP => {
-                p.state = State::Stopped(u64::from(self.clone()));
+                p.state = State::Stopped(u64::from(*self));
                 Ok(())
             }
             Self::SIGTSTP => {
-                p.state = State::Stopped(u64::from(self.clone()));
+                p.state = State::Stopped(u64::from(*self));
                 Ok(())
             }
             Self::SIGTTIN => {

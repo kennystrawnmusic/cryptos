@@ -30,17 +30,28 @@ pub fn safe_active_pml4(offset: VirtAddr) -> Mutex<PageTable> {
     Mutex::new(unsafe { active_pml4(offset).clone() })
 }
 
+/// Creates an `x86:64::structures::paging::OffsetPageTable` using an offset provided as an argument
+/// 
+/// # Safety
+/// 
+/// As this function calls the `OffsetPageTable`'s constructor, the same safety rules for that apply here.
 pub unsafe fn map_memory(offset: VirtAddr) -> OffsetPageTable<'static> {
     let pml4 = active_pml4(offset);
     OffsetPageTable::new(pml4, offset)
 }
 
+/// The frame allocator
 pub struct Falloc {
     map: &'static MemoryRegions,
     next: usize,
 }
 
 impl Falloc {
+    /// Creates a new frame allocator using the memory region slice provided by the bootloader
+    /// 
+    /// # Safety
+    /// 
+    /// Caller must ensure that the memory regions they're using point to valid addresses
     pub unsafe fn new(map: &'static MemoryRegions) -> Self {
         Self { map, next: 0 }
     }
@@ -63,7 +74,7 @@ impl Falloc {
 
         self.next += size + 1;
 
-        Some((PhysFrame::range_inclusive(begin, end), self.next.clone()))
+        Some((PhysFrame::range_inclusive(begin, end), self.next))
     }
 
     pub fn deallocate_multiple(&mut self, range: PhysFrameRangeInclusive<Size4KiB>) -> usize {
@@ -109,11 +120,11 @@ macro_rules! map_page {
             // suppress warnings if this macro is called from an unsafe fn
             #[allow(unused_unsafe)]
             let res = unsafe {
-                crate::MAPPER.get().unwrap().write().map_to(
+                $crate::MAPPER.get().unwrap().write().map_to(
                     page,
                     frame,
                     $flags,
-                    &mut *crate::FRAME_ALLOCATOR.get().unwrap().write(),
+                    &mut *$crate::FRAME_ALLOCATOR.get().unwrap().write(),
                 )
             };
 
@@ -149,7 +160,7 @@ macro_rules! unmap_page {
     ($page:expr) => {
         use x86_64::structures::paging::{Mapper, mapper::UnmapError};
 
-        let flush = match crate::MAPPER.get().unwrap().write().unmap($page) {
+        let flush = match $crate::MAPPER.get().unwrap().write().unmap($page) {
             Ok((_, flush)) => Some(flush),
             Err(e) => match e {
                 UnmapError::ParentEntryHugePage => {

@@ -76,10 +76,10 @@ pub(crate) fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
         let offset = crate::get_phys_offset();
         let mut ioapic_impl_vec = Vec::new();
 
-        let lapic_virt = apic.local_apic_address.clone() + offset;
+        let lapic_virt = apic.local_apic_address + offset;
 
         map_page!(
-            apic.local_apic_address.clone(),
+            apic.local_apic_address,
             lapic_virt,
             Size4KiB,
             PageTableFlags::PRESENT
@@ -97,7 +97,7 @@ pub(crate) fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
             .unwrap_or_else(|e| panic!("Error building the local APIC: {:#?}", e));
 
         for ioapic in apic.io_apics.iter() {
-            let phys = ioapic.address.clone() as u64;
+            let phys = ioapic.address as u64;
             let virt = phys + offset;
 
             ioapic_impl_vec.push(unsafe { IoApic::new(virt) });

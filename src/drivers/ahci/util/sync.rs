@@ -18,6 +18,12 @@ pub struct IrqGuard {
     locked: bool,
 }
 
+impl Default for IrqGuard {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IrqGuard {
     /// Creates a new IRQ guard. See the [`IrqGuard`] documentation for more.
     pub fn new() -> Self {

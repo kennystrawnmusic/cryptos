@@ -55,7 +55,7 @@ pub(crate) fn translate_flags(physmap: PhysmapFlags, map: MapFlags) -> PageTable
 pub fn iopl(level: usize, frame: &mut InterruptStackFrame) -> Result<usize> {
     if level <= 3 {
         unsafe {
-            let mut clone = frame.clone();
+            let mut clone = **frame;
             clone.cpu_flags = (frame.cpu_flags & !(3 << 12)) | (((level & 3) << 12) as u64);
             frame.as_mut().write(clone);
         }
@@ -92,11 +92,11 @@ fn physalloc_inner(
 
 pub fn physalloc(size: usize) -> Result<usize> {
     // TODO: make sure only root can do this
-    let res = match physalloc_inner(size, PhysallocFlags::SPACE_64) {
+    
+    match physalloc_inner(size, PhysallocFlags::SPACE_64) {
         Ok((size, _)) => Ok(size),
         Err(e) => Err(e),
-    };
-    res
+    }
 }
 
 fn physfree_inner(addr: usize, count: usize) -> Result<usize> {

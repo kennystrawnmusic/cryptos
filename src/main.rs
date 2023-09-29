@@ -175,38 +175,32 @@ pub fn get_next_usable_frame() -> PhysFrame {
         .write()
         .usable()
         .next()
-        .clone()
         .expect("Out of memory")
-        .clone()
 }
 
 /// Convenient wrapper for getting the physical memory offset
 pub fn get_phys_offset() -> u64 {
-    get_boot_info()
+    *get_boot_info()
         .physical_memory_offset
         .as_ref()
         .unwrap()
-        .clone()
 }
 
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();
 pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions<Global>>> = OnceCell::uninit();
 
 pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
-    PCI_CONFIG.get().clone().unwrap()
+    PCI_CONFIG.get().unwrap()
 }
 
 fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
     (0x0u32..0x00ffffffu32).map(|i: u32| match get_mcfg() {
-        Some(mcfg) => match mcfg.physical_address(
+        Some(mcfg) => mcfg.physical_address(
             i.to_be_bytes()[0] as u16,
             i.to_be_bytes()[1],
             i.to_be_bytes()[2],
             i.to_be_bytes()[3],
-        ) {
-            Some(addr) => Some(addr),
-            None => None,
-        },
+        ),
         None => None,
     })
 }
@@ -214,8 +208,7 @@ fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
 /// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
 pub fn mcfg_brute_force() -> impl Itertools<Item = u64> {
     mcfg_brute_force_inner()
-        .filter(|i| i.is_some())
-        .map(|i| i.unwrap())
+        .flatten()
         .dedup()
 }
 
@@ -257,10 +250,10 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     let buffer_optional = &mut boot_info.framebuffer;
     let buffer_option = buffer_optional.as_mut();
     let buffer = buffer_option.unwrap();
-    let bi = buffer.info().clone();
+    let bi = buffer.info();
     let raw_buffer = buffer.buffer_mut();
 
-    let rsdp = boot_info.rsdp_addr.clone().into_option().unwrap();
+    let rsdp = boot_info.rsdp_addr.into_option().unwrap();
     printk_init(raw_buffer, bi);
 
     info!(
@@ -279,9 +272,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         &boot_info.memory_regions.first().unwrap() as *const _ as usize
     );
 
-    match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp.clone() as usize) } {
-        Ok(mut tables) => {
-            USER_ACPI.call_once(|| UserAcpi::new(&mut tables));
+    match unsafe { AcpiTables::from_rsdp(KernelAcpi, rsdp as usize) } {
+        Ok(tables) => {
+            USER_ACPI.call_once(|| UserAcpi::new(&tables));
 
             let mcfg = match PciConfigRegions::new_in(&tables, Global) {
                 Ok(mcfg) => Some(mcfg),
@@ -299,7 +292,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 info!("TLS template: {:#x?}", boot_info.tls_template);
 
                 ahci_init();
-                pci_impl::init(&mut tables);
+                pci_impl::init(&tables);
             }
         }
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),

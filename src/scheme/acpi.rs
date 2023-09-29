@@ -50,11 +50,10 @@ pub(crate) static SCHID: AtomicU64 = AtomicU64::new(0);
 pub(crate) fn acpi_len() -> u64 {
     if let Some(tables) = DATA.get() {
         let data = unsafe {
-            let tables = tables;
             let tblptr = addr_of!(tables) as *const u8;
 
             let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
-            raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+            raw.to_vec()
         };
         data.len() as u64
     } else {
@@ -158,7 +157,7 @@ impl Scheme for AcpiScheme {
                     let tblptr = addr_of!(tables) as *const u8;
 
                     let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
-                    raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+                    raw.to_vec()
                 };
 
                 stat.st_mode = MODE_FILE;
@@ -206,11 +205,11 @@ impl Scheme for AcpiScheme {
             SEEK_SET => pos as u64,
             SEEK_CUR => {
                 if pos < 0 {
-                    (handle.offset as u64)
+                    handle.offset
                         .checked_sub((-pos) as u64)
                         .ok_or(Error::new(EINVAL))?
                 } else {
-                    (handle.offset as u64).saturating_add(pos as u64)
+                    handle.offset.saturating_add(pos as u64)
                 }
             }
             SEEK_END => {
@@ -250,16 +249,13 @@ impl Scheme for AcpiScheme {
         let handle = handles.get_mut(&(id as u64)).ok_or(Error::new(EBADF))?;
 
         let data = match handle.kind {
-            HandleKind::TopLevel => SIGNATURE
-                .iter()
-                .map(|byte| byte.clone())
-                .collect::<Vec<_>>(),
+            HandleKind::TopLevel => SIGNATURE.to_vec(),
             HandleKind::RootTable => unsafe {
                 let tables = DATA.get().ok_or(Error::new(EBADFD))?;
                 let tblptr = addr_of!(tables) as *const u8;
 
                 let raw = core::slice::from_raw_parts(tblptr, core::mem::size_of::<UserAcpi>());
-                raw.iter().map(|byte| byte.clone()).collect::<Vec<_>>()
+                raw.to_vec()
             },
             HandleKind::ShutdownPipe => {
                 let dest_char = match buf.first_mut() {

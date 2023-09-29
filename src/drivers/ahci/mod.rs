@@ -67,7 +67,7 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
         .expect("Out of memory");
 
     let phys = frame.start_address().as_u64();
-    let virt = unsafe { phys + get_phys_offset() as u64 };
+    let virt = unsafe { phys + get_phys_offset() };
 
     let fill_size = BUDDY_SIZE[order] as usize;
     let slice = unsafe { core::slice::from_raw_parts_mut(virt as *mut u8, fill_size) };
@@ -331,15 +331,15 @@ impl DmaRequest {
         }
     }
 
-    pub(crate) fn into_command(&self) -> AtaCommand {
+    pub(crate) fn as_command(&self) -> AtaCommand {
         let lba48 = self.sector > 0x0FFF_FFFF;
 
         match self.command {
             DmaCommand::Read => {
                 if lba48 {
-                    AtaCommand::AtaCommandReadDmaExt
+                    AtaCommand::ReadDmaExt
                 } else {
-                    AtaCommand::AtaCommandReadDma
+                    AtaCommand::ReadDma
                 }
             }
         }
@@ -354,67 +354,61 @@ impl DmaRequest {
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
 pub(crate) enum AtaCommand {
-    AtaCommandWriteDma = 0xCA,
-    AtaCommandWriteDmaQueued = 0xCC,
-    AtaCommandWriteMultiple = 0xC5,
-    AtaCommandWriteSectors = 0x30,
+    WriteDma = 0xCA,
+    WriteDmaQueued = 0xCC,
+    WriteMultiple = 0xC5,
+    WriteSectors = 0x30,
 
-    AtaCommandReadDma = 0xC8,
-    AtaCommandReadDmaQueued = 0xC7,
-    AtaCommandReadMultiple = 0xC4,
-    AtaCommandReadSectors = 0x20,
+    ReadDma = 0xC8,
+    ReadDmaQueued = 0xC7,
+    ReadMultiple = 0xC4,
+    ReadSectors = 0x20,
 
-    AtaCommandWriteDmaExt = 0x35,
-    AtaCommandWriteDmaQueuedExt = 0x36,
-    AtaCommandWriteMultipleExt = 0x39,
-    AtaCommandWriteSectorsExt = 0x34,
+    WriteDmaExt = 0x35,
+    WriteDmaQueuedExt = 0x36,
+    WriteMultipleExt = 0x39,
+    WriteSectorsExt = 0x34,
 
-    AtaCommandReadDmaExt = 0x25,
-    AtaCommandReadDmaQueuedExt = 0x26,
-    AtaCommandReadMultipleExt = 0x29,
-    AtaCommandReadSectorsExt = 0x24,
+    ReadDmaExt = 0x25,
+    ReadDmaQueuedExt = 0x26,
+    ReadMultipleExt = 0x29,
+    ReadSectorsExt = 0x24,
 
-    AtaCommandPacket = 0xA0,
-    AtaCommandDeviceReset = 0x08,
+    Packet = 0xA0,
+    DeviceReset = 0x08,
 
-    AtaCommandService = 0xA2,
-    AtaCommandNop = 0,
-    AtaCommandNopNopAutopoll = 1,
+    Service = 0xA2,
+    Nop = 0,
+    NopNopAutopoll = 1,
 
-    AtaCommandGetMediaStatus = 0xDA,
+    GetMediaStatus = 0xDA,
 
-    AtaCommandFlushCache = 0xE7,
-    AtaCommandFlushCacheExt = 0xEA,
+    FlushCache = 0xE7,
+    FlushCacheExt = 0xEA,
 
-    AtaCommandDataSetManagement = 0x06,
+    DataSetManagement = 0x06,
 
-    AtaCommandMediaEject = 0xED,
+    MediaEject = 0xED,
 
-    AtaCommandIdentifyPacketDevice = 0xA1,
-    AtaCommandIdentifyDevice = 0xEC,
+    IdentifyPacketDevice = 0xA1,
+    IdentifyDevice = 0xEC,
 
-    AtaCommandSetFeatures = 0xEF,
-    AtaCommandSetFeaturesEnableReleaseInt = 0x5D,
-    AtaCommandSetFeaturesEnableServiceInt = 0x5E,
-    AtaCommandSetFeaturesDisableReleaseInt = 0xDD,
-    AtaCommandSetFeaturesDisableServiceInt = 0xDE,
+    SetFeatures = 0xEF,
+    SetFeaturesEnableReleaseInt = 0x5D,
+    SetFeaturesEnableServiceInt = 0x5E,
+    SetFeaturesDisableReleaseInt = 0xDD,
+    SetFeaturesDisableServiceInt = 0xDE,
 }
 
 impl AtaCommand {
     #[allow(dead_code)] // will use this function later
     pub(crate) fn is_lba48(&self) -> bool {
-        match self {
-            AtaCommand::AtaCommandReadDmaExt | AtaCommand::AtaCommandWriteDmaExt => true,
-            _ => false,
-        }
+        matches!(self, AtaCommand::ReadDmaExt | AtaCommand::WriteDmaExt)
     }
 
     #[allow(dead_code)] // will use this function later
     pub(crate) fn is_write(&self) -> bool {
-        match self {
-            AtaCommand::AtaCommandWriteDmaExt | AtaCommand::AtaCommandWriteDma => true,
-            _ => false,
-        }
+        matches!(self, AtaCommand::WriteDmaExt | AtaCommand::WriteDma)
     }
 }
 
@@ -514,7 +508,7 @@ impl HbaCmdTbl {
     }
 
     fn prdt_entry_mut(&mut self, i: usize) -> &mut HbaPrdtEntry {
-        unsafe { &mut *self.prdt_entry.as_mut_ptr().offset(i as isize) }
+        unsafe { &mut *self.prdt_entry.as_mut_ptr().add(i) }
     }
 }
 
@@ -761,7 +755,7 @@ impl HbaPort {
         let header = self.cmd_header_at(slot);
         let mut flags = header.flags.get();
 
-        if command == AtaCommand::AtaCommandWriteDmaExt || command == AtaCommand::AtaCommandWriteDma
+        if command == AtaCommand::WriteDmaExt || command == AtaCommand::WriteDma
         {
             flags.insert(HbaCmdHeaderFlags::W); // If its a write command add the write flag.
         } else {
@@ -779,7 +773,7 @@ impl HbaPort {
         let command_table_addr = VirtAddr::new(get_phys_offset() + header.ctb.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
-        for pri in 0..length {
+        for (pri, dma) in buffer.iter().enumerate().take(length) {
             let prdt = command_table.prdt_entry_mut(pri);
 
             prdt.dba.set(buffer[pri].start);
@@ -809,7 +803,8 @@ impl HbaPort {
         let mut spin = 100;
 
         // Make sure the port is not busy.
-        while self.tfd.get() & 0x80 | 0x08 == 1 && spin > 0 {
+        // Also, thanks Clippy for helping me find an upstream Aero bug!
+        while (self.tfd.get() == 0x80 || self.tfd.get() == 0x08) && spin > 0 {
             core::hint::spin_loop();
             spin -= 1;
         }
@@ -831,7 +826,7 @@ impl HbaPort {
 
 impl HbaMemory {
     pub(crate) fn port_mut(&mut self, port: usize) -> &mut HbaPort {
-        unsafe { &mut *((self as *mut Self).offset(1) as *mut HbaPort).offset(port as isize) }
+        unsafe { &mut *((self as *mut Self).offset(1) as *mut HbaPort).add(port) }
     }
 }
 
@@ -869,7 +864,7 @@ impl AhciPortProtected {
                     let count = core::cmp::min(remaining, 128);
 
                     hba.run_command(
-                        request.into_command(),
+                        request.as_command(),
                         request.sector + offset,
                         count,
                         i,
@@ -949,7 +944,7 @@ impl Clone for AhciProtected {
     fn clone(&self) -> Self {
         Self {
             ports: self.ports.clone(),
-            hba: self.hba.clone(),
+            hba: self.hba,
         }
     }
 }
@@ -1073,7 +1068,7 @@ impl AhciProtected {
                     let buffer = &mut [0u8; 512];
                     let sector = 2000;
 
-                    if let Some(_) = port.read(sector, buffer) {
+                    if port.read(sector, buffer).is_some() {
                         info!("Read sector {:?}: {:?}", sector, buffer);
                     } else {
                         warn!("Couldn't read any data")
@@ -1101,11 +1096,7 @@ impl AhciDriver {
 
 impl FOSSPciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceKind) -> bool {
-        match (vendor_id, device_id) {
-            (Vendor::Intel, DeviceKind::SataController) => true,
-
-            _ => false,
-        }
+        matches!((vendor_id, device_id), (Vendor::Intel, DeviceKind::SataController))
     }
 
     fn start(&self, header: &mut pcics::Header) {

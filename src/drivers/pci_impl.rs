@@ -132,26 +132,24 @@ impl<A: Allocator> Bitmap<A> {
     /// assert_eq!(bitmap.find_first_set(), Some(0));
     /// ```
     pub fn find_first_unset(&self) -> Option<usize> {
-        for (i, block) in self.bitmap.iter().enumerate() {
+        self.bitmap.iter().enumerate().map(|(i, block)| {
             let mut block_value = *block;
 
+            
+            
             if block_value == 0 {
-                return Some(i * BLOCK_BITS);
+                i * BLOCK_BITS
+            } else {
+                let mut bit = 0;
+
+                while block_value.get_bit(0) {
+                    block_value >>= 1;
+                    bit += 1;
+                }
+
+                (i * BLOCK_BITS) + bit
             }
-
-            let mut bit = 0;
-
-            // Loop through the bits in the block and find
-            // the first unset bit.
-            while block_value.get_bit(0) {
-                block_value >>= 1;
-                bit += 1;
-            }
-
-            return Some((i * BLOCK_BITS) + bit);
-        }
-
-        None
+        }).nth(0)
     }
 
     /// Returns the index of the first set bit.
@@ -695,7 +693,7 @@ pub fn register_device_driver(handle: Arc<dyn FOSSPciDeviceHandle>) {
 }
 
 /// Lookup and initialize all PCI devices.
-pub fn init(tables: &mut AcpiTables<KernelAcpi>) {
+pub fn init(tables: &AcpiTables<KernelAcpi>) {
     // Check if the MCFG table is avaliable.
     if get_mcfg().is_some() {
         // Initialize AML table only once, not multiple times
