@@ -17,9 +17,9 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
-use x86_64::{instructions::port::Port, structures::paging::FrameAllocator};
+use x86_64::{instructions::port::Port, structures::paging::{FrameAllocator, mapper::UnmapError}};
 
-use crate::arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ};
+use crate::{arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ}, MAPPER, unmap_page};
 
 use {
     crate::{get_phys_offset, map_page},
@@ -89,7 +89,12 @@ impl AcpiHandler for KernelAcpi {
         )
     }
 
-    fn unmap_physical_region<T>(_region: &PhysicalMapping<Self, T>) {}
+    fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {
+        let region_start = region.virtual_start().addr().get() as u64;
+        let p = Page::<Size4KiB>::containing_address(VirtAddr::new(region_start));
+
+        unmap_page!(p);
+    }
 }
 
 impl aml::Handler for KernelAcpi {

@@ -16,7 +16,8 @@
     generator_clone,
     core_intrinsics,
     intrinsics,
-    extract_if
+    extract_if,
+    strict_provenance
 )]
 #![allow(internal_features)]
 #![allow(unused_imports)]

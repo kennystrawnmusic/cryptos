@@ -139,5 +139,31 @@ macro_rules! map_page {
     };
 }
 
+#[macro_export]
+macro_rules! unmap_page {
+    ($page:expr) => {
+        use x86_64::structures::paging::{Mapper, mapper::UnmapError};
+
+        let flush = match crate::MAPPER.get().unwrap().write().unmap($page) {
+            Ok((_, flush)) => Some(flush),
+            Err(e) => match e {
+                UnmapError::ParentEntryHugePage => {
+                    debug!("Already have a huge page here; skipping unmap");
+                    None
+                },
+                UnmapError::PageNotMapped => {
+                    debug!("Page not mapped; skipping unmap");
+                    None
+                },
+                UnmapError::InvalidFrameAddress(_) => panic!("The address you attempted to unmap from doesn't exist"),
+            },
+        };
+
+        if let Some(flush) = flush {
+            flush.flush();
+        }
+    };
+}
+
 unsafe impl Send for Falloc {}
 unsafe impl Sync for Falloc {}
