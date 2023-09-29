@@ -755,8 +755,7 @@ impl HbaPort {
         let header = self.cmd_header_at(slot);
         let mut flags = header.flags.get();
 
-        if command == AtaCommand::WriteDmaExt || command == AtaCommand::WriteDma
-        {
+        if command == AtaCommand::WriteDmaExt || command == AtaCommand::WriteDma {
             flags.insert(HbaCmdHeaderFlags::W); // If its a write command add the write flag.
         } else {
             flags.remove(HbaCmdHeaderFlags::W); // If its a read command remove the write flag.
@@ -1096,7 +1095,10 @@ impl AhciDriver {
 
 impl FOSSPciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceKind) -> bool {
-        matches!((vendor_id, device_id), (Vendor::Intel, DeviceKind::SataController))
+        matches!(
+            (vendor_id, device_id),
+            (Vendor::Intel, DeviceKind::SataController)
+        )
     }
 
     fn start(&self, header: &mut pcics::Header) {

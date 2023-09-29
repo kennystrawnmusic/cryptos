@@ -180,10 +180,7 @@ pub fn get_next_usable_frame() -> PhysFrame {
 
 /// Convenient wrapper for getting the physical memory offset
 pub fn get_phys_offset() -> u64 {
-    *get_boot_info()
-        .physical_memory_offset
-        .as_ref()
-        .unwrap()
+    *get_boot_info().physical_memory_offset.as_ref().unwrap()
 }
 
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();
@@ -207,9 +204,7 @@ fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
 
 /// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
 pub fn mcfg_brute_force() -> impl Itertools<Item = u64> {
-    mcfg_brute_force_inner()
-        .flatten()
-        .dedup()
+    mcfg_brute_force_inner().flatten().dedup()
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {

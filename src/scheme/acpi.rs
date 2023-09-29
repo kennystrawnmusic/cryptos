@@ -205,7 +205,8 @@ impl Scheme for AcpiScheme {
             SEEK_SET => pos as u64,
             SEEK_CUR => {
                 if pos < 0 {
-                    handle.offset
+                    handle
+                        .offset
                         .checked_sub((-pos) as u64)
                         .ok_or(Error::new(EINVAL))?
                 } else {

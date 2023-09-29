@@ -17,9 +17,15 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
-use x86_64::{instructions::port::Port, structures::paging::{FrameAllocator, mapper::UnmapError}};
+use x86_64::{
+    instructions::port::Port,
+    structures::paging::{mapper::UnmapError, FrameAllocator},
+};
 
-use crate::{arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ}, MAPPER, unmap_page};
+use crate::{
+    arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
+    unmap_page, MAPPER,
+};
 
 use {
     crate::{get_phys_offset, map_page},
@@ -524,8 +530,7 @@ pub fn aml_init(tables: &AcpiTables<KernelAcpi>) {
     info!("DSDT address: {:#x}", dsdt_addr.clone());
     let dsdt_len = tables.dsdt().as_ref().unwrap().length as usize;
 
-    let aml_test_page =
-        Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr as u64));
+    let aml_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dsdt_addr as u64));
     let aml_virt = aml_test_page.start_address().as_u64() + get_phys_offset();
 
     info!("Virtual DSDT address: {:#x}", &aml_virt);
@@ -665,7 +670,8 @@ impl UserAcpi {
             mcfg: tables
                 .find_table::<Mcfg>()
                 .unwrap_or_else(|e| panic!("Failed to find MCFG table: {:#?}", e))
-                .entries().to_vec(),
+                .entries()
+                .to_vec(),
             dsdt: if let Ok(dsdt) = tables.dsdt() {
                 Some(AmlTable {
                     address: dsdt.address,
@@ -697,9 +703,9 @@ impl Clone for UserAcpi {
             madt: self.madt,
             mcfg: self.mcfg.clone(),
             dsdt: self.dsdt.as_ref().map(|dsdt| AmlTable {
-                    address: dsdt.address,
-                    length: dsdt.length,
-                }),
+                address: dsdt.address,
+                length: dsdt.length,
+            }),
             ssdts: {
                 let mut v = Vec::new();
                 for table in self.ssdts.iter() {
@@ -718,7 +724,7 @@ unsafe impl Send for UserAcpi {}
 unsafe impl Sync for UserAcpi {}
 
 /// Invokes the ACPI shutdown command
-/// 
+///
 /// # Safety
 /// Doesn't save anything before shutting down! Equivalent to straight-up unplugging your system.
 pub unsafe fn system_shutdown() -> ! {

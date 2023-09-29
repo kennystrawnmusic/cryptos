@@ -14,7 +14,7 @@ use x86_64::{
 };
 
 use crate::{
-    acpi_impl::{aml_init, aml_route, KernelAcpi, system_shutdown},
+    acpi_impl::{aml_init, aml_route, system_shutdown, KernelAcpi},
     arch::x86_64::interrupts::{self, IDT},
     get_mcfg, mcfg_brute_force,
 };
@@ -132,24 +132,26 @@ impl<A: Allocator> Bitmap<A> {
     /// assert_eq!(bitmap.find_first_set(), Some(0));
     /// ```
     pub fn find_first_unset(&self) -> Option<usize> {
-        self.bitmap.iter().enumerate().map(|(i, block)| {
-            let mut block_value = *block;
+        self.bitmap
+            .iter()
+            .enumerate()
+            .map(|(i, block)| {
+                let mut block_value = *block;
 
-            
-            
-            if block_value == 0 {
-                i * BLOCK_BITS
-            } else {
-                let mut bit = 0;
+                if block_value == 0 {
+                    i * BLOCK_BITS
+                } else {
+                    let mut bit = 0;
 
-                while block_value.get_bit(0) {
-                    block_value >>= 1;
-                    bit += 1;
+                    while block_value.get_bit(0) {
+                        block_value >>= 1;
+                        bit += 1;
+                    }
+
+                    (i * BLOCK_BITS) + bit
                 }
-
-                (i * BLOCK_BITS) + bit
-            }
-        }).nth(0)
+            })
+            .nth(0)
     }
 
     /// Returns the index of the first set bit.
@@ -195,6 +197,7 @@ bitflags! {
     }
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn outb(port: u16, value: u8) {
     asm!(
@@ -205,6 +208,7 @@ pub unsafe fn outb(port: u16, value: u8) {
     );
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn inb(port: u16) -> u8 {
     let ret: u8;
@@ -219,6 +223,7 @@ pub unsafe fn inb(port: u16) -> u8 {
     ret
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn outw(port: u16, value: u16) {
     asm!(
@@ -229,6 +234,7 @@ pub unsafe fn outw(port: u16, value: u16) {
     );
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn outl(port: u16, value: u32) {
     asm!(
@@ -239,6 +245,7 @@ pub unsafe fn outl(port: u16, value: u32) {
     );
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn inl(port: u16) -> u32 {
     let ret: u32;
@@ -253,6 +260,7 @@ pub unsafe fn inl(port: u16) -> u32 {
     ret
 }
 
+#[allow(clippy::missing_safety_doc)] // TODO: document
 #[inline]
 pub unsafe fn inw(port: u16) -> u16 {
     let ret: u16;

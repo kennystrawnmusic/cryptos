@@ -53,7 +53,9 @@ impl PixelColorKind {
 }
 
 impl Clone for PixelColorKind {
-    fn clone(&self) -> Self { *self }
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl From<RawU24> for PixelColorKind {
@@ -73,20 +75,9 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
     let info = buffer.info();
     match info.pixel_format {
         PixelFormat::Rgb => {
-            let red = buffer
-                .buffer()
-                .iter()
-                .step_by(info.bytes_per_pixel);
-            let green = buffer
-                .buffer()
-                .iter()
-                .skip(1)
-                .step_by(info.bytes_per_pixel);
-            let blue = buffer
-                .buffer()
-                .iter()
-                .skip(2)
-                .step_by(info.bytes_per_pixel);
+            let red = buffer.buffer().iter().step_by(info.bytes_per_pixel);
+            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel);
+            let blue = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel);
             Box::new(
                 red.zip(green)
                     .zip(blue)
@@ -94,20 +85,9 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
             )
         }
         PixelFormat::Bgr => {
-            let blue = buffer
-                .buffer()
-                .iter()
-                .step_by(info.bytes_per_pixel);
-            let green = buffer
-                .buffer()
-                .iter()
-                .skip(1)
-                .step_by(info.bytes_per_pixel);
-            let red = buffer
-                .buffer()
-                .iter()
-                .skip(2)
-                .step_by(info.bytes_per_pixel);
+            let blue = buffer.buffer().iter().step_by(info.bytes_per_pixel);
+            let green = buffer.buffer().iter().skip(1).step_by(info.bytes_per_pixel);
+            let red = buffer.buffer().iter().skip(2).step_by(info.bytes_per_pixel);
             Box::new(
                 red.zip(green)
                     .zip(blue)
@@ -115,10 +95,7 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
             )
         }
         PixelFormat::U8 => {
-            let gray = buffer
-                .buffer()
-                .iter()
-                .step_by(info.bytes_per_pixel);
+            let gray = buffer.buffer().iter().step_by(info.bytes_per_pixel);
             Box::new(gray.map(move |g| PixelColorKind::new(info, *g, *g, *g)))
         }
         _ => panic!("Unknown pixel format"),

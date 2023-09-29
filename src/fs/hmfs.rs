@@ -204,7 +204,7 @@ impl<'a> Entry<'a> {
                     name,
                     parent,
                     Some(mime),
-                    0o777,                 // TODO: users and permissions
+                    0o777,                // TODO: users and permissions
                     String::from("root"), // TODO: users and permissions
                     timestamp,
                     timestamp,

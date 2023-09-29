@@ -31,9 +31,9 @@ pub fn safe_active_pml4(offset: VirtAddr) -> Mutex<PageTable> {
 }
 
 /// Creates an `x86:64::structures::paging::OffsetPageTable` using an offset provided as an argument
-/// 
+///
 /// # Safety
-/// 
+///
 /// As this function calls the `OffsetPageTable`'s constructor, the same safety rules for that apply here.
 pub unsafe fn map_memory(offset: VirtAddr) -> OffsetPageTable<'static> {
     let pml4 = active_pml4(offset);
@@ -48,9 +48,9 @@ pub struct Falloc {
 
 impl Falloc {
     /// Creates a new frame allocator using the memory region slice provided by the bootloader
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// Caller must ensure that the memory regions they're using point to valid addresses
     pub unsafe fn new(map: &'static MemoryRegions) -> Self {
         Self { map, next: 0 }
@@ -151,14 +151,14 @@ macro_rules! map_page {
 }
 
 /// Macro for unmapping pages
-/// 
+///
 /// Just like `map_page!`, this macro converts the `Result` thrown by `Mapper::unmap`
 /// to an `Option<MapperFlush<S>>` so the errors can just be skipped before the page table
 /// is flushed
 #[macro_export]
 macro_rules! unmap_page {
     ($page:expr) => {
-        use x86_64::structures::paging::{Mapper, mapper::UnmapError};
+        use x86_64::structures::paging::{mapper::UnmapError, Mapper};
 
         let flush = match $crate::MAPPER.get().unwrap().write().unmap($page) {
             Ok((_, flush)) => Some(flush),
@@ -166,12 +166,14 @@ macro_rules! unmap_page {
                 UnmapError::ParentEntryHugePage => {
                     debug!("Already have a huge page here; skipping unmap");
                     None
-                },
+                }
                 UnmapError::PageNotMapped => {
                     debug!("Page not mapped; skipping unmap");
                     None
-                },
-                UnmapError::InvalidFrameAddress(_) => panic!("The address you attempted to unmap from doesn't exist"),
+                }
+                UnmapError::InvalidFrameAddress(_) => {
+                    panic!("The address you attempted to unmap from doesn't exist")
+                }
             },
         };
 

@@ -92,7 +92,7 @@ fn physalloc_inner(
 
 pub fn physalloc(size: usize) -> Result<usize> {
     // TODO: make sure only root can do this
-    
+
     match physalloc_inner(size, PhysallocFlags::SPACE_64) {
         Ok((size, _)) => Ok(size),
         Err(e) => Err(e),
