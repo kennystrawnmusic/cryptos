@@ -1074,7 +1074,7 @@ impl AhciProtected {
                     let sector = 2000;
 
                     if let Some(_) = port.read(sector, buffer) {
-                        debug!("Read sector {:?}: {:?}", sector, buffer);
+                        info!("Read sector {:?}: {:?}", sector, buffer);
                     } else {
                         warn!("Couldn't read any data")
                     }
