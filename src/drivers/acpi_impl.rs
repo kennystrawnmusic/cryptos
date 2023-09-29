@@ -569,43 +569,6 @@ pub fn aml_init(tables: &mut AcpiTables<KernelAcpi>) {
             let smi_cmd = fadt.smi_cmd_port;
             let acpi_en = fadt.acpi_enable;
 
-            info!("SMI command port: {:#x?}", smi_cmd);
-            info!("ACPI enable value: {:?}", acpi_en);
-
-            let pm1a_block = match fadt.pm1a_control_block() {
-                Ok(block) => Some(block.address),
-                Err(_) => None,
-            };
-
-            if let Some(addr) = pm1a_block {
-                info!("Found PM1a control address: {:#x?}", addr);
-            }
-
-            let pm1b_block = match fadt.pm1b_control_block() {
-                Ok(block_opt) => {
-                    if let Some(block) = block_opt {
-                        Some(block.address)
-                    } else {
-                        None
-                    }
-                }
-                Err(_) => None,
-            };
-
-            if let Some(addr) = pm1b_block {
-                info!("Found PM1b control address: {:?}", addr);
-            }
-
-            let no_value = [None, None, None, None, None, None, None];
-
-            if let Ok(pkg) = aml_ctx.invoke_method(
-                &AmlName::from_str("\\_S5")
-                    .unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)),
-                Args(no_value),
-            ) {
-                info!("S5 Controls: {:#?}", pkg)
-            };
-
             let mut smi_port = Port::new(smi_cmd as u16);
             unsafe { smi_port.write(acpi_en) };
 
