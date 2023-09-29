@@ -139,6 +139,11 @@ macro_rules! map_page {
     };
 }
 
+/// Macro for unmapping pages
+/// 
+/// Just like `map_page!`, this macro converts the `Result` thrown by `Mapper::unmap`
+/// to an `Option<MapperFlush<S>>` so the errors can just be skipped before the page table
+/// is flushed
 #[macro_export]
 macro_rules! unmap_page {
     ($page:expr) => {
