@@ -41,8 +41,6 @@ pub type time_t = i128;
 
 pub type FileData = Vec<u8>;
 
-// work around Box not implementing Hash
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum EntryKind<'a> {
     Directory(Arc<HashMap<Properties<'a>, Arc<Entry<'a>>>>),
