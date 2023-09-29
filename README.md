@@ -21,7 +21,7 @@ The reason for the hybrid kernel design is driver segregation by license: the re
 
 ## Not yet started
 
-* XHCI — I do already depend on [a crate](https://github.com/rust-osdev/xhci) for this, but need to study how the APIs that said crate exposes first in order to actually use that dependency. This is particularly important for getting keyboards, mice, and USB mass storage working properly.
+* XHCI — I do already depend on [a crate](https://github.com/rust-osdev/xhci) for this, but need to study how the APIs that said crate exposes work first in order to actually use that dependency. This is particularly important for getting keyboards, mice, and USB mass storage working properly.
 * Support for CPU architectures other than x86_64
 * NVMe
 * Initramfs — the bootloader crate did recently add support for this in version 11.3, but figuring out how to properly take advantage of that support (or what archive formats it supports, for that matter) is going to be tricky.
