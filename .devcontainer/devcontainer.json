@@ -9,5 +9,8 @@
                 "tamasfe.even-better-toml"
             ]
         }
+    },
+    "build": {
+        "dockerfile": "Dockerfile"
     }
 }
