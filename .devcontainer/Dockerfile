@@ -1,2 +1,2 @@
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- --default-toolchain nightly -y
-RUN sudo apt-get install build-essential qemu-system-x86 ovmf p7zip
+RUN [ '/bin/bash', '-c', 'sudo -u vscode curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- --default-toolchain nightly -y' ]
+RUN ['/bin/bash', '-c', 'sudo apt-get -y install build-essential qemu-system-x86 ovmf p7zip']
