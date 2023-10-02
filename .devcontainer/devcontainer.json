@@ -1,0 +1,10 @@
+{
+    "name": "Accelerated Kernel Development",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "GitHub.copilot"
+            ]
+        }
+    }
+}
