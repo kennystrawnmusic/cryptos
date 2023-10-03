@@ -188,7 +188,7 @@ unsafe impl Send for KernelFrameAlloc {}
 unsafe impl Sync for KernelFrameAlloc {}
 
 impl xhci::accessor::Mapper for KernelFrameAlloc {
-    unsafe fn map(&mut self, phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
+    unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
         let virt_start = phys_start as u64 + get_phys_offset();
 
         map_page!(
@@ -201,10 +201,10 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
                 | PageTableFlags::WRITE_THROUGH
         );
 
-        if _bytes > 4096 {
+        if bytes > 4096 {
             let mut i = 4096;
 
-            while i < _bytes {
+            while i < bytes {
                 let phys = phys_start + i;
                 let virt = virt_start + i as u64;
 
