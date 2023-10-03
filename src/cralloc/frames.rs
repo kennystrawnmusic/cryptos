@@ -185,3 +185,13 @@ macro_rules! unmap_page {
 
 unsafe impl Send for Falloc {}
 unsafe impl Sync for Falloc {}
+
+impl xhci::accessor::Mapper for Falloc {
+    unsafe fn map(&mut self, _phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
+        todo!("Use map_page! macro to implement this")
+    }
+
+    fn unmap(&mut self, _virt_start: usize, _bytes: usize) {
+        todo!("Use unmap_page! macro to implement this")
+    }
+}
