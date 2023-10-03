@@ -3,7 +3,9 @@
         "rust-lang.rust-analyzer",
         "GitHub.copilot",
         "GitHub.codespaces",
+        "GitHub.copilot-chat",
         "serayuzgur.crates",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "Gruntfuggly.todo-tree",
     ]
 }
