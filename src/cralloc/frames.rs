@@ -190,6 +190,7 @@ unsafe impl Sync for KernelFrameAlloc {}
 impl xhci::accessor::Mapper for KernelFrameAlloc {
     unsafe fn map(&mut self, phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
         let virt_start = phys_start as u64 + get_phys_offset();
+
         map_page!(
             phys_start,
             virt_start,
@@ -199,11 +200,13 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
                 | PageTableFlags::NO_CACHE
                 | PageTableFlags::WRITE_THROUGH
         );
+
         NonZeroUsize::new(virt_start as usize).unwrap()
     }
 
     fn unmap(&mut self, _virt_start: usize, _bytes: usize) {
         let p = Page::<Size4KiB>::containing_address(VirtAddr::new(_virt_start as u64));
+
         unmap_page!(p);
     }
 }
