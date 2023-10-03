@@ -225,9 +225,24 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
         NonZeroUsize::new(virt_start as usize).unwrap()
     }
 
-    fn unmap(&mut self, _virt_start: usize, _bytes: usize) {
-        let p = Page::<Size4KiB>::containing_address(VirtAddr::new(_virt_start as u64));
+    fn unmap(&mut self, virt_start: usize, bytes: usize) {
 
-        unmap_page!(p);
+        if bytes > 4096 {
+            let mut i = 4096;
+
+            while i < bytes {
+                let virt = (virt_start + i) as u64;
+
+                let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt as u64));
+
+                unmap_page!(p);
+
+                i += 4096;
+            }
+        } else {
+            let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt_start as u64));
+
+            unmap_page!(p);
+        }
     }
 }
