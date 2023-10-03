@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "GitHub.copilot",
+        "GitHub.codespaces",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml"
+    ]
+}
