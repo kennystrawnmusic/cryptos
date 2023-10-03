@@ -3,7 +3,7 @@
     "tasks": [
       {
         "label": "Install All Recommended Extensions",
-        "type": "shell",      
+        "type": "shell",
         "command": "jq -r '.recommendations[]' ./.vscode/extensions.json | xargs -L 1 code --install-extension",
         "runOptions": {
           "runOn": "folderOpen"
@@ -11,6 +11,38 @@
         "presentation": {
           "reveal": "silent"
         }
+      },
+      {
+        "label": "Build Kernel",
+        "type": "shell",
+        "command": [
+          "cargo",
+          "run",
+          "--package",
+          "runner",
+          "--"
+        ]
+      },
+      {
+        "label": "Run Kernel in QEMU",
+        "type": "shell",
+        "command": [
+          "cargo",
+          "run",
+          "--package",
+          "runner",
+          "--",
+          "--boot"
+        ]
+      },
+      {
+        "type": "cargo",
+        "command": "build",
+        "problemMatcher": [
+          "$rustc"
+        ],
+        "group": "build",
+        "label": "rust: cargo build"
       }
     ]
   }
