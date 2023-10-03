@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
-use core::ops::DerefMut;
+use core::{num::NonZeroUsize, ops::DerefMut};
 use spin::RwLock;
 use x86_64::structures::paging::{frame::PhysFrameRangeInclusive, FrameDeallocator};
 #[allow(unused_imports)] //future-proof
@@ -158,6 +158,7 @@ macro_rules! map_page {
 #[macro_export]
 macro_rules! unmap_page {
     ($page:expr) => {
+        use log::debug;
         use x86_64::structures::paging::{mapper::UnmapError, Mapper};
 
         let flush = match $crate::MAPPER.get().unwrap().write().unmap($page) {
@@ -187,11 +188,22 @@ unsafe impl Send for KernelFrameAlloc {}
 unsafe impl Sync for KernelFrameAlloc {}
 
 impl xhci::accessor::Mapper for KernelFrameAlloc {
-    unsafe fn map(&mut self, _phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
-        todo!("Use map_page! macro to implement this")
+    unsafe fn map(&mut self, phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
+        let virt_start = phys_start as u64 + get_phys_offset();
+        map_page!(
+            phys_start,
+            virt_start,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+        NonZeroUsize::new(virt_start as usize).unwrap()
     }
 
     fn unmap(&mut self, _virt_start: usize, _bytes: usize) {
-        todo!("Use unmap_page! macro to implement this")
+        let p = Page::<Size4KiB>::containing_address(VirtAddr::new(_virt_start as u64));
+        unmap_page!(p);
     }
 }
