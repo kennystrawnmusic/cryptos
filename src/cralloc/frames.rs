@@ -187,7 +187,11 @@ macro_rules! unmap_page {
 unsafe impl Send for KernelFrameAlloc {}
 unsafe impl Sync for KernelFrameAlloc {}
 
-impl xhci::accessor::Mapper for KernelFrameAlloc {
+// Dummy type for getting around the issue of KernelFrameAlloc not implementing Clone
+#[derive(Clone)]
+pub struct XhciMapper;
+
+impl xhci::accessor::Mapper for XhciMapper {
     unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
         let virt_start = phys_start as u64 + get_phys_offset();
 
@@ -231,7 +235,7 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
 
             while i < bytes {
                 let virt = (virt_start + i) as u64;
-                let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt as u64));
+                let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt));
 
                 unmap_page!(p);
 
