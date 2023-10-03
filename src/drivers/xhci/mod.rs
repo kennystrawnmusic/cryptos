@@ -1,4 +1,8 @@
-use crate::{cralloc::frames::XhciMapper, pci_impl::{DeviceKind, FOSSPciDeviceHandle}, FRAME_ALLOCATOR};
+use crate::{
+    cralloc::frames::XhciMapper,
+    pci_impl::{DeviceKind, FOSSPciDeviceHandle},
+    FRAME_ALLOCATOR,
+};
 use pcics::{header::HeaderType, Header};
 use spin::RwLock;
 use xhci::Registers;
@@ -25,7 +29,8 @@ impl XhciImpl {
 
                         let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
-                        let regs = unsafe { Registers::new(full_bar as usize, MAPPER.read().clone()) };
+                        let regs =
+                            unsafe { Registers::new(full_bar as usize, MAPPER.read().clone()) };
 
                         Some(regs)
                     } else {
@@ -34,7 +39,7 @@ impl XhciImpl {
                 } else {
                     None
                 }
-            }
+            },
         }
     }
 }
@@ -48,6 +53,9 @@ impl FOSSPciDeviceHandle for XhciImpl {
     }
 
     fn start(&self, header: &mut pcics::Header) {
-        todo!("use this to actually configure the space by parsing {:#?}", header);
+        todo!(
+            "use this to actually configure the space by parsing {:#?}",
+            header
+        );
     }
 }
