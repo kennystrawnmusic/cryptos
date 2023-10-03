@@ -7,13 +7,13 @@ use xhci::Registers;
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
 #[allow(dead_code)] // not finished
-pub(crate) struct XhciImpl {
-    pub(crate) regs: Option<Registers<XhciMapper>>,
+pub struct XhciImpl {
+    pub regs: Option<Registers<XhciMapper>>,
 }
 
 #[allow(dead_code)] // not finished
 impl XhciImpl {
-    pub(crate) fn new(header: &Header) -> Self {
+    pub fn new(header: &Header) -> Self {
         Self {
             regs: {
                 if let DeviceKind::UsbController =
