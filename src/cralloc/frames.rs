@@ -201,6 +201,26 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
                 | PageTableFlags::WRITE_THROUGH
         );
 
+        if _bytes > 4096 {
+            let mut i = 4096;
+            while i < _bytes {
+                let phys = phys_start + i;
+                let virt = virt_start + i as u64;
+
+                map_page!(
+                    phys,
+                    virt,
+                    Size4KiB,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::NO_CACHE
+                        | PageTableFlags::WRITE_THROUGH
+                );
+
+                i += 4096;
+            }
+        }
+
         NonZeroUsize::new(virt_start as usize).unwrap()
     }
 
