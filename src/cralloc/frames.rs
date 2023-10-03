@@ -226,7 +226,6 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
     }
 
     fn unmap(&mut self, virt_start: usize, bytes: usize) {
-
         if bytes > 4096 {
             let mut i = 4096;
 
