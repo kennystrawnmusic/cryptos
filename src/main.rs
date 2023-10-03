@@ -76,7 +76,7 @@ use core::{
     sync::atomic::{AtomicU64, Ordering},
 };
 use cralloc::{
-    frames::{map_memory, Falloc},
+    frames::{map_memory, KernelFrameAlloc},
     heap_init_inner, BEGIN_HEAP,
 };
 use drivers::acpi_impl::UserAcpi;
@@ -164,7 +164,7 @@ pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
 pub static MAPPER: OnceCell<RwLock<OffsetPageTable>> = OnceCell::uninit();
-pub static FRAME_ALLOCATOR: OnceCell<RwLock<Falloc>> = OnceCell::uninit();
+pub static FRAME_ALLOCATOR: OnceCell<RwLock<KernelFrameAlloc>> = OnceCell::uninit();
 
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {

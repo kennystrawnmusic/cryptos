@@ -41,12 +41,12 @@ pub unsafe fn map_memory(offset: VirtAddr) -> OffsetPageTable<'static> {
 }
 
 /// The frame allocator
-pub struct Falloc {
+pub struct KernelFrameAlloc {
     map: &'static MemoryRegions,
     next: usize,
 }
 
-impl Falloc {
+impl KernelFrameAlloc {
     /// Creates a new frame allocator using the memory region slice provided by the bootloader
     ///
     /// # Safety
@@ -86,7 +86,7 @@ impl Falloc {
     }
 }
 
-unsafe impl FrameAllocator<Size4KiB> for Falloc {
+unsafe impl FrameAllocator<Size4KiB> for KernelFrameAlloc {
     fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
         let f = self.usable().nth(self.next);
         self.next += 1;
@@ -94,7 +94,7 @@ unsafe impl FrameAllocator<Size4KiB> for Falloc {
     }
 }
 
-impl FrameDeallocator<Size4KiB> for Falloc {
+impl FrameDeallocator<Size4KiB> for KernelFrameAlloc {
     unsafe fn deallocate_frame(&mut self, mut _frame: PhysFrame<Size4KiB>) {
         let current_addr = _frame.start_address();
 
@@ -183,10 +183,10 @@ macro_rules! unmap_page {
     };
 }
 
-unsafe impl Send for Falloc {}
-unsafe impl Sync for Falloc {}
+unsafe impl Send for KernelFrameAlloc {}
+unsafe impl Sync for KernelFrameAlloc {}
 
-impl xhci::accessor::Mapper for Falloc {
+impl xhci::accessor::Mapper for KernelFrameAlloc {
     unsafe fn map(&mut self, _phys_start: usize, _bytes: usize) -> core::num::NonZeroUsize {
         todo!("Use map_page! macro to implement this")
     }

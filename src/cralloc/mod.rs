@@ -13,7 +13,7 @@ use x86_64::{
 use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
 use spin::{Mutex, RwLock};
 
-use self::frames::Falloc;
+use self::frames::KernelFrameAlloc;
 
 pub mod frames;
 
@@ -41,8 +41,8 @@ pub fn get_mapper<'a>() -> &'a mut OffsetPageTable<'static> {
     unsafe { &mut *(MAP_ADDR.load(Ordering::SeqCst) as *mut OffsetPageTable) }
 }
 
-pub fn get_falloc<'a>() -> &'a mut Falloc {
-    unsafe { &mut *(FRAME_ALLOC_ADDR.load(Ordering::SeqCst) as *mut Falloc) }
+pub fn get_falloc<'a>() -> &'a mut KernelFrameAlloc {
+    unsafe { &mut *(FRAME_ALLOC_ADDR.load(Ordering::SeqCst) as *mut KernelFrameAlloc) }
 }
 
 pub fn heap_init_inner(
@@ -83,7 +83,7 @@ pub fn heap_init() {
     let offset = VirtAddr::new(get_phys_offset());
 
     let map = unsafe { map_memory(offset) };
-    let falloc = unsafe { Falloc::new(&boot_info.memory_regions) };
+    let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
 
     MAPPER.get_or_init(move || RwLock::new(map));
     FRAME_ALLOCATOR.get_or_init(move || RwLock::new(falloc));
