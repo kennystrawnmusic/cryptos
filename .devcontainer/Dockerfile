@@ -1,7 +1,7 @@
-FROM archlinux:latest
-COPY install_deps_archlinux.sh /tmp
-RUN chmod a+x /tmp/install_deps_archlinux.sh
-RUN /tmp/install_deps_archlinux.sh
-COPY install_rust.sh /tmp
-RUN chmod a+x /tmp/install_rust.sh
-RUN /tmp/install_rust.sh
+FROM ubuntu_23.04
+COPY install_deps_ubuntu.sh /tmp
+RUN chmod a+x /tmp/install_deps_ubuntu.sh
+RUN /tmp/install_deps_ubuntu.sh
+COPY install_rust_ubuntu.sh /tmp
+RUN chmod a+x /tmp/install_rust_ubuntu.sh
+RUN /tmp/install_rust_ubuntu.sh
