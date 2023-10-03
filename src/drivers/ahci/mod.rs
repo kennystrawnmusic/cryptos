@@ -50,14 +50,18 @@ static BUDDY_SIZE: [u64; 3] = [
 pub static ABAR: OnceCell<u64> = OnceCell::uninit();
 
 #[repr(usize)]
+#[derive(Clone)]
 pub enum BuddyOrdering {
     Size4KiB = 0,
     Size8KiB = 2,
 }
 
 pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
-    let order = order as usize;
-    debug_assert!(order <= BUDDY_SIZE.len());
+    // borrow checker
+    let copied_order = order.clone();
+
+    let raw_order = order as usize;
+    debug_assert!(raw_order <= BUDDY_SIZE.len());
 
     let frame = FRAME_ALLOCATOR
         .get()
@@ -69,7 +73,39 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
     let phys = frame.start_address().as_u64();
     let virt = unsafe { phys + get_phys_offset() };
 
-    let fill_size = BUDDY_SIZE[order] as usize;
+    if let BuddyOrdering::Size4KiB = copied_order {
+        map_page!(
+            phys,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+    } else {
+        // map 2 pages to take the 8KiB size into account
+        map_page!(
+            phys,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+        map_page!(
+            phys + 4096,
+            virt + 4096,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+    }
+
+    let fill_size = BUDDY_SIZE[raw_order] as usize;
     let slice = unsafe { core::slice::from_raw_parts_mut(virt as *mut u8, fill_size) };
 
     // We always zero out memory for security reasons.
@@ -1062,20 +1098,20 @@ impl AhciProtected {
             // unsafe { super::acpi_impl::system_shutdown() };
 
             // Test code
-            // for port in self.ports.iter().filter(|p| p.is_some()) {
-            //     if let Some(port) = port {
-            //         let buffer = &mut [0u8; 512];
-            //         let sector = 2000;
+            for port in self.ports.iter().filter(|p| p.is_some()) {
+                if let Some(port) = port {
+                    let buffer = &mut [0u8; 512];
+                    let sector = 2000;
 
-            //         if port.read(sector, buffer).is_some() {
-            //             info!("Read sector {:?}: {:?}", sector, buffer);
-            //         } else {
-            //             warn!("Couldn't read any data")
-            //         }
-            //     } else {
-            //         unreachable!()
-            //     }
-            // }
+                    if port.read(sector, buffer).is_some() {
+                        info!("Read sector {:?}: {:?}", sector, buffer);
+                    } else {
+                        warn!("Couldn't read any data")
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
         } else {
             panic!("AHCI: Not a normal header")
         }

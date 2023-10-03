@@ -133,11 +133,11 @@ macro_rules! map_page {
                 Err(e) => match e {
                     x86_64::structures::paging::mapper::MapToError::FrameAllocationFailed => panic!("Out of memory"),
                     x86_64::structures::paging::mapper::MapToError::PageAlreadyMapped(_) => {
-                        log::debug!("Already have a page here; skipping mapping");
+                        // Skip mapping as page already exists
                         None
                     }
                     x86_64::structures::paging::mapper::MapToError::ParentEntryHugePage => {
-                        log::debug!("Already have a huge page here; skipping mapping");
+                        // Skip mapping as page already exists
                         None
                     }
                 },
@@ -165,11 +165,11 @@ macro_rules! unmap_page {
             Ok((_, flush)) => Some(flush),
             Err(e) => match e {
                 UnmapError::ParentEntryHugePage => {
-                    debug!("Already have a huge page here; skipping unmap");
+                    // Skip unmap as large page already exists here
                     None
                 }
                 UnmapError::PageNotMapped => {
-                    debug!("Page not mapped; skipping unmap");
+                    // Skip unmap as page never existed to begin with
                     None
                 }
                 UnmapError::InvalidFrameAddress(_) => {
