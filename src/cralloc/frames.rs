@@ -203,6 +203,7 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
 
         if _bytes > 4096 {
             let mut i = 4096;
+
             while i < _bytes {
                 let phys = phys_start + i;
                 let virt = virt_start + i as u64;
