@@ -1,8 +1,11 @@
 use crate::{cralloc::frames::XhciMapper, pci_impl::DeviceKind, FRAME_ALLOCATOR};
 use pcics::{header::HeaderType, Header};
+use spin::RwLock;
 use xhci::Registers;
 
-pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Registers<XhciMapper>> {
+pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
+
+pub fn xhci_init(header: &Header) -> Option<Registers<XhciMapper>> {
     if let DeviceKind::UsbController =
         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
     {
@@ -12,7 +15,7 @@ pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Registers<XhciMa
 
             let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
-            let regs = unsafe { Registers::new(full_bar as usize, mapper) };
+            let regs = unsafe { Registers::new(full_bar as usize, MAPPER.write().clone()) };
 
             Some(regs)
         } else {
