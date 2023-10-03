@@ -25,7 +25,7 @@ impl XhciImpl {
 
                         let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
-                        let regs = unsafe { Registers::new(full_bar as usize, MAPPER.write().clone()) };
+                        let regs = unsafe { Registers::new(full_bar as usize, MAPPER.read().clone()) };
 
                         Some(regs)
                     } else {
