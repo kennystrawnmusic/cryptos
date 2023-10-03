@@ -1,5 +1,4 @@
 use crate::{cralloc::frames::XhciMapper, pci_impl::DeviceKind, FRAME_ALLOCATOR};
-use alloc::boxed::Box;
 use pcics::{header::HeaderType, Header};
 use xhci::{registers::Operational, Registers};
 
