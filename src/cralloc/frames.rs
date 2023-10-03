@@ -231,7 +231,6 @@ impl xhci::accessor::Mapper for KernelFrameAlloc {
 
             while i < bytes {
                 let virt = (virt_start + i) as u64;
-
                 let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt as u64));
 
                 unmap_page!(p);
