@@ -1062,20 +1062,20 @@ impl AhciProtected {
             // unsafe { super::acpi_impl::system_shutdown() };
 
             // Test code
-            for port in self.ports.iter().filter(|p| p.is_some()) {
-                if let Some(port) = port {
-                    let buffer = &mut [0u8; 512];
-                    let sector = 2000;
+            // for port in self.ports.iter().filter(|p| p.is_some()) {
+            //     if let Some(port) = port {
+            //         let buffer = &mut [0u8; 512];
+            //         let sector = 2000;
 
-                    if port.read(sector, buffer).is_some() {
-                        info!("Read sector {:?}: {:?}", sector, buffer);
-                    } else {
-                        warn!("Couldn't read any data")
-                    }
-                } else {
-                    unreachable!()
-                }
-            }
+            //         if port.read(sector, buffer).is_some() {
+            //             info!("Read sector {:?}: {:?}", sector, buffer);
+            //         } else {
+            //             warn!("Couldn't read any data")
+            //         }
+            //     } else {
+            //         unreachable!()
+            //     }
+            // }
         } else {
             panic!("AHCI: Not a normal header")
         }
