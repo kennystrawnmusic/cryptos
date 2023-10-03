@@ -3,7 +3,7 @@ use alloc::boxed::Box;
 use pcics::{header::HeaderType, Header};
 use xhci::{registers::Operational, Registers};
 
-pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Operational<XhciMapper>> {
+pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Registers<XhciMapper>> {
     if let DeviceKind::UsbController =
         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
     {
@@ -15,7 +15,7 @@ pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Operational<Xhci
 
             let regs = unsafe { Registers::new(full_bar as usize, mapper) };
 
-            Some(regs.operational)
+            Some(regs)
         } else {
             None
         }
