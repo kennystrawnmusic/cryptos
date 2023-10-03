@@ -8,7 +8,7 @@ pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
 #[allow(dead_code)] // not finished
 pub struct XhciImpl {
-    pub regs: Option<Registers<XhciMapper>>,
+    regs: Option<Registers<XhciMapper>>,
 }
 
 #[allow(dead_code)] // not finished
