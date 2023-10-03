@@ -248,3 +248,7 @@ impl xhci::accessor::Mapper for XhciMapper {
         }
     }
 }
+
+// Needed to allow access from statics
+unsafe impl Send for XhciMapper {}
+unsafe impl Sync for XhciMapper {}
