@@ -1,6 +1,6 @@
 use crate::{cralloc::frames::XhciMapper, pci_impl::DeviceKind, FRAME_ALLOCATOR};
 use pcics::{header::HeaderType, Header};
-use xhci::{registers::Operational, Registers};
+use xhci::Registers;
 
 pub fn xhci_init(header: &Header, mapper: XhciMapper) -> Option<Registers<XhciMapper>> {
     if let DeviceKind::UsbController =
