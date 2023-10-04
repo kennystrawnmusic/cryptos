@@ -133,6 +133,7 @@ impl XhciImpl {
 
                 let pci_guard = PCI_TABLE.write();
 
+                // borrow checker
                 let headers_vec = pci_guard.headers.clone();
                 let raw_headers_vec = pci_guard.raw_headers.clone();
 
