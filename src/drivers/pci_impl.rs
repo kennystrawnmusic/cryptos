@@ -2,6 +2,7 @@
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
 use alloc::{rc::Rc, vec};
+use spin::RwLock;
 
 use core::{
     iter::Map,
@@ -28,7 +29,7 @@ use crate::{
 
 use {
     crate::{
-        ahci::util::{sync::Mutex, VolatileCell},
+        ahci::util::VolatileCell,
         map_page,
     },
     alloc::{alloc::Global, sync::Arc, vec::Vec},
@@ -43,7 +44,7 @@ use log::*;
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
-pub static PCI_TABLE: Mutex<PciTable> = Mutex::new(PciTable::new());
+pub static PCI_TABLE: RwLock<PciTable> = RwLock::new(PciTable::new());
 pub static PCI_DRIVER_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 const fn calculate_blocks(bits: usize) -> usize {
@@ -712,9 +713,9 @@ impl PciTable {
 }
 
 pub fn register_device_driver(handle: Arc<dyn FOSSPciDeviceHandle>) {
-    PCI_TABLE.lock().devices.push(PciDevice { handle });
+    PCI_TABLE.write().devices.push(PciDevice { handle });
     unsafe {
-        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().devices.len();
+        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.read().devices.len();
     }
 }
 
@@ -746,14 +747,14 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
             // borrow checker
-            let raw_clone = raw_header.clone();
+            let raw_clone = raw_header;
 
             let mut header = pcics::Header::from(raw_header);
 
             // borrow checker
             let header_clone = header.clone();
 
-            PCI_TABLE.lock().register_headers(raw_clone, header_clone);
+            PCI_TABLE.write().register_headers(raw_clone, header_clone);
 
             if let DeviceKind::Unknown =
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
@@ -771,7 +772,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             debug!("Interrupt pin: {:#?}", header.interrupt_pin);
 
-            for driver in &mut PCI_TABLE.lock().devices {
+            for driver in &mut PCI_TABLE.write().devices {
                 // can't declare these earlier than this without pissing off the borrow checker
 
                 if driver.handle.handles(
@@ -780,7 +781,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 ) {
                     driver.handle.start(&mut header);
                     unsafe {
-                        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().devices.len();
+                        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.read().devices.len();
                     }
                 }
             }

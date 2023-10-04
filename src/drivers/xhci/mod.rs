@@ -123,7 +123,7 @@ impl XhciImpl {
                     crcr.set_command_ring_pointer(virt);
                 });
 
-                let pci_guard = PCI_TABLE.lock();
+                let pci_guard = PCI_TABLE.write();
 
                 let headers_iter = pci_guard.headers.iter().cloned();
                 let raw_headers_iter = pci_guard.raw_headers.iter().cloned();
@@ -143,7 +143,6 @@ impl XhciImpl {
                     .expect("Controller not found");
 
                 let mut _caps = Capabilities::new(&raw, &header);
-
 
                 op.usbcmd.update_volatile(|cmd| {
                     cmd.set_run_stop();
