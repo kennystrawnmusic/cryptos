@@ -24,14 +24,5 @@
           "--boot"
         ]
       },
-      {
-        "type": "cargo",
-        "command": "build",
-        "problemMatcher": [
-          "$rustc"
-        ],
-        "group": "build",
-        "label": "rust: cargo build"
-      }
     ]
   }
