@@ -9,7 +9,15 @@ use crate::{
     pci_impl::{DeviceKind, FOSSPciDeviceHandle, PCI_TABLE},
     FRAME_ALLOCATOR,
 };
-use pcics::{capabilities::{msi_x::Table, MsiX, CapabilityKind, msi_x::{MessageControl, Bir}}, header::HeaderType, Capabilities, Header};
+use pcics::{
+    capabilities::{
+        msi_x::Table,
+        msi_x::{Bir, MessageControl},
+        CapabilityKind, MsiX,
+    },
+    header::HeaderType,
+    Capabilities, Header,
+};
 use spin::RwLock;
 use xhci::{
     accessor::array::ReadWrite,

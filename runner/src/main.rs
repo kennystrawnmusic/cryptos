@@ -112,8 +112,6 @@ impl HostDistro {
         is_archlinux.stdout(Stdio::null());
         is_archlinux.stderr(Stdio::null());
 
-        
-
         if let Ok(ubuntu_status) = is_ubuntu.status() {
             if let Ok(()) = ubuntu_status.exit_ok() {
                 Self::Ubuntu
@@ -435,10 +433,7 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
     let uefi_status = uefi_cmd.status().unwrap();
 
     if !uefi_status.success() {
-        println!(
-            "Failed to run QEMU: {:#?}",
-            &uefi_status.code().unwrap()
-        );
+        println!("Failed to run QEMU: {:#?}", &uefi_status.code().unwrap());
         exit(uefi_status.code().unwrap());
     }
 }
