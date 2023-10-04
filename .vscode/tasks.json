@@ -10,7 +10,11 @@
           "--package",
           "runner",
           "--"
-        ]
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
       },
       {
         "label": "Run Kernel in QEMU",
@@ -22,7 +26,11 @@
           "runner",
           "--",
           "--boot"
-        ]
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
       },
     ]
   }
