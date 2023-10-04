@@ -37,7 +37,7 @@ fn main() {
         c.log_level = LevelFilter::Error;
     }
 
-    let mut uefi = UefiBoot::new(&kernel_path);
+    let mut uefi = UefiBoot::new(kernel_path);
     uefi.set_boot_config(&c);
 
     if let Err(e) = uefi.create_disk_image(&out_path) {
@@ -47,7 +47,7 @@ fn main() {
 
     println!("Created bootable UEFI disk image at {:#?}", &out_path);
 
-    if let Some(arg) = args().skip(1).next() {
+    if let Some(arg) = args().nth(1) {
         match arg.as_str() {
             "--boot" => {
                 if Path::exists(Path::new("OVMF-pure-efi.fd")) {
@@ -94,6 +94,12 @@ pub enum HostDistro {
     //TBC
 }
 
+impl Default for HostDistro {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HostDistro {
     pub fn new() -> Self {
         let mut is_ubuntu = Command::new("which");
@@ -106,7 +112,9 @@ impl HostDistro {
         is_archlinux.stdout(Stdio::null());
         is_archlinux.stderr(Stdio::null());
 
-        let ret = if let Ok(ubuntu_status) = is_ubuntu.status() {
+        
+
+        if let Ok(ubuntu_status) = is_ubuntu.status() {
             if let Ok(()) = ubuntu_status.exit_ok() {
                 Self::Ubuntu
             } else if let Ok(arch_status) = is_archlinux.status() {
@@ -120,9 +128,7 @@ impl HostDistro {
             }
         } else {
             unreachable!()
-        };
-
-        ret
+        }
     }
 }
 
@@ -134,19 +140,19 @@ fn install_arch_deps() {
     does_dep_1_exist.stdout(Stdio::null());
     does_dep_1_exist.stderr(Stdio::null());
 
-    if let Err(_) = does_dep_1_exist.status() {
+    if does_dep_1_exist.status().is_err() {
         let mut does_dep_2_exist = Command::new("which");
         does_dep_2_exist.arg("gcc");
         does_dep_2_exist.stdout(Stdio::null());
         does_dep_2_exist.stderr(Stdio::null());
 
-        if let Err(_) = does_dep_2_exist.status() {
+        if does_dep_2_exist.status().is_err() {
             let mut does_dep_3_exist = Command::new("which");
             does_dep_3_exist.arg("qemu-system-x86_64");
             does_dep_3_exist.stdout(Stdio::null());
             does_dep_3_exist.stderr(Stdio::null());
 
-            if let Err(_) = does_dep_3_exist.status() {
+            if does_dep_3_exist.status().is_err() {
                 arch_install_deps
                     .arg("pacman")
                     .arg("--noconfirm")
@@ -212,19 +218,19 @@ fn install_ubuntu_deps() {
     does_dep_1_exist.stdout(Stdio::null());
     does_dep_1_exist.stderr(Stdio::null());
 
-    if let Err(_) = does_dep_1_exist.status() {
+    if does_dep_1_exist.status().is_err() {
         let mut does_dep_2_exist = Command::new("which");
         does_dep_2_exist.arg("gcc");
         does_dep_2_exist.stdout(Stdio::null());
         does_dep_2_exist.stderr(Stdio::null());
 
-        if let Err(_) = does_dep_2_exist.status() {
+        if does_dep_2_exist.status().is_err() {
             let mut does_dep_3_exist = Command::new("which");
             does_dep_3_exist.arg("qemu-system-x86_64");
             does_dep_3_exist.stdout(Stdio::null());
             does_dep_3_exist.stderr(Stdio::null());
 
-            if let Err(_) = does_dep_3_exist.status() {
+            if does_dep_3_exist.status().is_err() {
                 ubuntu_install_deps_inner
                     .arg("apt-get")
                     .arg("-y")
@@ -307,7 +313,7 @@ fn download_ovmf() {
             "Failed to copy OVMF to crate root: {:#?}",
             &copy_status.clone()
         );
-        exit(copy_status.code().clone().unwrap());
+        exit(copy_status.code().unwrap());
     }
 }
 
@@ -363,9 +369,9 @@ fn is_snap() -> Option<bool> {
                 None
             };
 
-            if let Some(_) = vscode_insiders {
+            if vscode_insiders.is_some() {
                 vscode_insiders
-            } else if let Some(_) = vscode {
+            } else if vscode.is_some() {
                 vscode
             } else {
                 None
@@ -424,15 +430,15 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("-d")
         .arg("int");
 
-    uefi_cmd.current_dir(&kdir);
+    uefi_cmd.current_dir(kdir);
 
     let uefi_status = uefi_cmd.status().unwrap();
 
     if !uefi_status.success() {
         println!(
             "Failed to run QEMU: {:#?}",
-            &uefi_status.code().clone().unwrap()
+            &uefi_status.code().unwrap()
         );
-        exit(uefi_status.code().clone().unwrap());
+        exit(uefi_status.code().unwrap());
     }
 }
