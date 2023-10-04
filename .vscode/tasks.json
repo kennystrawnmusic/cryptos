@@ -32,5 +32,28 @@
           "isDefault": true
         },
       },
+      {
+        "label": "Create Bootable USB Flash Drive",
+        "type": "shell",
+        "command": [
+          "./write_img_unix_like.sh"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+      },
+      {
+        "label": "Clean",
+        "type": "shell",
+        "command": [
+          "cargo",
+          "clean",
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+      },
     ]
   }
