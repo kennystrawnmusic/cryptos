@@ -150,7 +150,8 @@ impl XhciImpl {
                     })
                     .expect("Controller not found");
 
-                let mut _caps = Capabilities::new(&raw, &header);
+                let mut caps = Capabilities::new(&raw, &header).map(|cap| cap.ok()).flatten();
+                let _msix = caps.find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
 
                 op.usbcmd.update_volatile(|cmd| {
                     cmd.set_run_stop();
