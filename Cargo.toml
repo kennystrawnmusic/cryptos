@@ -18,6 +18,7 @@ aml = { git = "https://github.com/rust-osdev/acpi" }
 bit = "0.1.1"
 bit_field = "0.10.1"
 bitflags = "2.4.0"
+bitvec = { version = "1.0.1", default-features = false, features = ["alloc", "atomic"] }
 bootloader-x86_64-common = "^0.11"
 bootloader_api = "^0.11"
 byteorder = { version = "1.4.3", default-features = false }

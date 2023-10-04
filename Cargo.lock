@@ -474,6 +474,7 @@ dependencies = [
  "bit",
  "bit_field",
  "bitflags 2.4.0",
+ "bitvec",
  "bootloader-x86_64-common",
  "bootloader_api",
  "byteorder",
