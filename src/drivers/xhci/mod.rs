@@ -151,7 +151,11 @@ impl XhciImpl {
                     .expect("Controller not found");
 
                 let mut caps = Capabilities::new(&raw, &header).map(|cap| cap.ok()).flatten();
-                let _msix = caps.find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
+                let msix = caps.find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
+
+                if let Some(msix) = msix {
+                    log::info!("Found MSI-X capability: {:#?}", msix);
+                }
 
                 op.usbcmd.update_volatile(|cmd| {
                     cmd.set_run_stop();
