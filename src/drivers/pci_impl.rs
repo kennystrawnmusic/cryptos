@@ -13,8 +13,9 @@ use core::{
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::{
-    header::{ClassCode, InterruptPin},
-    Capabilities, Header,
+    capabilities::CapabilityKind,
+    header::{self, ClassCode, InterruptPin},
+    Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
     structures::paging::{FrameAllocator, Mapper, Page, Size4KiB},
@@ -743,6 +744,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
+
             // borrow checker
             let raw_clone = raw_header;
 
@@ -758,16 +760,35 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             {
                 continue; // don't print unknown devices
             } else {
-                debug!(
-                    "PCI device {:x?}:{:x?} (device={:?}, vendor={:?})",
+                info!(
+                    "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
                     header.vendor_id,
                     header.device_id,
                     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
                     Vendor::new(header.vendor_id as u32),
+                    header.capabilities_pointer
                 );
             }
 
+            // borrow checker
+            // let raw_clone_2 = raw_header.clone();
+            // let header_clone_2 = header.clone();
+
             debug!("Interrupt pin: {:#?}", header.interrupt_pin);
+
+            // let caps = Capabilities::new(
+            //     &raw_clone_2[(DDR_OFFSET / 8)..(ECS_OFFSET / 8)], // bytes, not bits
+            //     &header_clone_2,
+            // )
+            // .map(|cap| cap.ok());
+        
+            // let msix = caps
+            //     .flatten()
+            //     .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
+
+            // if let Some(msix) = msix {
+            //     info!("MSI-X: {:#?}", msix.kind);
+            // }
 
             for driver in &mut PCI_TABLE.write().devices {
                 // can't declare these earlier than this without pissing off the borrow checker
