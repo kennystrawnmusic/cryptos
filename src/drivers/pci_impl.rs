@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
+use alloc::{rc::Rc, vec};
+
 use core::{
     iter::Map,
+    mem::ManuallyDrop,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 use acpi::AcpiTables;
-use pcics::header::{ClassCode, InterruptPin};
+use conquer_once::spin::OnceCell;
+use pcics::{
+    header::{ClassCode, InterruptPin},
+    Capabilities, Header,
+};
 use x86_64::{
     structures::paging::{FrameAllocator, Mapper, Page, Size4KiB},
     VirtAddr,
@@ -684,19 +691,30 @@ pub struct PciDevice {
 }
 
 pub struct PciTable {
-    pub inner: Vec<PciDevice>,
+    pub devices: Vec<PciDevice>,
+    pub raw_headers: Vec<[u8; 64]>,
+    pub headers: Vec<Header>,
 }
 
 impl PciTable {
     const fn new() -> Self {
-        Self { inner: Vec::new() }
+        Self {
+            devices: Vec::new(),
+            raw_headers: Vec::new(),
+            headers: Vec::new(),
+        }
+    }
+
+    pub fn register_headers(&mut self, raw: [u8; 64], header: Header) {
+        self.raw_headers.push(raw);
+        self.headers.push(header);
     }
 }
 
 pub fn register_device_driver(handle: Arc<dyn FOSSPciDeviceHandle>) {
-    PCI_TABLE.lock().inner.push(PciDevice { handle });
+    PCI_TABLE.lock().devices.push(PciDevice { handle });
     unsafe {
-        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().inner.len();
+        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().devices.len();
     }
 }
 
@@ -727,7 +745,15 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; 64]) };
+            // borrow checker
+            let raw_clone = raw_header.clone();
+
             let mut header = pcics::Header::from(raw_header);
+
+            // borrow checker
+            let header_clone = header.clone();
+
+            PCI_TABLE.lock().register_headers(raw_clone, header_clone);
 
             if let DeviceKind::Unknown =
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
@@ -745,7 +771,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             debug!("Interrupt pin: {:#?}", header.interrupt_pin);
 
-            for driver in &mut PCI_TABLE.lock().inner {
+            for driver in &mut PCI_TABLE.lock().devices {
                 // can't declare these earlier than this without pissing off the borrow checker
 
                 if driver.handle.handles(
@@ -754,7 +780,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 ) {
                     driver.handle.start(&mut header);
                     unsafe {
-                        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().inner.len();
+                        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.lock().devices.len();
                     }
                 }
             }

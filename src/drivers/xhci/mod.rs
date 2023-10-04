@@ -1,28 +1,34 @@
+use alloc::{collections::VecDeque, vec::Vec};
+use conquer_once::spin::OnceCell;
+use core::{ptr::addr_of, sync::atomic::AtomicU64};
+use x86_64::structures::paging::{Mapper, PageTableFlags, Size4KiB};
+
 use crate::{
     cralloc::frames::XhciMapper,
-    pci_impl::{DeviceKind, FOSSPciDeviceHandle},
+    get_phys_offset, map_page,
+    pci_impl::{DeviceKind, FOSSPciDeviceHandle, PCI_TABLE},
     FRAME_ALLOCATOR,
 };
-use pcics::{header::HeaderType, Header};
+use pcics::{capabilities::{msi_x::Table, MsiX, CapabilityKind, msi_x::{MessageControl, Bir}}, header::HeaderType, Capabilities, Header};
 use spin::RwLock;
 use xhci::{
     accessor::array::ReadWrite,
+    context::Slot,
     registers::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
         Runtime,
     },
+    ring::trb::Link,
     Registers,
 };
 
-#[allow(dead_code)] // not finished
+pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
-#[allow(dead_code)] // not finished
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
 }
 
-#[allow(dead_code)] // not finished
 impl XhciImpl {
     pub fn new(header: &Header) -> Self {
         Self {
@@ -90,6 +96,61 @@ impl XhciImpl {
         self.regs
             .as_ref()
             .map(|regs| &regs.interrupter_register_set)
+    }
+    pub fn init(&mut self) {
+        self.operational_mut()
+            .map(|op| {
+                while op.usbsts.read_volatile().controller_not_ready() {
+                    core::hint::spin_loop();
+                }
+
+                op.config.update_volatile(|config| {
+                    config.set_max_device_slots_enabled(255);
+                });
+
+                op.dcbaap.update_volatile(|dcbaap| {
+                    dcbaap.set(dcbaap.get() + get_phys_offset());
+                });
+
+                op.crcr.update_volatile(|crcr| {
+                    // First we actually need a TRB to place at the address we're telling the registers to access
+                    let l = Link::new();
+                    ROOT_LINK.get_or_init(move || RwLock::new(l));
+
+                    let phys = addr_of!(*ROOT_LINK.get().unwrap().read()) as u64;
+
+                    let virt = phys - (phys % (64 * 8)) + get_phys_offset();
+                    crcr.set_command_ring_pointer(virt);
+                });
+
+                let pci_guard = PCI_TABLE.lock();
+
+                let headers_iter = pci_guard.headers.iter().cloned();
+                let raw_headers_iter = pci_guard.raw_headers.iter().cloned();
+
+                let (raw, header) = raw_headers_iter
+                    .zip(headers_iter)
+                    .find_map(|(raw, header)| {
+                        if let DeviceKind::UsbController = DeviceKind::new(
+                            header.class_code.base as u32,
+                            header.class_code.sub as u32,
+                        ) {
+                            Some((raw, header))
+                        } else {
+                            None
+                        }
+                    })
+                    .expect("Controller not found");
+
+                let mut _caps = Capabilities::new(&raw, &header);
+
+
+                op.usbcmd.update_volatile(|cmd| {
+                    cmd.set_run_stop();
+                    cmd.set_host_controller_reset();
+                });
+            })
+            .expect("XHCI controller not found");
     }
 }
 
