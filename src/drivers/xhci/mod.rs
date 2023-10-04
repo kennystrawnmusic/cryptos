@@ -133,8 +133,14 @@ impl XhciImpl {
 
                 let pci_guard = PCI_TABLE.write();
 
-                let headers_iter = pci_guard.headers.iter().cloned();
-                let raw_headers_iter = pci_guard.raw_headers.iter().cloned();
+                let headers_vec = pci_guard.headers.clone();
+                let raw_headers_vec = pci_guard.raw_headers.clone();
+
+                let headers_iter = headers_vec.iter().cloned();
+                let raw_headers_iter = raw_headers_vec.iter().cloned();
+
+                // Don't hold onto the lock for too long
+                drop(pci_guard);
 
                 let (raw, header) = raw_headers_iter
                     .zip(headers_iter)
