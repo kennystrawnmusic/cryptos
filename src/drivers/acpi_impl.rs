@@ -23,7 +23,7 @@ use x86_64::{
 };
 
 use crate::{
-    apic_impl::get_active_lapic,
+    apic_impl::{get_active_lapic, APIC_IS_INITIALIZED},
     arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::PCI_DRIVER_COUNT,
     unmap_page, MAPPER,
@@ -639,21 +639,12 @@ pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
             a[3] = (desc.irq, InterruptPin::IntD);
         }
 
-        // GDT will #GP if an IDT-load is attempted more than once
-        if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 0 {
-            // GDT will #GP if an IDT-load is attempted more than once
+        debug!("Loading IDT...");
+        crate::arch::x86_64::interrupts::init();
 
-            info!("Loading IDT...");
-            crate::arch::x86_64::interrupts::init();
-
-            info!("Setting up interrupts...");
+        if !APIC_IS_INITIALIZED.load(Ordering::Relaxed) {
+            debug!("Setting up interrupts...");
             crate::apic_impl::init_all_available_apics();
-
-            info!("Max LAPIC LVT entry: {:#x}", unsafe {
-                get_active_lapic().max_lvt_entry()
-            });
-
-            PCI_DRIVER_COUNT.fetch_add(1, Ordering::Relaxed);
         }
 
         return Some(a);

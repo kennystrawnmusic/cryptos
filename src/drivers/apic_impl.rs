@@ -1,3 +1,5 @@
+use core::sync::atomic::{AtomicBool, Ordering};
+
 use x2apic::lapic::xapic_base;
 use x86_64::structures::paging::{FrameAllocator, PageTableFlags};
 
@@ -18,6 +20,8 @@ use {
         structures::paging::{Mapper, Size4KiB},
     },
 };
+
+pub(crate) static APIC_IS_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 /// Function returning an Iterator of all XAPIC IDs present on the system
 ///
@@ -144,6 +148,8 @@ pub(crate) fn init_all_available_apics() {
 
         x86_64::instructions::interrupts::enable();
     }
+
+    APIC_IS_INITIALIZED.store(true, Ordering::Relaxed);
 }
 
 /// Workaround for getting a reference to the local APIC without needing to lock it

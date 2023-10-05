@@ -755,8 +755,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             let mut header = Header::try_from(raw_header.as_slice()).unwrap();
 
-            let _ = aml_route(&header);
-
             // borrow checker
             let header_clone = header.clone();
 
@@ -779,6 +777,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.class_code.sub as u32,
                 ));
                 DEDUPED_SCAN.write().dedup();
+
+                let _ = aml_route(&header);
 
                 info!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
