@@ -42,7 +42,7 @@ use {
     },
 };
 
-/// Initializes both the GDT (by calling the initializer function thereof) and the IDT
+/// Initializes the IDT
 pub fn init() {
     lazy_static! {
         static ref IDT_CLONE: InterruptDescriptorTable = IDT.read().clone();
