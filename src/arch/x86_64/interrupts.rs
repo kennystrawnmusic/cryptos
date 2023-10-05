@@ -44,6 +44,9 @@ use {
 
 /// Initializes both the GDT (by calling the initializer function thereof) and the IDT
 pub fn init() {
+    lazy_static! {
+        static ref IDT_CLONE: InterruptDescriptorTable = IDT.read().clone();
+    }
     IDT_CLONE.load();
 }
 
@@ -110,9 +113,6 @@ lazy_static! {
         idt[151].set_handler_fn(ahci);
         RwLock::new(idt)
     };
-
-    // borrow checker
-    pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.read().clone();
 }
 
 pub static TICK_COUNT: AtomicU64 = AtomicU64::new(0);
