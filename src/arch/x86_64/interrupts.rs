@@ -3,6 +3,7 @@ use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
 use alloc::sync::Arc;
 use log::warn;
 use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
+use spin::RwLock;
 use syscall::ESKMSG;
 use x2apic::lapic::{xapic_base, LocalApic};
 use x86_64::{
@@ -44,7 +45,7 @@ use {
 /// Initializes both the GDT (by calling the initializer function thereof) and the IDT
 pub fn init() {
     super::exceptions::init();
-    IDT.load();
+    IDT_CLONE.load();
 }
 
 pub fn current_priority_level(frame: InterruptStackFrameValue) -> PrivilegeLevel {
@@ -62,7 +63,7 @@ pub static INTC_IRQ: AtomicU64 = AtomicU64::new(0);
 pub static INTD_IRQ: AtomicU64 = AtomicU64::new(0);
 
 lazy_static! {
-    pub static ref IDT: InterruptDescriptorTable = {
+    pub static ref IDT: RwLock<InterruptDescriptorTable> = {
         let mut idt = InterruptDescriptorTable::new();
         unsafe {
             idt.double_fault
@@ -108,8 +109,11 @@ lazy_static! {
         idt[139].set_handler_fn(pci);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
-        idt
+        RwLock::new(idt)
     };
+    
+    // borrow checker
+    pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.read().clone();
 }
 
 pub static TICK_COUNT: AtomicU64 = AtomicU64::new(0);

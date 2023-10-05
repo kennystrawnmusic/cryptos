@@ -70,7 +70,7 @@ use core::{
     mem::MaybeUninit,
     ops::{
         Add, AddAssign, BitAnd, BitOr, DerefMut, Div, DivAssign, Mul, MulAssign, Not, Sub,
-        SubAssign,
+        SubAssign, Range,
     },
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
@@ -191,8 +191,8 @@ pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
     PCI_CONFIG.get().unwrap()
 }
 
-fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
-    (0x0u32..0x00ffffffu32).map(|i: u32| match get_mcfg() {
+fn mcfg_brute_force_inner(r: Range<u32>) -> impl Itertools<Item = Option<u64>> {
+    r.map(|i: u32| match get_mcfg() {
         Some(mcfg) => mcfg.physical_address(
             i.to_be_bytes()[0] as u16,
             i.to_be_bytes()[1],
@@ -204,8 +204,16 @@ fn mcfg_brute_force_inner() -> impl Itertools<Item = Option<u64>> {
 }
 
 /// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
-pub fn mcfg_brute_force() -> impl Itertools<Item = u64> {
-    mcfg_brute_force_inner().flatten().dedup()
+pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
+    let mut deduped_scan = Vec::new();
+
+    // Will add support for more addresses here when I can get the allocator to quit panicking
+    for addr in mcfg_brute_force_inner(0x0u32..0x1000u32).flatten().dedup() {
+        deduped_scan.push(addr);
+        deduped_scan.dedup();
+    }
+
+    deduped_scan.into_iter()
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {

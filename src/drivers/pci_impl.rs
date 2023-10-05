@@ -18,7 +18,10 @@ use pcics::{
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
-    structures::{paging::{FrameAllocator, Mapper, Page, Size4KiB}, idt::InterruptStackFrame},
+    structures::{
+        idt::InterruptStackFrame,
+        paging::{FrameAllocator, Mapper, Page, Size4KiB},
+    },
     VirtAddr,
 };
 
@@ -750,6 +753,9 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             let mut header = Header::try_from(raw_header.as_slice()).unwrap();
 
+            let _ = aml_route(&header);
+            PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
+
             // borrow checker
             let header_clone = header.clone();
 
@@ -799,7 +805,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             if let Some(msix) = msix {
                 info!("MSI-X: {:#?}", msix.map(|m| m.kind));
 
-                let mut _msixdt = Vec::<extern "x86-interrupt" fn() -> InterruptStackFrame>::with_capacity(2048);
+                let mut _msixdt =
+                    Vec::<extern "x86-interrupt" fn() -> InterruptStackFrame>::with_capacity(2048);
             }
 
             for driver in &mut PCI_TABLE.write().devices {
@@ -810,9 +817,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
                 ) {
                     driver.handle.start(&mut header);
-                    unsafe {
-                        *(PCI_DRIVER_COUNT.as_ptr()) = PCI_TABLE.read().devices.len();
-                    }
                 }
             }
         }

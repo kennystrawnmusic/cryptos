@@ -1044,30 +1044,6 @@ impl AhciProtected {
 
     /// This function is responsible for initializing and starting the AHCI driver.
     fn start_driver(&mut self, header: &mut pcics::Header) {
-        let arr = aml_route(header);
-
-        if arr.is_some() {
-            match header.interrupt_pin {
-                InterruptPin::IntA
-                | InterruptPin::IntB
-                | InterruptPin::IntC
-                | InterruptPin::IntD => {
-                    if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
-                        // GDT will #GP if an IDT-load is attempted more than once
-
-                        info!("Loading descriptor tables...");
-                        crate::arch::x86_64::interrupts::init();
-
-                        info!("Setting up interrupts...");
-                        crate::apic_impl::init_all_available_apics();
-                    }
-                }
-                InterruptPin::Unused => {} // ignore unused interrupt pins
-                InterruptPin::Reserved(err) => {
-                    panic!("Invalid interrupt pin: {:#?}", err)
-                }
-            };
-        }
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
