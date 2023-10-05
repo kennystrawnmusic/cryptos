@@ -240,7 +240,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
     heap_init();
 
-    // load the GDT
+    // load the GDT early because repeated GDT loads cause a #GP
     crate::arch::x86_64::exceptions::init();
 
     // map the TLS template onto the heap to ensure proper memory safety
@@ -296,7 +296,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
 
                 debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
-                info!("TLS template: {:#x?}", boot_info.tls_template);
+                debug!("TLS template: {:#x?}", boot_info.tls_template);
 
                 ahci_init();
                 pci_impl::init(&tables);
