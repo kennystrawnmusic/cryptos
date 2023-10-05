@@ -240,6 +240,9 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
     heap_init();
 
+    // load the GDT
+    crate::arch::x86_64::exceptions::init();
+
     // map the TLS template onto the heap to ensure proper memory safety
     TLS_TEMPLATE_ADDR.store(Box::into_raw(Box::new(0)) as usize as u64, Ordering::SeqCst);
 

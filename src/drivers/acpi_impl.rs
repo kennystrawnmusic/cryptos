@@ -640,10 +640,10 @@ pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
         }
 
         // GDT will #GP if an IDT-load is attempted more than once
-        if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 0 {
+        if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 0 {
             // GDT will #GP if an IDT-load is attempted more than once
 
-            info!("Loading descriptor tables...");
+            info!("Loading IDT...");
             crate::arch::x86_64::interrupts::init();
 
             info!("Setting up interrupts...");
@@ -652,6 +652,8 @@ pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
             info!("Max LAPIC LVT entry: {:#x}", unsafe {
                 get_active_lapic().max_lvt_entry()
             });
+
+            PCI_DRIVER_COUNT.fetch_add(1, Ordering::Relaxed);
         }
 
         return Some(a);

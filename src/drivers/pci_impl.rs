@@ -756,7 +756,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             let mut header = Header::try_from(raw_header.as_slice()).unwrap();
 
             let _ = aml_route(&header);
-            PCI_DRIVER_COUNT.fetch_add(1, Ordering::SeqCst);
 
             // borrow checker
             let header_clone = header.clone();
