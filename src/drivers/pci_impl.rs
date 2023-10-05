@@ -18,7 +18,7 @@ use pcics::{
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, Page, Size4KiB},
+    structures::{paging::{FrameAllocator, Mapper, Page, Size4KiB}, idt::InterruptStackFrame},
     VirtAddr,
 };
 
@@ -798,6 +798,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             if let Some(msix) = msix {
                 info!("MSI-X: {:#?}", msix.map(|m| m.kind));
+
+                let mut _msixdt = Vec::<extern "x86-interrupt" fn() -> InterruptStackFrame>::with_capacity(2048);
             }
 
             for driver in &mut PCI_TABLE.write().devices {
