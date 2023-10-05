@@ -743,7 +743,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     | PageTableFlags::WRITE_THROUGH
             );
 
-            let raw_header = unsafe { *(virt as *const [u8; 256]) }; // ECS offset needs to be accounted for
+            let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
 
             // borrow checker
             let raw_clone = raw_header;
