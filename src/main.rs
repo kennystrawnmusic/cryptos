@@ -181,7 +181,7 @@ pub fn get_next_usable_frame() -> PhysFrame {
 
 /// Convenient wrapper for getting the physical memory offset
 pub fn get_phys_offset() -> u64 {
-    *get_boot_info().physical_memory_offset.as_ref().unwrap()
+    *(get_boot_info().physical_memory_offset.as_ref().unwrap())
 }
 
 pub static INTERRUPT_MODEL: OnceCell<InterruptModel<Global>> = OnceCell::uninit();

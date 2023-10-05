@@ -791,7 +791,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             }
 
             // borrow checker
-            let raw_clone_2 = raw_header.clone();
+            let raw_clone_2 = raw_header;
             let header_clone_2 = Header::try_from(raw_clone_2.as_slice()).unwrap();
 
             debug!("Interrupt pin: {:#?}", header.interrupt_pin);
@@ -805,14 +805,10 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 None
             };
 
-            let msix = if let Some(caps) = caps {
-                Some(
-                    caps.flatten()
-                        .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_))),
-                )
-            } else {
-                None
-            };
+            let msix = caps.map(|caps| {
+                caps.flatten()
+                    .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)))
+            });
 
             if let Some(msix) = msix {
                 info!("MSI-X: {:#?}", msix.map(|m| m.kind));

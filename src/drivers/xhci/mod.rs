@@ -157,9 +157,7 @@ impl XhciImpl {
                     })
                     .expect("Controller not found");
 
-                let mut caps = Capabilities::new(&raw, &header)
-                    .map(|cap| cap.ok())
-                    .flatten();
+                let mut caps = Capabilities::new(&raw, &header).filter_map(|cap| cap.ok());
                 let msix = caps.find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
 
                 if let Some(msix) = msix {
