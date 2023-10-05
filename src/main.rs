@@ -208,7 +208,7 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
     let mut deduped_scan = Vec::new();
 
     // Will add support for more addresses here when I can get the allocator to quit panicking
-    for addr in mcfg_brute_force_inner(0x0u32..0x1000u32).flatten().dedup() {
+    for addr in mcfg_brute_force_inner(0x0..0x1000).flatten().dedup() {
         deduped_scan.push(addr);
         deduped_scan.dedup();
     }
