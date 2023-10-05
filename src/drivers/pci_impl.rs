@@ -753,7 +753,9 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             // borrow checker
             let header_clone = header.clone();
 
-            PCI_TABLE.write().register_headers(*raw_clone.split_array_ref::<64>().0, header_clone);
+            PCI_TABLE
+                .write()
+                .register_headers(*raw_clone.split_array_ref::<64>().0, header_clone);
 
             if let DeviceKind::Unknown =
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
@@ -778,11 +780,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             let caps = if header.capabilities_pointer != 0 {
                 Some(
-                    Capabilities::new(
-                        &raw_clone_2[DDR_OFFSET..ECS_OFFSET],
-                        &header_clone_2,
-                    )
-                    .map(|cap| cap.ok()),
+                    Capabilities::new(&raw_clone_2[DDR_OFFSET..ECS_OFFSET], &header_clone_2)
+                        .map(|cap| cap.ok()),
                 )
             } else {
                 None

@@ -1071,7 +1071,7 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            info!("ABAR: {:#x}", &abar);
+            debug!("ABAR: {:#x}", &abar);
 
             let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
             let abar_virt = abar_test_page.start_address().as_u64() + get_phys_offset();
