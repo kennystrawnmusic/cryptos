@@ -43,6 +43,8 @@ use {
 use itertools::Itertools;
 use log::*;
 
+static DEDUPED_SCAN: RwLock<Vec<DeviceKind>> = RwLock::new(Vec::new());
+
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
 pub static PCI_TABLE: RwLock<PciTable> = RwLock::new(PciTable::new());
@@ -767,7 +769,15 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
             {
                 continue; // don't print unknown devices
+            } else if DEDUPED_SCAN.read().contains(&DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)) {
+                continue; // don't print duplicates
             } else {
+                DEDUPED_SCAN.write().push(DeviceKind::new(
+                    header.class_code.base as u32,
+                    header.class_code.sub as u32,
+                ));
+                DEDUPED_SCAN.write().dedup();
+                
                 info!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
                     header.vendor_id,
