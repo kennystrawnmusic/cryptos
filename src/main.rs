@@ -69,8 +69,8 @@ use core::{
     marker::PhantomData,
     mem::MaybeUninit,
     ops::{
-        Add, AddAssign, BitAnd, BitOr, DerefMut, Div, DivAssign, Mul, MulAssign, Not, Sub,
-        SubAssign, Range,
+        Add, AddAssign, BitAnd, BitOr, DerefMut, Div, DivAssign, Mul, MulAssign, Not, Range, Sub,
+        SubAssign,
     },
     panic::PanicInfo,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},

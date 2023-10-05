@@ -769,7 +769,10 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
             {
                 continue; // don't print unknown devices
-            } else if DEDUPED_SCAN.read().contains(&DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)) {
+            } else if DEDUPED_SCAN.read().contains(&DeviceKind::new(
+                header.class_code.base as u32,
+                header.class_code.sub as u32,
+            )) {
                 continue; // don't print duplicates
             } else {
                 DEDUPED_SCAN.write().push(DeviceKind::new(
@@ -777,7 +780,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.class_code.sub as u32,
                 ));
                 DEDUPED_SCAN.write().dedup();
-                
+
                 info!(
                     "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
                     header.vendor_id,

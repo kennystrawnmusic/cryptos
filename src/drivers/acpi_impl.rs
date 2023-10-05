@@ -23,8 +23,10 @@ use x86_64::{
 };
 
 use crate::{
+    apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    unmap_page, MAPPER, apic_impl::get_active_lapic, pci_impl::PCI_DRIVER_COUNT,
+    pci_impl::PCI_DRIVER_COUNT,
+    unmap_page, MAPPER,
 };
 
 use {
@@ -647,7 +649,9 @@ pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
             info!("Setting up interrupts...");
             crate::apic_impl::init_all_available_apics();
 
-            info!("Max LAPIC LVT entry: {:#x}", unsafe { get_active_lapic().max_lvt_entry() });
+            info!("Max LAPIC LVT entry: {:#x}", unsafe {
+                get_active_lapic().max_lvt_entry()
+            });
         }
 
         return Some(a);

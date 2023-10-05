@@ -111,7 +111,7 @@ lazy_static! {
         idt[151].set_handler_fn(ahci);
         RwLock::new(idt)
     };
-    
+
     // borrow checker
     pub static ref IDT_CLONE: InterruptDescriptorTable = IDT.read().clone();
 }
