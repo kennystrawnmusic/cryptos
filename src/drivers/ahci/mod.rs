@@ -1077,7 +1077,7 @@ impl AhciProtected {
             for port in self.ports.iter().filter(|p| p.is_some()) {
                 if let Some(port) = port {
                     let buffer = &mut [0u8; 512];
-                    let sector = 2000;
+                    let sector = 0;
 
                     if port.read(sector, buffer).is_some() {
                         debug!("Read sector {:?}: {:?}", sector, buffer);
