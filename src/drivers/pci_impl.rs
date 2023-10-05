@@ -805,13 +805,13 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 None
             };
 
-            let msix = caps.map(|caps| {
+            let msix = caps.and_then(|caps| {
                 caps.flatten()
                     .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)))
             });
 
             if let Some(msix) = msix {
-                info!("MSI-X: {:#?}", msix.map(|m| m.kind));
+                info!("MSI-X: {:#?}", msix.kind);
 
                 let mut _msixdt =
                     Vec::<extern "x86-interrupt" fn() -> InterruptStackFrame>::with_capacity(2048);
