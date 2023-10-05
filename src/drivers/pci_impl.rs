@@ -743,17 +743,17 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     | PageTableFlags::WRITE_THROUGH
             );
 
-            let raw_header = unsafe { *(virt as *const [u8; 64]) };
+            let raw_header = unsafe { *(virt as *const [u8; 256]) }; // ECS offset needs to be accounted for
 
             // borrow checker
             let raw_clone = raw_header;
 
-            let mut header = pcics::Header::from(raw_header);
+            let mut header = Header::try_from(raw_header.as_slice()).unwrap();
 
             // borrow checker
             let header_clone = header.clone();
 
-            PCI_TABLE.write().register_headers(raw_clone, header_clone);
+            PCI_TABLE.write().register_headers(*raw_clone.split_array_ref::<64>().0, header_clone);
 
             if let DeviceKind::Unknown =
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
@@ -771,24 +771,35 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             }
 
             // borrow checker
-            // let raw_clone_2 = raw_header.clone();
-            // let header_clone_2 = header.clone();
+            let raw_clone_2 = raw_header.clone();
+            let header_clone_2 = Header::try_from(raw_clone_2.as_slice()).unwrap();
 
             debug!("Interrupt pin: {:#?}", header.interrupt_pin);
 
-            // let caps = Capabilities::new(
-            //     &raw_clone_2[(DDR_OFFSET / 8)..(ECS_OFFSET / 8)], // bytes, not bits
-            //     &header_clone_2,
-            // )
-            // .map(|cap| cap.ok());
-        
-            // let msix = caps
-            //     .flatten()
-            //     .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)));
+            let caps = if header.capabilities_pointer != 0 {
+                Some(
+                    Capabilities::new(
+                        &raw_clone_2[DDR_OFFSET..ECS_OFFSET],
+                        &header_clone_2,
+                    )
+                    .map(|cap| cap.ok()),
+                )
+            } else {
+                None
+            };
 
-            // if let Some(msix) = msix {
-            //     info!("MSI-X: {:#?}", msix.kind);
-            // }
+            let msix = if let Some(caps) = caps {
+                Some(
+                    caps.flatten()
+                        .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_))),
+                )
+            } else {
+                None
+            };
+
+            if let Some(msix) = msix {
+                info!("MSI-X: {:#?}", msix.map(|m| m.kind));
+            }
 
             for driver in &mut PCI_TABLE.write().devices {
                 // can't declare these earlier than this without pissing off the borrow checker

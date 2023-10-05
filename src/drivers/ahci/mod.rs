@@ -769,7 +769,7 @@ impl HbaPort {
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
             if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
-                info!("AHCI: enabling port {}", port);
+                debug!("AHCI: enabling port {}", port);
             }
 
             self.start();
@@ -1004,7 +1004,7 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        info!(
+        debug!(
             "AHCI: controller version {}.{}",
             major_version, minor_version
         );
@@ -1019,7 +1019,7 @@ impl AhciProtected {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
 
-                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
+                    debug!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
 
                     let port = Arc::new(AhciPort::new(address));
 
@@ -1104,7 +1104,7 @@ impl AhciProtected {
                     let sector = 2000;
 
                     if port.read(sector, buffer).is_some() {
-                        info!("Read sector {:?}: {:?}", sector, buffer);
+                        debug!("Read sector {:?}: {:?}", sector, buffer);
                     } else {
                         warn!("Couldn't read any data")
                     }
@@ -1140,7 +1140,7 @@ impl FOSSPciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header) {
         // keeps restarting endlessly if I don't put this check in here
         if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
-            info!("AHCI: Initializing");
+            debug!("AHCI: Initializing");
             get_ahci().lock().start_driver(header);
         }
     }

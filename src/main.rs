@@ -17,7 +17,8 @@
     core_intrinsics,
     intrinsics,
     extract_if,
-    strict_provenance
+    strict_provenance,
+    split_array,
 )]
 #![allow(internal_features)]
 #![allow(unused_imports)]
