@@ -208,7 +208,8 @@ bitflags! {
     }
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn outb(port: u16, value: u8) {
     asm!(
@@ -219,7 +220,8 @@ pub unsafe fn outb(port: u16, value: u8) {
     );
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn inb(port: u16) -> u8 {
     let ret: u8;
@@ -234,7 +236,8 @@ pub unsafe fn inb(port: u16) -> u8 {
     ret
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn outw(port: u16, value: u16) {
     asm!(
@@ -245,7 +248,8 @@ pub unsafe fn outw(port: u16, value: u16) {
     );
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn outl(port: u16, value: u32) {
     asm!(
@@ -256,7 +260,8 @@ pub unsafe fn outl(port: u16, value: u32) {
     );
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn inl(port: u16) -> u32 {
     let ret: u32;
@@ -271,7 +276,8 @@ pub unsafe fn inl(port: u16) -> u32 {
     ret
 }
 
-#[allow(clippy::missing_safety_doc)] // TODO: document
+/// ### Safety
+/// Uses inline assembly
 #[inline]
 pub unsafe fn inw(port: u16) -> u16 {
     let ret: u16;
@@ -811,10 +817,11 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             });
 
             if let Some(msix) = msix {
-                info!("MSI-X: {:#?}", msix.kind);
+                if let CapabilityKind::MsiX(mut msix) = msix.kind {
+                    msix.message_control.msi_x_enable = true;
 
-                let mut _msixdt =
-                    Vec::<extern "x86-interrupt" fn() -> InterruptStackFrame>::with_capacity(2048);
+                    info!("MSI-X: {:#?}", msix);
+                }
             }
 
             for driver in &mut PCI_TABLE.write().devices {

@@ -104,6 +104,7 @@ lazy_static! {
         idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
         idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
         idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
+        idt[0x80].set_handler_fn(syscall);
 
         // Vector 100 = IPI_WAKE handler as task scheduler
         // performance is the obvious reason why I'm doing this
@@ -491,6 +492,10 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     }
 
     unsafe { get_active_lapic().end_of_interrupt() };
+}
+
+pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
+    todo!("Syscall handler");
 }
 
 #[inline(always)]
