@@ -916,7 +916,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             let _ = aml_route(&header);
 
             info!(
-                "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
+                "PCI device {:04x?}:{:04x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
                 header.vendor_id,
                 header.device_id,
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
