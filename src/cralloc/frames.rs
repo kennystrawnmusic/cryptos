@@ -172,8 +172,11 @@ macro_rules! unmap_page {
                     // Skip unmap as page never existed to begin with
                     None
                 }
-                UnmapError::InvalidFrameAddress(_) => {
-                    panic!("The address you attempted to unmap from doesn't exist")
+                UnmapError::InvalidFrameAddress(err) => {
+                    panic!(
+                        "The address you attempted to unmap from doesn't exist: {:?}",
+                        err
+                    )
                 }
             },
         };

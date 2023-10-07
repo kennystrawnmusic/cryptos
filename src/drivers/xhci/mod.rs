@@ -1,4 +1,4 @@
-use alloc::{collections::VecDeque, vec::Vec, sync::Arc};
+use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use conquer_once::spin::OnceCell;
 use core::{ptr::addr_of, sync::atomic::AtomicU64};
 use x86_64::structures::paging::{Mapper, PageTableFlags, Size4KiB};
@@ -6,7 +6,9 @@ use x86_64::structures::paging::{Mapper, PageTableFlags, Size4KiB};
 use crate::{
     cralloc::frames::XhciMapper,
     get_phys_offset, map_page,
-    pci_impl::{DeviceKind, FOSSPciDeviceHandle, PCI_TABLE, PciDevice, register_device_driver, Vendor},
+    pci_impl::{
+        register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
+    },
     FRAME_ALLOCATOR,
 };
 use pcics::{
@@ -18,7 +20,7 @@ use pcics::{
     header::HeaderType,
     Capabilities, Header,
 };
-use spin::{RwLock, Once};
+use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
     context::Slot,
@@ -144,7 +146,9 @@ impl XhciImpl {
 pub(crate) static DRIVER: Once<Arc<XhciImpl>> = Once::new();
 
 pub(crate) fn get_xhci<'a>() -> &'a Arc<XhciImpl> {
-    DRIVER.get().expect("Attempt to get XHCI controller before initializing it")
+    DRIVER
+        .get()
+        .expect("Attempt to get XHCI controller before initializing it")
 }
 
 pub fn xhci_init() {
@@ -152,7 +156,10 @@ pub fn xhci_init() {
         let guard = PCI_TABLE.read();
         let header = guard.headers.iter().find(|h| {
             matches!(
-                (Vendor::new(h.vendor_id as u32), DeviceKind::new(h.vendor_id as u32, h.device_id as u32)),
+                (
+                    Vendor::new(h.vendor_id as u32),
+                    DeviceKind::new(h.vendor_id as u32, h.device_id as u32)
+                ),
                 (_, DeviceKind::UsbController)
             )
         });
@@ -166,10 +173,7 @@ pub fn xhci_init() {
 
 impl FOSSPciDeviceHandle for XhciImpl {
     fn handles(&self, vendor_id: crate::pci_impl::Vendor, device_id: DeviceKind) -> bool {
-        matches!(
-            (vendor_id, device_id),
-            (_, DeviceKind::UsbController)
-        )
+        matches!((vendor_id, device_id), (_, DeviceKind::UsbController))
     }
 
     fn start(&self, header: &mut pcics::Header) {

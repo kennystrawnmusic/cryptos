@@ -34,7 +34,8 @@ use crate::{
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
-    interrupts::irqalloc, xhci::{xhci_init, XhciImpl},
+    interrupts::irqalloc,
+    xhci::{xhci_init, XhciImpl},
 };
 
 use {
@@ -909,9 +910,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             // borrow checker
             let header_clone = header.clone();
 
-            PCI_TABLE
-                .write()
-                .register_headers(raw_clone, header_clone);
+            PCI_TABLE.write().register_headers(raw_clone, header_clone);
 
             let _ = aml_route(&header);
 
@@ -973,7 +972,9 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    if let DeviceKind::UsbController = DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32) {
+                    if let DeviceKind::UsbController =
+                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+                    {
                         PCI_TABLE
                             .write()
                             .register_headers(raw_clone_2, header_clone_2);
