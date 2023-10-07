@@ -3,6 +3,8 @@
 
 use alloc::{rc::Rc, vec};
 use spin::RwLock;
+use x2apic::{ioapic::IrqMode, lapic::xapic_base};
+use xhci::accessor::single::ReadWrite;
 
 use core::{
     iter::Map,
@@ -13,7 +15,7 @@ use core::{
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::{
-    capabilities::CapabilityKind,
+    capabilities::{CapabilityKind, msi_x::Bir},
     header::{self, ClassCode, InterruptPin},
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
@@ -28,7 +30,7 @@ use x86_64::{
 use crate::{
     acpi_impl::{aml_init, aml_route, system_shutdown, KernelAcpi},
     arch::x86_64::interrupts::{self, IDT},
-    get_mcfg, mcfg_brute_force,
+    get_mcfg, mcfg_brute_force, cralloc::frames::XhciMapper, apic_impl::get_active_lapic,
 };
 
 use {
@@ -208,6 +210,19 @@ bitflags! {
     }
 }
 
+/// BAR parser
+pub fn parse_bar(base: u64, bir: Bir) -> u64 {
+    match bir {
+        Bir::Bar10h => base + 0x10,
+        Bir::Bar14h => base + 0x14,
+        Bir::Bar18h => base + 0x18,
+        Bir::Bar1Ch => base + 0x1C,
+        Bir::Bar20h => base + 0x20,
+        Bir::Bar24h => base + 0x24,
+        Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
+    }
+}
+
 /// ### Safety
 /// Uses inline assembly
 #[inline]
@@ -294,6 +309,45 @@ pub unsafe fn inw(port: u16) -> u16 {
 
 // const PCI_CONFIG_ADDRESS_PORT: u16 = 0xCF8;
 // const PCI_CONFIG_DATA_PORT: u16 = 0xCFC;
+
+/// Struct representing a single MSI-X message
+#[repr(C)]
+pub struct Message {
+    addr_low: ReadWrite<u32, XhciMapper>,
+    addr_high: ReadWrite<u32, XhciMapper>,
+    data: ReadWrite<u32, XhciMapper>,
+    mask: ReadWrite<u32, XhciMapper>,
+}
+
+impl Message {
+    pub fn is_masked(&self) -> bool {
+        self.mask.read_volatile().get_bit(0)
+    }
+
+    pub fn set_mask(&mut self, mask: bool) {
+        self.mask.write_volatile(*self.mask.read_volatile().set_bit(0, mask));
+        self.mask.write_volatile(*self.mask.read_volatile().set_bit(30, mask));
+    }
+
+    pub fn set(&mut self, vector: u8, delivery_mode: IrqMode) {
+        let mut data = 0;
+        data.set_bits(0..8, vector as u32);
+        data.set_bits(8..11, delivery_mode as u32);
+        data.set_bit(14, false);
+        data.set_bit(15, false);
+
+        // reserved values
+        data.set_bits(16..32, 0);
+
+        let mut addr = 0;
+        addr.set_bits(12..20, unsafe { get_active_lapic().id() });
+        addr.set_bits(20..32, unsafe { xapic_base().get_bits(20..32) as u32 } );
+
+        self.data.write_volatile(data);
+        self.addr_low.write_volatile(addr);
+        self.addr_high.write_volatile(0);
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Vendor {
