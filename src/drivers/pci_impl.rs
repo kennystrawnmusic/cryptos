@@ -341,6 +341,9 @@ impl Message {
 
         let mut addr = 0;
         addr.set_bits(12..20, unsafe { get_active_lapic().id() });
+
+        // Use the IA32_APIC_BASE MSR to ensure that these bits actually match the first three bits
+        // of the address of the APIC on the system instead of hardcoding them.
         addr.set_bits(20..32, unsafe { xapic_base().get_bits(20..32) as u32 } );
 
         self.data.write_volatile(data);
