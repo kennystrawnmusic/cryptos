@@ -889,13 +889,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     let raw_addr = addr_of!(header) as u64;
                     let raw_orig = (raw_addr - get_phys_offset()) as u32;
 
-                    let _msg_control = KernelAcpi::read_pci_u16_outer(
-                        raw_orig.to_be_bytes()[0] as u16,
-                        raw_orig.to_be_bytes()[1],
-                        raw_orig.to_be_bytes()[2],
-                        raw_orig.to_be_bytes()[3],
-                        0x2,
-                    );
+                    let _msg_control = msix.message_control;
                 }
             }
 
