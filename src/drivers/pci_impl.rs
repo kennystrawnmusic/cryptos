@@ -890,22 +890,16 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 .write()
                 .register_headers(*raw_clone.split_array_ref::<64>().0, header_clone);
 
-            if let DeviceKind::Unknown =
-                DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
-            {
-                continue; // don't print unknown devices
-            } else {
-                let _ = aml_route(&header);
+            let _ = aml_route(&header);
 
-                info!(
-                    "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
-                    header.vendor_id,
-                    header.device_id,
-                    DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
-                    Vendor::new(header.vendor_id as u32),
-                    header.capabilities_pointer
-                );
-            }
+            info!(
+                "PCI device {:x?}:{:x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
+                header.vendor_id,
+                header.device_id,
+                DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
+                Vendor::new(header.vendor_id as u32),
+                header.capabilities_pointer
+            );
 
             // borrow checker
             let raw_clone_2 = raw_header;
