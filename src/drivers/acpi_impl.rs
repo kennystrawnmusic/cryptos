@@ -66,119 +66,94 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 #[derive(Clone)]
 pub struct KernelAcpi;
 
-// Wrapper implementation to allow public access to trait methods
-impl KernelAcpi {    
-    pub fn unmap_physical_region_outer<T>(region: &PhysicalMapping<Self, T>) {
-        KernelAcpi::unmap_physical_region(region);
+// Wrapper implementation to allow public access to AML handling trait methods
+impl KernelAcpi {
+    pub fn read_u8_outer(address: usize) -> u8 {
+        use aml::Handler;
+        Self::read_u8(&Self, address)
     }
 
-    pub fn read_u8_outer(&self, address: usize) -> u8 {
+    pub fn read_u16_outer(address: usize) -> u16 {
         use aml::Handler;
-        self.read_u8(address)
+        Self::read_u16(&Self, address)
     }
 
-    pub fn read_u16_outer(&self, address: usize) -> u16 {
+    pub fn read_u32_outer(address: usize) -> u32 {
         use aml::Handler;
-        self.read_u16(address)
+        Self::read_u32(&Self, address)
     }
 
-    pub fn read_u32_outer(&self, address: usize) -> u32 {
+    pub fn read_u64_outer(address: usize) -> u64 {
         use aml::Handler;
-        self.read_u32(address)
+        Self::read_u64(&Self, address)
     }
 
-    pub fn read_u64_outer(&self, address: usize) -> u64 {
+    pub fn write_u8_outer(address: usize, value: u8) {
         use aml::Handler;
-        self.read_u64(address)
+        Self::write_u8(&mut Self, address, value)
     }
 
-    pub fn write_u8_outer(&mut self, address: usize, value: u8) {
+    pub fn write_u16_outer(address: usize, value: u16) {
         use aml::Handler;
-        self.write_u8(address, value)
+        Self::write_u16(&mut Self, address, value)
     }
 
-    pub fn write_u16_outer(&mut self, address: usize, value: u16) {
+    pub fn write_u32_outer(address: usize, value: u32) {
         use aml::Handler;
-        self.write_u16(address, value)
+        Self::write_u32(&mut Self, address, value)
     }
 
-    pub fn write_u32_outer(&mut self, address: usize, value: u32) {
+    pub fn write_u64_outer(address: usize, value: u64) {
         use aml::Handler;
-        self.write_u32(address, value)
+        Self::write_u64(&mut Self, address, value)
     }
 
-    pub fn write_u64_outer(&mut self, address: usize, value: u64) {
+    pub fn read_io_u8_outer(port: u16) -> u8 {
         use aml::Handler;
-        self.write_u64(address, value)
+        Self::read_io_u8(&Self, port)
     }
 
-    pub fn read_io_u8_outer(&self, port: u16) -> u8 {
+    pub fn read_io_u16_outer(port: u16) -> u16 {
         use aml::Handler;
-        self.read_io_u8(port)
+        Self::read_io_u16(&Self, port)
     }
 
-    pub fn read_io_u16_outer(&self, port: u16) -> u16 {
+    pub fn read_io_u32_outer(port: u16) -> u32 {
         use aml::Handler;
-        self.read_io_u16(port)
+        Self::read_io_u32(&Self, port)
     }
 
-    pub fn read_io_u32_outer(&self, port: u16) -> u32 {
+    pub fn write_io_u8_outer(port: u16, value: u8) {
         use aml::Handler;
-        self.read_io_u32(port)
+        Self::write_io_u8(&Self, port, value)
     }
 
-    pub fn write_io_u8_outer(&self, port: u16, value: u8) {
+    pub fn write_io_u16_outer(port: u16, value: u16) {
         use aml::Handler;
-        self.write_io_u8(port, value)
+        Self::write_io_u16(&Self, port, value)
     }
 
-    pub fn write_io_u16_outer(&self, port: u16, value: u16) {
+    pub fn write_io_u32_outer(port: u16, value: u32) {
         use aml::Handler;
-        self.write_io_u16(port, value)
+        Self::write_io_u32(&Self, port, value)
     }
 
-    pub fn write_io_u32_outer(&self, port: u16, value: u32) {
+    pub fn read_pci_u8_outer(segment: u16, bus: u8, device: u8, function: u8, offset: u16) -> u8 {
         use aml::Handler;
-        self.write_io_u32(port, value)
+        Self::read_pci_u8(&Self, segment, bus, device, function, offset)
     }
 
-    pub fn read_pci_u8_outer(
-        &self,
-        segment: u16,
-        bus: u8,
-        device: u8,
-        function: u8,
-        offset: u16,
-    ) -> u8 {
+    pub fn read_pci_u16_outer(segment: u16, bus: u8, device: u8, function: u8, offset: u16) -> u16 {
         use aml::Handler;
-        self.read_pci_u8(segment, bus, device, function, offset)
+        Self::read_pci_u16(&Self, segment, bus, device, function, offset)
     }
 
-    pub fn read_pci_u16_outer(
-        segment: u16,
-        bus: u8,
-        device: u8,
-        function: u8,
-        offset: u16,
-    ) -> u16 {
+    pub fn read_pci_u32_outer(segment: u16, bus: u8, device: u8, function: u8, offset: u16) -> u32 {
         use aml::Handler;
-        KernelAcpi::read_pci_u16(&Self, segment, bus, device, function, offset)
-    }
-
-    pub fn read_pci_u32_outer(
-        &self,
-        segment: u16,
-        bus: u8,
-        device: u8,
-        function: u8,
-        offset: u16,
-    ) -> u32 {
-        use aml::Handler;
-        self.read_pci_u32(segment, bus, device, function, offset)
+        Self::read_pci_u32(&Self, segment, bus, device, function, offset)
     }
 
     pub fn write_pci_u8_outer(
-        &self,
         segment: u16,
         bus: u8,
         device: u8,
@@ -187,11 +162,10 @@ impl KernelAcpi {
         value: u8,
     ) {
         use aml::Handler;
-        self.write_pci_u8(segment, bus, device, function, offset, value)
+        Self::write_pci_u8(&Self, segment, bus, device, function, offset, value)
     }
 
     pub fn write_pci_u16_outer(
-        &self,
         segment: u16,
         bus: u8,
         device: u8,
@@ -200,11 +174,10 @@ impl KernelAcpi {
         value: u16,
     ) {
         use aml::Handler;
-        self.write_pci_u16(segment, bus, device, function, offset, value)
+        Self::write_pci_u16(&Self, segment, bus, device, function, offset, value)
     }
 
     pub fn write_pci_u32_outer(
-        &self,
         segment: u16,
         bus: u8,
         device: u8,
@@ -213,7 +186,7 @@ impl KernelAcpi {
         value: u32,
     ) {
         use aml::Handler;
-        self.write_pci_u32(segment, bus, device, function, offset, value)
+        Self::write_pci_u32(&Self, segment, bus, device, function, offset, value)
     }
 
     pub fn stall_outer(&self, microseconds: u64) {

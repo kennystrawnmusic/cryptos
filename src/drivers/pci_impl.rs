@@ -9,7 +9,8 @@ use xhci::accessor::single::ReadWrite;
 use core::{
     iter::Map,
     mem::ManuallyDrop,
-    sync::atomic::{AtomicUsize, Ordering}, ptr::addr_of,
+    ptr::addr_of,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
 use acpi::AcpiTables;
@@ -32,7 +33,7 @@ use crate::{
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
-    get_mcfg, mcfg_brute_force, get_phys_offset,
+    get_mcfg, get_phys_offset, mcfg_brute_force,
 };
 
 use {
