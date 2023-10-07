@@ -329,9 +329,9 @@ impl Message {
         self.mask.write_volatile(*self.mask.read_volatile().set_bit(30, mask));
     }
 
-    pub fn set(&mut self, vector: u8, delivery_mode: IrqMode) {
+    pub fn set(&mut self, irq: u8, delivery_mode: IrqMode) {
         let mut data = 0;
-        data.set_bits(0..8, vector as u32);
+        data.set_bits(0..8, irq as u32);
         data.set_bits(8..11, delivery_mode as u32);
         data.set_bit(14, false);
         data.set_bit(15, false);
