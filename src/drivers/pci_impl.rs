@@ -71,8 +71,7 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
     let mut deduped_scan = Vec::new();
     let mut deduped_kinds = Vec::new();
 
-    // Will add support for more addresses here when I can get the allocator to quit panicking
-    for addr in mcfg_brute_force_inner(0x0..0x1000).flatten().dedup() {
+    for addr in mcfg_brute_force_inner(0x0..0xffff).flatten().dedup() {
         let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
         let virt = test_page.start_address().as_u64() + get_phys_offset();
 
