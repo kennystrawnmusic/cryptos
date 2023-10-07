@@ -194,7 +194,7 @@ pub struct XhciMapper;
 impl xhci::accessor::Mapper for XhciMapper {
     unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
         let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys_start as u64));
-        
+
         map_page!(
             phys_start,
             test.start_address().as_u64(),
@@ -210,7 +210,9 @@ impl xhci::accessor::Mapper for XhciMapper {
 
             while i < bytes {
                 let phys = phys_start + i;
-                let virt = phys_start + i;
+                let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys as u64));
+
+                let virt = test.start_address().as_u64();
 
                 map_page!(
                     phys,
