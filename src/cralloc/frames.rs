@@ -193,11 +193,10 @@ pub struct XhciMapper;
 
 impl xhci::accessor::Mapper for XhciMapper {
     unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
-        let virt_start = phys_start as u64;
-
+        // Identity-map to attempt to avoid address overflows
         map_page!(
             phys_start,
-            virt_start,
+            phys_start,
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -210,7 +209,7 @@ impl xhci::accessor::Mapper for XhciMapper {
 
             while i < bytes {
                 let phys = phys_start + i;
-                let virt = virt_start + i as u64;
+                let virt = phys_start + i;
 
                 map_page!(
                     phys,
@@ -226,7 +225,7 @@ impl xhci::accessor::Mapper for XhciMapper {
             }
         }
 
-        NonZeroUsize::new(virt_start as usize).unwrap()
+        NonZeroUsize::new(phys_start as usize).unwrap()
     }
 
     fn unmap(&mut self, virt_start: usize, bytes: usize) {

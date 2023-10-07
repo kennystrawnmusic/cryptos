@@ -925,14 +925,17 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     // borrow checker
                     let msix_clone = msix.clone();
 
-                    let msg_control = &mut msix.message_control;
+                    let mut msg_control = msix.message_control.clone();
 
                     let table_len = msg_control.table_size as u64;
                     let table = msix_clone.table;
+                    
+                    let parsed = parse_bir(raw_header_addr, table);
+                    let bar_offset = parsed & !0b111;
 
                     let _msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
-                            (parse_bir(raw_header_addr, table) + 4 + table_len) as *mut Message,
+                            (parsed + bar_offset + 4 + table_len) as *mut Message,
                             table_len as usize,
                         )
                     }
@@ -951,6 +954,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     // Disable legacy interrupts
                     header.command.interrupt_disable = true;
+                    msix.message_control = msg_control;
 
                     info!("MSI-X: {:#?}", msix);
                 }
