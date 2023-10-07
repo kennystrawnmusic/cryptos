@@ -351,6 +351,7 @@ impl Message {
 
         // Use the IA32_APIC_BASE MSR to ensure that these bits actually match the first 12 bits
         // of the address of the APIC on the system instead of hardcoding them.
+        // This ensures compatibility with non-compliant hardware.
         addr.set_bits(20..32, unsafe { xapic_base().get_bits(20..32) as u32 });
 
         self.data.write_volatile(data);
