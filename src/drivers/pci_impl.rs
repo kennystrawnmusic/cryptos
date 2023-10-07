@@ -1002,7 +1002,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
     }
 }
 
-#[allow(dead_code)] // not ready to do this
 extern "x86-interrupt" fn msi_x(_: InterruptStackFrame) {
     info!("MSI-X interrupt");
 }
