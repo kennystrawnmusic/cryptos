@@ -9,7 +9,7 @@ use xhci::accessor::single::ReadWrite;
 use core::{
     iter::Map,
     mem::ManuallyDrop,
-    ptr::addr_of,
+    ptr::{addr_of, addr_of_mut},
     sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -33,7 +33,9 @@ use crate::{
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
-    get_mcfg, get_phys_offset, mcfg_brute_force,
+    get_mcfg, get_phys_offset,
+    interrupts::irqalloc,
+    mcfg_brute_force,
 };
 
 use {
@@ -804,7 +806,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
         for dev in mcfg_brute_force() {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
 
-            let virt = test_page.start_address().as_u64() + crate::get_phys_offset();
+            // Identity map to avoid address overflow
+            let virt = test_page.start_address().as_u64();
 
             map_page!(
                 dev,
@@ -817,6 +820,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
+            let raw_header_addr = unsafe { *(virt as *const u64) };
 
             // borrow checker
             let raw_clone = raw_header;
@@ -880,13 +884,36 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             if let Some(msix) = msix {
                 if let CapabilityKind::MsiX(mut msix) = msix.kind {
-                    msix.message_control.msi_x_enable = true;
+                    // borrow checker
+                    let msix_clone = msix.clone();
+
+                    let msg_control = &mut msix.message_control;
+
+                    let table_len = msg_control.table_size as u64;
+                    let bir = msix_clone.table.bir;
+
+                    let _msg_table = unsafe {
+                        core::slice::from_raw_parts_mut(
+                            (parse_bar(raw_header_addr, bir) + 4 + table_len) as *mut Message,
+                            table_len as usize,
+                        )
+                    }
+                    .iter_mut();
+
+                    // Has tendency to attempt to access invalid address 0x10000710d380ca which overflows bit 48
+                    // for entry in _msg_table {
+                    //     let irq = irqalloc();
+                    //     entry.route_irq(irq, IrqMode::Fixed);
+                    //     IDT.write()[irq as usize].set_handler_fn(msi_x);
+                    // }
+
+                    msg_control.msi_x_enable = true;
+                    msg_control.function_mask = false;
+
+                    // Disable legacy interrupts
+                    header.command.interrupt_disable = true;
 
                     info!("MSI-X: {:#?}", msix);
-
-                    let _msg_table = Vec::<Message>::new();
-
-                    let _msg_control = msix.message_control;
                 }
             }
 
@@ -904,4 +931,9 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
     } else {
         panic!("MCFG table not present");
     }
+}
+
+#[allow(dead_code)] // not ready to do this
+extern "x86-interrupt" fn msi_x(_: InterruptStackFrame) {
+    info!("MSI-X interrupt");
 }

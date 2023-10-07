@@ -69,3 +69,6 @@ bootloader-boot-config = { git = "https://github.com/kennystrawnmusic/bootloader
 bootloader-x86_64-common = { git = "https://github.com/kennystrawnmusic/bootloader" }
 bootloader_api = { git = "https://github.com/kennystrawnmusic/bootloader" }
 redox_syscall = { git = "https://gitlab.redox-os.org/redox-os/syscall" }
+
+[features]
+shutdown_on_panic = []

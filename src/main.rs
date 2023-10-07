@@ -112,16 +112,15 @@ pub use drivers::*;
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     error!("Kernel panic -- not syncing: {info}");
-    loop {
-        unsafe {
-            core::arch::asm!("cli");
-            core::arch::asm!("hlt")
-        };
+    if cfg!(feature = "shutdown_on_panic") {
+        unsafe { system_shutdown() };
+    } else {
+        loop {}
     }
 }
-
 // needed to allow access outside main.rs
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 32) as u64;
+const PHYS_OFFSET: u64 = BOOT_INFO_ADDR / 128;
 const FB_ADDR: u64 = BOOT_INFO_ADDR * 2;
 
 /// Function that extracts BootInfo from raw pointer to BootInfo address
@@ -137,7 +136,7 @@ const MAPPINGS: Mappings = {
     mappings.kernel_stack = Mapping::FixedAddress(KERNEL_STACK_ADDR);
     mappings.boot_info = Mapping::FixedAddress(BOOT_INFO_ADDR);
     mappings.framebuffer = Mapping::FixedAddress(FB_ADDR);
-    mappings.physical_memory = Some(Mapping::Dynamic);
+    mappings.physical_memory = Some(Mapping::FixedAddress(PHYS_OFFSET));
     mappings.page_table_recursive = None;
     mappings.aslr = false;
     mappings.dynamic_range_start = Some(0);

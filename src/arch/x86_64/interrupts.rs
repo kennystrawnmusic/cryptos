@@ -15,7 +15,7 @@ use x86_64::{
     },
     structures::{
         gdt::SegmentSelector,
-        idt::{DescriptorTable, InterruptStackFrameValue, SelectorErrorCode},
+        idt::{DescriptorTable, Entry, InterruptStackFrameValue, SelectorErrorCode},
         paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
     PrivilegeLevel, VirtAddr,
@@ -275,35 +275,18 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
+        let virt = Cr2::read().as_u64();
+        let phys = virt - get_phys_offset();
 
-        if (Cr2::read().as_u64() as i64 - get_phys_offset() as i64) < 0 {
-            // identity-map the page
-            let virt = Cr2::read().as_u64();
-
-            map_page!(
-                virt,
-                virt,
-                Size4KiB,
-                PageTableFlags::PRESENT
-                    | PageTableFlags::WRITABLE
-                    | PageTableFlags::NO_CACHE
-                    | PageTableFlags::WRITE_THROUGH
-            );
-        } else {
-            // take physical offset into account
-            let virt = Cr2::read().as_u64();
-            let phys = virt - get_phys_offset();
-
-            map_page!(
-                phys,
-                virt,
-                Size4KiB,
-                PageTableFlags::PRESENT
-                    | PageTableFlags::WRITABLE
-                    | PageTableFlags::NO_CACHE
-                    | PageTableFlags::WRITE_THROUGH
-            );
-        }
+        map_page!(
+            phys,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
     } else if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
         // kernel mode
         panic!(
@@ -528,4 +511,14 @@ pub(crate) unsafe fn disable_interrupts() {
 #[inline(always)]
 pub(crate) unsafe fn enable_interrupts() {
     interrupts::enable();
+}
+
+pub fn irqalloc() -> u8 {
+    for i in 32..=255 {
+        if IDT.read()[i] == Entry::missing() {
+            return i as u8;
+        }
+    }
+    // we've exhausted all entries at this point
+    panic!("Out of IRQs!")
 }
