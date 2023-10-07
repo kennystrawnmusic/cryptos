@@ -329,7 +329,7 @@ impl Message {
         self.mask.write_volatile(*self.mask.read_volatile().set_bit(30, mask));
     }
 
-    pub fn set(&mut self, irq: u8, delivery_mode: IrqMode) {
+    pub fn route_irq(&mut self, irq: u8, delivery_mode: IrqMode) {
         let mut data = 0;
         data.set_bits(0..8, irq as u32);
         data.set_bits(8..11, delivery_mode as u32);
