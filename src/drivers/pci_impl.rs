@@ -34,7 +34,7 @@ use crate::{
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
-    interrupts::irqalloc, xhci::xhci_init,
+    interrupts::irqalloc, xhci::{xhci_init, XhciImpl},
 };
 
 use {
@@ -974,7 +974,10 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     msix.message_control = msg_control;
 
                     if let DeviceKind::UsbController = DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32) {
-                        xhci_init();
+                        PCI_TABLE
+                            .write()
+                            .register_headers(raw_clone_2, header_clone_2);
+                        XhciImpl::new(&header).init();
                     }
 
                     for entry in msg_table {

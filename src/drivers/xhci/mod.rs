@@ -158,7 +158,7 @@ pub fn xhci_init() {
         });
 
         let out = header.map(|h| Arc::new(XhciImpl::new(h)));
-        out.expect("XHCI controller not found")
+        out.expect("XHCI device not in the table")
     });
 
     register_device_driver(get_xhci().clone());
