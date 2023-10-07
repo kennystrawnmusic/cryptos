@@ -66,6 +66,167 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 #[derive(Clone)]
 pub struct KernelAcpi;
 
+// Wrapper implementation to allow public access to trait methods
+impl KernelAcpi {    
+    pub fn unmap_physical_region_outer<T>(region: &PhysicalMapping<Self, T>) {
+        KernelAcpi::unmap_physical_region(region);
+    }
+
+    pub fn read_u8_outer(&self, address: usize) -> u8 {
+        use aml::Handler;
+        self.read_u8(address)
+    }
+
+    pub fn read_u16_outer(&self, address: usize) -> u16 {
+        use aml::Handler;
+        self.read_u16(address)
+    }
+
+    pub fn read_u32_outer(&self, address: usize) -> u32 {
+        use aml::Handler;
+        self.read_u32(address)
+    }
+
+    pub fn read_u64_outer(&self, address: usize) -> u64 {
+        use aml::Handler;
+        self.read_u64(address)
+    }
+
+    pub fn write_u8_outer(&mut self, address: usize, value: u8) {
+        use aml::Handler;
+        self.write_u8(address, value)
+    }
+
+    pub fn write_u16_outer(&mut self, address: usize, value: u16) {
+        use aml::Handler;
+        self.write_u16(address, value)
+    }
+
+    pub fn write_u32_outer(&mut self, address: usize, value: u32) {
+        use aml::Handler;
+        self.write_u32(address, value)
+    }
+
+    pub fn write_u64_outer(&mut self, address: usize, value: u64) {
+        use aml::Handler;
+        self.write_u64(address, value)
+    }
+
+    pub fn read_io_u8_outer(&self, port: u16) -> u8 {
+        use aml::Handler;
+        self.read_io_u8(port)
+    }
+
+    pub fn read_io_u16_outer(&self, port: u16) -> u16 {
+        use aml::Handler;
+        self.read_io_u16(port)
+    }
+
+    pub fn read_io_u32_outer(&self, port: u16) -> u32 {
+        use aml::Handler;
+        self.read_io_u32(port)
+    }
+
+    pub fn write_io_u8_outer(&self, port: u16, value: u8) {
+        use aml::Handler;
+        self.write_io_u8(port, value)
+    }
+
+    pub fn write_io_u16_outer(&self, port: u16, value: u16) {
+        use aml::Handler;
+        self.write_io_u16(port, value)
+    }
+
+    pub fn write_io_u32_outer(&self, port: u16, value: u32) {
+        use aml::Handler;
+        self.write_io_u32(port, value)
+    }
+
+    pub fn read_pci_u8_outer(
+        &self,
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+    ) -> u8 {
+        use aml::Handler;
+        self.read_pci_u8(segment, bus, device, function, offset)
+    }
+
+    pub fn read_pci_u16_outer(
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+    ) -> u16 {
+        use aml::Handler;
+        KernelAcpi::read_pci_u16(&Self, segment, bus, device, function, offset)
+    }
+
+    pub fn read_pci_u32_outer(
+        &self,
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+    ) -> u32 {
+        use aml::Handler;
+        self.read_pci_u32(segment, bus, device, function, offset)
+    }
+
+    pub fn write_pci_u8_outer(
+        &self,
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+        value: u8,
+    ) {
+        use aml::Handler;
+        self.write_pci_u8(segment, bus, device, function, offset, value)
+    }
+
+    pub fn write_pci_u16_outer(
+        &self,
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+        value: u16,
+    ) {
+        use aml::Handler;
+        self.write_pci_u16(segment, bus, device, function, offset, value)
+    }
+
+    pub fn write_pci_u32_outer(
+        &self,
+        segment: u16,
+        bus: u8,
+        device: u8,
+        function: u8,
+        offset: u16,
+        value: u32,
+    ) {
+        use aml::Handler;
+        self.write_pci_u32(segment, bus, device, function, offset, value)
+    }
+
+    pub fn stall_outer(&self, microseconds: u64) {
+        use aml::Handler;
+        self.stall(microseconds)
+    }
+
+    pub fn sleep_outer(&self, milliseconds: u64) {
+        use aml::Handler;
+        self.sleep(milliseconds)
+    }
+}
+
 impl AcpiHandler for KernelAcpi {
     unsafe fn map_physical_region<T>(
         &self,

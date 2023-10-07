@@ -275,18 +275,35 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
-        let virt = Cr2::read().as_u64();
-        let phys = virt - get_phys_offset();
 
-        map_page!(
-            phys,
-            virt,
-            Size4KiB,
-            PageTableFlags::PRESENT
-                | PageTableFlags::WRITABLE
-                | PageTableFlags::NO_CACHE
-                | PageTableFlags::WRITE_THROUGH
-        );
+        if (Cr2::read().as_u64() as i64 - get_phys_offset() as i64) < 0 {
+            // identity-map the page
+            let virt = Cr2::read().as_u64();
+
+            map_page!(
+                virt,
+                virt,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
+        } else {
+            // take physical offset into account
+            let virt = Cr2::read().as_u64();
+            let phys = virt - get_phys_offset();
+
+            map_page!(
+                phys,
+                virt,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
+        }
     } else if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
         // kernel mode
         panic!(

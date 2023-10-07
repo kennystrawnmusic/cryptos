@@ -9,7 +9,7 @@ use xhci::accessor::single::ReadWrite;
 use core::{
     iter::Map,
     mem::ManuallyDrop,
-    sync::atomic::{AtomicUsize, Ordering},
+    sync::atomic::{AtomicUsize, Ordering}, ptr::addr_of,
 };
 
 use acpi::AcpiTables;
@@ -32,7 +32,7 @@ use crate::{
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
-    get_mcfg, mcfg_brute_force,
+    get_mcfg, mcfg_brute_force, get_phys_offset,
 };
 
 use {
@@ -884,6 +884,17 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     info!("MSI-X: {:#?}", msix);
 
                     let _msg_table = Vec::<Message>::new();
+
+                    let raw_addr = addr_of!(header) as u64;
+                    let raw_orig = (raw_addr - get_phys_offset()) as u32;
+
+                    let _msg_control = KernelAcpi::read_pci_u16_outer(
+                        raw_orig.to_be_bytes()[0] as u16,
+                        raw_orig.to_be_bytes()[1],
+                        raw_orig.to_be_bytes()[2],
+                        raw_orig.to_be_bytes()[3],
+                        0x2,
+                    );
                 }
             }
 
