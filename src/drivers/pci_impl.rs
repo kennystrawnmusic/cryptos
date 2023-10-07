@@ -882,6 +882,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     msix.message_control.msi_x_enable = true;
 
                     info!("MSI-X: {:#?}", msix);
+
+                    let _msg_table = Vec::<Message>::new();
                 }
             }
 
