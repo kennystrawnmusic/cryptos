@@ -921,6 +921,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             });
 
             if let Some(msix) = msix {
+                // Most of this was learned from studying Aero's implementation:
+                // https://github.com/Andy-Python-Programmer/aero/blob/master/src/aero_kernel/src/drivers/pci.rs#L99
                 if let CapabilityKind::MsiX(mut msix) = msix.kind {
                     // borrow checker
                     let msix_clone = msix.clone();
