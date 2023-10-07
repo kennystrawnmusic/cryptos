@@ -15,7 +15,7 @@ use core::{
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::{
-    capabilities::{CapabilityKind, msi_x::Bir},
+    capabilities::{msi_x::Bir, CapabilityKind},
     header::{self, ClassCode, InterruptPin},
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
@@ -29,8 +29,10 @@ use x86_64::{
 
 use crate::{
     acpi_impl::{aml_init, aml_route, system_shutdown, KernelAcpi},
+    apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
-    get_mcfg, mcfg_brute_force, cralloc::frames::XhciMapper, apic_impl::get_active_lapic,
+    cralloc::frames::XhciMapper,
+    get_mcfg, mcfg_brute_force,
 };
 
 use {
@@ -325,8 +327,10 @@ impl Message {
     }
 
     pub fn set_mask(&mut self, mask: bool) {
-        self.mask.write_volatile(*self.mask.read_volatile().set_bit(0, mask));
-        self.mask.write_volatile(*self.mask.read_volatile().set_bit(30, mask));
+        self.mask
+            .write_volatile(*self.mask.read_volatile().set_bit(0, mask));
+        self.mask
+            .write_volatile(*self.mask.read_volatile().set_bit(30, mask));
     }
 
     pub fn route_irq(&mut self, irq: u8, delivery_mode: IrqMode) {
@@ -344,7 +348,7 @@ impl Message {
 
         // Use the IA32_APIC_BASE MSR to ensure that these bits actually match the first three bits
         // of the address of the APIC on the system instead of hardcoding them.
-        addr.set_bits(20..32, unsafe { xapic_base().get_bits(20..32) as u32 } );
+        addr.set_bits(20..32, unsafe { xapic_base().get_bits(20..32) as u32 });
 
         self.data.write_volatile(data);
         self.addr_low.write_volatile(addr);
