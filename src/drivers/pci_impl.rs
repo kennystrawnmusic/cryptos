@@ -981,8 +981,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     // Disable legacy interrupts
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
-
-                    info!("MSI-X: {:#?}", msix);
                 }
             }
 
