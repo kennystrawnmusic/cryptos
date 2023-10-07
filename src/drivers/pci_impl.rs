@@ -337,6 +337,8 @@ impl Message {
     }
 
     pub fn route_irq(&mut self, irq: u8, delivery_mode: IrqMode) {
+        // Found out all of the below mainly from studying Aero's implementation
+        
         let mut data = 0;
         data.set_bits(0..8, irq as u32);
         data.set_bits(8..11, delivery_mode as u32);
