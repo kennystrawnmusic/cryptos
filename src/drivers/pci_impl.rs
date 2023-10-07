@@ -292,11 +292,11 @@ pub fn parse_bir(mut header: Header) -> u64 {
                 if let HeaderType::Normal(header) = header.header_type {
                     match msix.table.bir {
                         Bir::Bar10h => header.base_addresses.orig()[0] as u64,
-                        Bir::Bar14h => header.base_addresses.orig()[1] as u64,
-                        Bir::Bar18h => header.base_addresses.orig()[2] as u64,
-                        Bir::Bar1Ch => header.base_addresses.orig()[3] as u64,
-                        Bir::Bar20h => header.base_addresses.orig()[4] as u64,
-                        Bir::Bar24h => header.base_addresses.orig()[5] as u64,
+                        Bir::Bar14h => header.base_addresses.orig()[1] as u64 + 0x14,
+                        Bir::Bar18h => header.base_addresses.orig()[2] as u64 + 0x18,
+                        Bir::Bar1Ch => header.base_addresses.orig()[3] as u64 + 0x1C,
+                        Bir::Bar20h => header.base_addresses.orig()[4] as u64 + 0x20,
+                        Bir::Bar24h => header.base_addresses.orig()[5] as u64 + 0x24,
                         Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
                     }
                 } else {
@@ -981,6 +981,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     // Disable legacy interrupts
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
+
+                    info!("MSI-X: {:#?}", msix);
                 }
             }
 
