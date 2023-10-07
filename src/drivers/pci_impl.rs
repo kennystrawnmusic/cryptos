@@ -17,7 +17,7 @@ use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::{
     capabilities::{msi_x::Bir, CapabilityKind},
-    header::{self, ClassCode, InterruptPin, HeaderType},
+    header::{self, ClassCode, HeaderType, InterruptPin},
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
@@ -273,10 +273,7 @@ pub fn parse_bir(mut header: Header) -> u64 {
     let raw = unsafe { &mut *(addr_of_mut!(header) as *mut [u8; ECS_OFFSET]) };
 
     let caps = if header.capabilities_pointer != 0 {
-        Some(
-            Capabilities::new(&raw[DDR_OFFSET..ECS_OFFSET], &header)
-                .map(|cap| cap.ok()),
-        )
+        Some(Capabilities::new(&raw[DDR_OFFSET..ECS_OFFSET], &header).map(|cap| cap.ok()))
     } else {
         None
     };
@@ -972,6 +969,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     for entry in _msg_table {
                         let irq = irqalloc();
                         entry.route_irq(irq, IrqMode::Fixed);
+
+                        // TODO: split this into different interrupts depending on device functionality
                         IDT.write()[irq as usize].set_handler_fn(msi_x);
                     }
 
