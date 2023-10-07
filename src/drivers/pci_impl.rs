@@ -886,9 +886,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     let _msg_table = Vec::<Message>::new();
 
-                    let raw_addr = addr_of!(header) as u64;
-                    let raw_orig = (raw_addr - get_phys_offset()) as u32;
-
                     let _msg_control = msix.message_control;
                 }
             }
