@@ -34,7 +34,7 @@ use crate::{
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
-    interrupts::irqalloc,
+    interrupts::irqalloc, xhci::xhci_init,
 };
 
 use {
@@ -848,7 +848,7 @@ pub struct PciDevice {
 
 pub struct PciTable {
     pub devices: Vec<PciDevice>,
-    pub raw_headers: Vec<[u8; 64]>,
+    pub raw_headers: Vec<[u8; ECS_OFFSET]>,
     pub headers: Vec<Header>,
 }
 
@@ -861,7 +861,7 @@ impl PciTable {
         }
     }
 
-    pub fn register_headers(&mut self, raw: [u8; 64], header: Header) {
+    pub fn register_headers(&mut self, raw: [u8; ECS_OFFSET], header: Header) {
         self.raw_headers.push(raw);
         self.headers.push(header);
     }
@@ -911,7 +911,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             PCI_TABLE
                 .write()
-                .register_headers(*raw_clone.split_array_ref::<64>().0, header_clone);
+                .register_headers(raw_clone, header_clone);
 
             let _ = aml_route(&header);
 
@@ -948,6 +948,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 // Most of this was learned from studying Aero's implementation:
                 // https://github.com/Andy-Python-Programmer/aero/blob/master/src/aero_kernel/src/drivers/pci.rs#L99
                 if let CapabilityKind::MsiX(mut msix) = msix.kind {
+                    info!("MSI-X: {:#?}", msix);
+
                     let mut msg_control = msix.message_control.clone();
                     let table = msix.clone().table;
 
@@ -956,23 +958,13 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     let parsed = parse_bir(header.clone());
                     let bar_offset = table.offset as u64;
 
-                    let _msg_table = unsafe {
+                    let msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
-                            (parsed + bar_offset + 4 + table_len) as *mut Message,
+                            (parsed + bar_offset) as *mut Message,
                             table_len as usize,
                         )
                     }
                     .iter_mut();
-
-                    // Has tendency to attempt to access invalid address 0x10000710d380ca which overflows bit 48
-                    // Placing the physical memory offset at a low fixed address has no effect
-                    for entry in _msg_table {
-                        let irq = irqalloc();
-                        entry.route_irq(irq, IrqMode::Fixed);
-
-                        // TODO: split this into different interrupts depending on device functionality
-                        IDT.write()[irq as usize].set_handler_fn(msi_x);
-                    }
 
                     msg_control.msi_x_enable = true;
                     msg_control.function_mask = false;
@@ -981,7 +973,17 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    info!("MSI-X: {:#?}", msix);
+                    if let DeviceKind::UsbController = DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32) {
+                        xhci_init();
+                    }
+
+                    for entry in msg_table {
+                        let irq = irqalloc();
+                        entry.route_irq(irq, IrqMode::Fixed);
+
+                        // TODO: split this into different interrupts depending on device functionality
+                        IDT.write()[irq as usize].set_handler_fn(msi_x);
+                    }
                 }
             }
 

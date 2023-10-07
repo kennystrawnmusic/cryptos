@@ -419,6 +419,8 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("ahci,id=ahci")
         .arg("-device")
         .arg("ide-hd,drive=disk,bus=ahci.0")
+        .arg("-device")
+        .arg("qemu-xhci")
         .arg("-bios")
         .arg("OVMF-pure-efi.fd")
         .arg("-machine")
