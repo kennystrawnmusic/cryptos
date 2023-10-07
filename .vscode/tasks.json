@@ -5,6 +5,7 @@
         "label": "Build Kernel",
         "type": "shell",
         "command": [
+          "RUST_BACKTRACE=1",
           "cargo",
           "run",
           "--package",
@@ -20,6 +21,7 @@
         "label": "Run Kernel in QEMU",
         "type": "shell",
         "command": [
+          "RUST_BACKTRACE=1",
           "cargo",
           "run",
           "--package",
