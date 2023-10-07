@@ -215,15 +215,15 @@ bitflags! {
     }
 }
 
-/// BAR parser
-pub fn parse_bar(base: u64, bir: Bir) -> u64 {
-    match bir {
-        Bir::Bar10h => base + 0x10,
-        Bir::Bar14h => base + 0x14,
-        Bir::Bar18h => base + 0x18,
-        Bir::Bar1Ch => base + 0x1C,
-        Bir::Bar20h => base + 0x20,
-        Bir::Bar24h => base + 0x24,
+/// BIR parser
+pub fn parse_bir(base: u64, table: pcics::capabilities::msi_x::Table) -> u64 {
+    match table.bir {
+        Bir::Bar10h => base + (table.offset as u64) + 0x10,
+        Bir::Bar14h => base + (table.offset as u64) + 0x14,
+        Bir::Bar18h => base + (table.offset as u64) + 0x18,
+        Bir::Bar1Ch => base + (table.offset as u64) + 0x1C,
+        Bir::Bar20h => base + (table.offset as u64) + 0x20,
+        Bir::Bar24h => base + (table.offset as u64) + 0x24,
         Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
     }
 }
@@ -806,9 +806,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
          */
         for dev in mcfg_brute_force() {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
-
-            // Identity map to avoid address overflow
-            let virt = test_page.start_address().as_u64();
+            let virt = test_page.start_address().as_u64() + get_phys_offset();
 
             map_page!(
                 dev,
@@ -891,11 +889,11 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     let msg_control = &mut msix.message_control;
 
                     let table_len = msg_control.table_size as u64;
-                    let bir = msix_clone.table.bir;
+                    let table = msix_clone.table;
 
                     let _msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
-                            (parse_bar(raw_header_addr, bir) + 4 + table_len) as *mut Message,
+                            (parse_bir(raw_header_addr, table) + 4 + table_len) as *mut Message,
                             table_len as usize,
                         )
                     }
