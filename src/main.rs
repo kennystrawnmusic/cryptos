@@ -81,12 +81,12 @@ use cralloc::{
     frames::{map_memory, KernelFrameAlloc},
     heap_init_inner, BEGIN_HEAP,
 };
-use drivers::acpi_impl::UserAcpi;
+use drivers::{acpi_impl::UserAcpi, pci_impl::DeviceKind};
 use itertools::Itertools;
 use log::{debug, error, info};
 use pcics::{
     capabilities::pci_express::Device,
-    header::{Header, HeaderType, InterruptPin},
+    header::{Header, HeaderType, InterruptPin}, ECS_OFFSET,
 };
 use raw_cpuid::CpuId;
 use spin::{Mutex, Once, RwLock};
@@ -189,31 +189,6 @@ pub static PCI_CONFIG: OnceCell<Option<PciConfigRegions<Global>>> = OnceCell::un
 
 pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
     PCI_CONFIG.get().unwrap()
-}
-
-fn mcfg_brute_force_inner(r: Range<u32>) -> impl Itertools<Item = Option<u64>> {
-    r.map(|i: u32| match get_mcfg() {
-        Some(mcfg) => mcfg.physical_address(
-            i.to_be_bytes()[0] as u16,
-            i.to_be_bytes()[1],
-            i.to_be_bytes()[2],
-            i.to_be_bytes()[3],
-        ),
-        None => None,
-    })
-}
-
-/// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
-pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
-    let mut deduped_scan = Vec::new();
-
-    // Will add support for more addresses here when I can get the allocator to quit panicking
-    for addr in mcfg_brute_force_inner(0x0..0x1000).flatten().dedup() {
-        deduped_scan.push(addr);
-        deduped_scan.dedup();
-    }
-
-    deduped_scan.into_iter()
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {

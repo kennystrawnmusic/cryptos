@@ -35,7 +35,6 @@ use crate::{
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
     interrupts::irqalloc,
-    mcfg_brute_force,
 };
 
 use {
@@ -50,12 +49,68 @@ use {
 use itertools::Itertools;
 use log::*;
 
-static DEDUPED_SCAN: RwLock<Vec<DeviceKind>> = RwLock::new(Vec::new());
-
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 
 pub static PCI_TABLE: RwLock<PciTable> = RwLock::new(PciTable::new());
 pub static PCI_DRIVER_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+fn mcfg_brute_force_inner(r: core::ops::Range<u32>) -> impl Itertools<Item = Option<u64>> {
+    r.map(|i: u32| match get_mcfg() {
+        Some(mcfg) => mcfg.physical_address(
+            i.to_be_bytes()[0] as u16,
+            i.to_be_bytes()[1],
+            i.to_be_bytes()[2],
+            i.to_be_bytes()[3],
+        ),
+        None => None,
+    })
+}
+
+/// Iterates over all possible `Option<u64>` in the address space, then maps and unwraps them
+pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
+    let mut deduped_scan = Vec::new();
+    let mut deduped_kinds = Vec::new();
+
+    // Will add support for more addresses here when I can get the allocator to quit panicking
+    for addr in mcfg_brute_force_inner(0x0..0x1000).flatten().dedup() {
+        let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
+        let virt = test_page.start_address().as_u64() + get_phys_offset();
+
+        map_page!(
+            addr,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+
+        let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
+        let header = Header::try_from(raw_header.as_slice()).unwrap();
+
+        if let DeviceKind::Unknown =
+            DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+        {
+            // don't push unknown devices
+            continue;
+        } else if deduped_kinds.contains(&DeviceKind::new(
+            header.class_code.base as u32,
+            header.class_code.sub as u32,
+        )) {
+            // don't push duplicates
+            continue;
+        } else {
+            deduped_kinds.push(DeviceKind::new(
+                header.class_code.base as u32,
+                header.class_code.sub as u32,
+            ));
+            deduped_scan.push(addr);
+        }
+    };
+
+    deduped_scan.into_iter()
+}
 
 const fn calculate_blocks(bits: usize) -> usize {
     if bits % BLOCK_BITS == 0 {
@@ -338,7 +393,7 @@ impl Message {
 
     pub fn route_irq(&mut self, irq: u8, delivery_mode: IrqMode) {
         // Found out all of the below mainly from studying Aero's implementation
-        
+
         let mut data = 0;
         data.set_bits(0..8, irq as u32);
         data.set_bits(8..11, delivery_mode as u32);
@@ -839,18 +894,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
             {
                 continue; // don't print unknown devices
-            } else if DEDUPED_SCAN.read().contains(&DeviceKind::new(
-                header.class_code.base as u32,
-                header.class_code.sub as u32,
-            )) {
-                continue; // don't print duplicates
             } else {
-                DEDUPED_SCAN.write().push(DeviceKind::new(
-                    header.class_code.base as u32,
-                    header.class_code.sub as u32,
-                ));
-                DEDUPED_SCAN.write().dedup();
-
                 let _ = aml_route(&header);
 
                 info!(
