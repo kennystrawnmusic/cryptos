@@ -901,6 +901,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     .iter_mut();
 
                     // Has tendency to attempt to access invalid address 0x10000710d380ca which overflows bit 48
+                    // Placing the physical memory offset at a low fixed address has no effect
                     // for entry in _msg_table {
                     //     let irq = irqalloc();
                     //     entry.route_irq(irq, IrqMode::Fixed);
