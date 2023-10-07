@@ -17,7 +17,7 @@ use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::{
     capabilities::{msi_x::Bir, CapabilityKind},
-    header::{self, ClassCode, InterruptPin},
+    header::{self, ClassCode, InterruptPin, HeaderType},
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
@@ -106,7 +106,7 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
             ));
             deduped_scan.push(addr);
         }
-    };
+    }
 
     deduped_scan.into_iter()
 }
@@ -266,6 +266,47 @@ bitflags! {
         const SECONDARY_PCI_NATIVE = 0b00000100;
         const SECONDARY_CAN_SWITCH = 0b00001000;
         const DMA_CAPABLE          = 0b10000000;
+    }
+}
+
+pub fn parse_bir_new(mut header: Header) -> u64 {
+    let raw = unsafe { &mut *(addr_of_mut!(header) as *mut [u8; ECS_OFFSET]) };
+
+    let caps = if header.capabilities_pointer != 0 {
+        Some(
+            Capabilities::new(&raw[DDR_OFFSET..ECS_OFFSET], &header)
+                .map(|cap| cap.ok()),
+        )
+    } else {
+        None
+    };
+
+    let msix = caps.and_then(|caps| {
+        caps.flatten()
+            .find(|cap| matches!(cap.kind, CapabilityKind::MsiX(_)))
+    });
+
+    match msix {
+        Some(msix) => {
+            if let CapabilityKind::MsiX(msix) = msix.kind {
+                if let HeaderType::Normal(header) = header.header_type {
+                    match msix.table.bir {
+                        Bir::Bar10h => header.base_addresses.orig()[0] as u64,
+                        Bir::Bar14h => header.base_addresses.orig()[1] as u64,
+                        Bir::Bar18h => header.base_addresses.orig()[2] as u64,
+                        Bir::Bar1Ch => header.base_addresses.orig()[3] as u64,
+                        Bir::Bar20h => header.base_addresses.orig()[4] as u64,
+                        Bir::Bar24h => header.base_addresses.orig()[5] as u64,
+                        Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
+                    }
+                } else {
+                    panic!("Not a normal header");
+                }
+            } else {
+                panic!("Invalid MSI-X capability");
+            }
+        }
+        None => 0,
     }
 }
 
@@ -875,7 +916,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
-            let raw_header_addr = unsafe { *(virt as *const u64) };
 
             // borrow checker
             let raw_clone = raw_header;
@@ -924,16 +964,13 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 // Most of this was learned from studying Aero's implementation:
                 // https://github.com/Andy-Python-Programmer/aero/blob/master/src/aero_kernel/src/drivers/pci.rs#L99
                 if let CapabilityKind::MsiX(mut msix) = msix.kind {
-                    // borrow checker
-                    let msix_clone = msix.clone();
-
                     let mut msg_control = msix.message_control.clone();
+                    let table = msix.clone().table;
 
                     let table_len = msg_control.table_size as u64;
-                    let table = msix_clone.table;
-                    
-                    let parsed = parse_bir(raw_header_addr, table);
-                    let bar_offset = parsed & !0b111;
+
+                    let parsed = parse_bir_new(header.clone());
+                    let bar_offset = table.offset as u64;
 
                     let _msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
@@ -945,11 +982,11 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     // Has tendency to attempt to access invalid address 0x10000710d380ca which overflows bit 48
                     // Placing the physical memory offset at a low fixed address has no effect
-                    // for entry in _msg_table {
-                    //     let irq = irqalloc();
-                    //     entry.route_irq(irq, IrqMode::Fixed);
-                    //     IDT.write()[irq as usize].set_handler_fn(msi_x);
-                    // }
+                    for entry in _msg_table {
+                        let irq = irqalloc();
+                        entry.route_irq(irq, IrqMode::Fixed);
+                        IDT.write()[irq as usize].set_handler_fn(msi_x);
+                    }
 
                     msg_control.msi_x_enable = true;
                     msg_control.function_mask = false;

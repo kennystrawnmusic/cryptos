@@ -36,11 +36,12 @@ pub mod scheme;
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
     ahci::{ahci_init, get_ahci, ABAR},
+    apic_impl::APIC_IS_INITIALIZED,
     cralloc::heap_init,
     drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::{FOSSPciDeviceHandle, PCI_TABLE},
-    scheme::acpi::DATA, apic_impl::APIC_IS_INITIALIZED,
+    scheme::acpi::DATA,
 };
 use acpi::{
     fadt::Fadt,
@@ -61,7 +62,6 @@ use bootloader_api::{
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
-use x2apic::lapic::LocalApic;
 use core::{
     alloc::Layout,
     any::TypeId,
@@ -86,10 +86,12 @@ use itertools::Itertools;
 use log::{debug, error, info};
 use pcics::{
     capabilities::pci_express::Device,
-    header::{Header, HeaderType, InterruptPin}, ECS_OFFSET,
+    header::{Header, HeaderType, InterruptPin},
+    ECS_OFFSET,
 };
 use raw_cpuid::CpuId;
 use spin::{Mutex, Once, RwLock};
+use x2apic::lapic::LocalApic;
 use x86_64::{
     structures::paging::{
         FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size1GiB,
