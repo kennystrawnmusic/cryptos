@@ -779,6 +779,8 @@ pub fn aml_route(header: &Header) -> Option<[(u32, InterruptPin); 4]> {
         if !APIC_IS_INITIALIZED.load(Ordering::Relaxed) {
             debug!("Setting up interrupts...");
             crate::apic_impl::init_all_available_apics();
+            
+            info!("Local APIC ID: {:#?}", unsafe { get_active_lapic().id() });
         }
 
         return Some(a);

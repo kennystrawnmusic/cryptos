@@ -40,7 +40,7 @@ use crate::{
     drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
     interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
     pci_impl::{FOSSPciDeviceHandle, PCI_TABLE},
-    scheme::acpi::DATA,
+    scheme::acpi::DATA, apic_impl::APIC_IS_INITIALIZED,
 };
 use acpi::{
     fadt::Fadt,
@@ -61,6 +61,7 @@ use bootloader_api::{
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
 use conquer_once::spin::OnceCell;
+use x2apic::lapic::LocalApic;
 use core::{
     alloc::Layout,
     any::TypeId,
