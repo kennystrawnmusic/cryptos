@@ -269,7 +269,7 @@ bitflags! {
     }
 }
 
-pub fn parse_bir_new(mut header: Header) -> u64 {
+pub fn parse_bir(mut header: Header) -> u64 {
     let raw = unsafe { &mut *(addr_of_mut!(header) as *mut [u8; ECS_OFFSET]) };
 
     let caps = if header.capabilities_pointer != 0 {
@@ -307,19 +307,6 @@ pub fn parse_bir_new(mut header: Header) -> u64 {
             }
         }
         None => 0,
-    }
-}
-
-/// BIR parser
-pub fn parse_bir(base: u64, table: pcics::capabilities::msi_x::Table) -> u64 {
-    match table.bir {
-        Bir::Bar10h => base + (table.offset as u64) + 0x10,
-        Bir::Bar14h => base + (table.offset as u64) + 0x14,
-        Bir::Bar18h => base + (table.offset as u64) + 0x18,
-        Bir::Bar1Ch => base + (table.offset as u64) + 0x1C,
-        Bir::Bar20h => base + (table.offset as u64) + 0x20,
-        Bir::Bar24h => base + (table.offset as u64) + 0x24,
-        Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
     }
 }
 
@@ -969,7 +956,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     let table_len = msg_control.table_size as u64;
 
-                    let parsed = parse_bir_new(header.clone());
+                    let parsed = parse_bir(header.clone());
                     let bar_offset = table.offset as u64;
 
                     let _msg_table = unsafe {
