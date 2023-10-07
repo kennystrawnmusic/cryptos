@@ -426,7 +426,9 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("-m")
         .arg("4G")
         .arg("-d")
-        .arg("int");
+        .arg("int")
+        .arg("-nic")
+        .arg("none");
 
     uefi_cmd.current_dir(kdir);
 
