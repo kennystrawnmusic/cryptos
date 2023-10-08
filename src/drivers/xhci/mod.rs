@@ -51,6 +51,9 @@ impl XhciImpl {
                         let bar1 = header.base_addresses.orig()[1];
 
                         let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
+                        
+                        // Align this properly
+                        let full_bar = full_bar - (full_bar % (core::mem::size_of::<Registers<XhciMapper>>() as u64));
 
                         let regs =
                             unsafe { Registers::new(full_bar as usize, MAPPER.read().clone()) };

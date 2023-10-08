@@ -26,6 +26,18 @@ impl<T: Copy> VolatileCell<T> {
     pub fn set(&self, value: T) {
         unsafe { core::ptr::write_volatile(self.0.get(), value) }
     }
+
+    /// Compatibility mode function for [`get`]
+    #[inline]
+    pub fn read_volatile(&self) -> T {
+        self.get()
+    }
+
+    /// Compatibility mode function for [`set`]
+    #[inline]
+    pub fn write_volatile(&self, value: T) {
+        self.set(value)
+    }
 }
 
 // Key difference: if we want to use `VolatileCell` in statics, not implementing Send/Sync is a problem

@@ -398,10 +398,10 @@ pub unsafe fn inw(port: u16) -> u16 {
 /// Struct representing a single MSI-X message
 #[repr(C)]
 pub struct Message {
-    addr_low: ReadWrite<u32, XhciMapper>,
-    addr_high: ReadWrite<u32, XhciMapper>,
-    data: ReadWrite<u32, XhciMapper>,
-    mask: ReadWrite<u32, XhciMapper>,
+    addr_low: VolatileCell<u32>,
+    addr_high: VolatileCell<u32>,
+    data: VolatileCell<u32>,
+    mask: VolatileCell<u32>,
 }
 
 impl Message {
@@ -901,6 +901,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
+            let raw_header_addr = virt;
 
             // borrow checker
             let raw_clone = raw_header;
@@ -947,8 +948,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                 // Most of this was learned from studying Aero's implementation:
                 // https://github.com/Andy-Python-Programmer/aero/blob/master/src/aero_kernel/src/drivers/pci.rs#L99
                 if let CapabilityKind::MsiX(mut msix) = msix.kind {
-                    info!("MSI-X: {:#?}", msix);
-
                     let mut msg_control = msix.message_control.clone();
                     let table = msix.clone().table;
 
@@ -959,7 +958,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     let msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
-                            (parsed + bar_offset) as *mut Message,
+                            (raw_header_addr + parsed + bar_offset) as *mut Message,
                             table_len as usize,
                         )
                     }
@@ -972,14 +971,16 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    if let DeviceKind::UsbController =
-                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
-                    {
-                        PCI_TABLE
-                            .write()
-                            .register_headers(raw_clone_2, header_clone_2);
-                        XhciImpl::new(&header).init();
-                    }
+                    // Need to figure out how to tell the XHCI controller that open device slots exist
+                    // before attempting to test this
+                    // if let DeviceKind::UsbController =
+                    //     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+                    // {
+                    //     PCI_TABLE
+                    //         .write()
+                    //         .register_headers(raw_clone_2, header_clone_2);
+                    //     XhciImpl::new(&header).init();
+                    // }
 
                     for entry in msg_table {
                         let irq = irqalloc();
@@ -988,6 +989,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         // TODO: split this into different interrupts depending on device functionality
                         IDT.write()[irq as usize].set_handler_fn(msi_x);
                     }
+
+                    info!("MSI-X: {:#?}", msix);
                 }
             }
 
