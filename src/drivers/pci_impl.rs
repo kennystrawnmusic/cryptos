@@ -988,6 +988,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                         // TODO: split this into different interrupts depending on device functionality
                         IDT.write()[irq as usize].set_handler_fn(msi_x);
+                        // Reload IDT
+                        crate::arch::x86_64::interrupts::init();
                     }
 
                     info!("MSI-X: {:#?}", msix);
