@@ -513,6 +513,7 @@ pub(crate) unsafe fn enable_interrupts() {
     interrupts::enable();
 }
 
+/// Function that searches for an open entry in the IDT to map a new handler to
 pub fn irqalloc() -> u8 {
     for i in 32..=255 {
         if IDT.read()[i] == Entry::missing() {
