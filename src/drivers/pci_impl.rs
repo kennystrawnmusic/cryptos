@@ -971,8 +971,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    // Need to figure out how to tell the XHCI controller that open device slots exist
-                    // before attempting to test this
+                    // Panics with assertion failure (help wanted)
                     // if let DeviceKind::UsbController =
                     //     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     // {
