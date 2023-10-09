@@ -50,7 +50,7 @@ pub fn init() {
     IDT_CLONE.load();
 }
 
-pub fn current_priority_level(frame: InterruptStackFrameValue) -> PrivilegeLevel {
+pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLevel {
     // TODO: from what end is the SegmentSelector padded with zeros? Ask @phil-opp for advice on this
     let sel = SegmentSelector(frame.code_segment as u16);
 
@@ -216,7 +216,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Bound range exceeded\nStack frame: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -228,7 +228,7 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64()) as *const u32) };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!(
             "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
             offender.to_be_bytes(),
@@ -242,7 +242,7 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Device not available\nStack frame: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -287,7 +287,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::NO_CACHE
                 | PageTableFlags::WRITE_THROUGH
         );
-    } else if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    } else if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         // kernel mode
         panic!(
             "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
@@ -304,7 +304,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
 }
 
 extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
     } else {
         (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
@@ -322,7 +322,7 @@ extern "x86-interrupt" fn invalid_tss(frame: InterruptStackFrame, code: u64) {
 extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
     let selector = SelectorErrorCode::new_truncate(code);
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!(
             "Segment selector at index {:#?} is not present\n\
             Descriptor table involved: {:#?}\n\
@@ -362,7 +362,7 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
         sel => Some(sel),
     };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         if let Some(code) = is_caused_by_np {
             let selector = SelectorErrorCode::new_truncate(code);
             panic!(
@@ -397,7 +397,7 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
         sel => Some(sel),
     };
 
-    if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
+    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         if let Some(code) = is_seg_related {
             let selector = SelectorErrorCode::new_truncate(code);
             panic!(
