@@ -287,7 +287,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::NO_CACHE
                 | PageTableFlags::WRITE_THROUGH
         );
-    } else if CS::get_reg().rpl() == PrivilegeLevel::Ring0 {
+    } else if let PrivilegeLevel::Ring0 = current_priority_level(*frame) {
         // kernel mode
         panic!(
             "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
