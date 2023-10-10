@@ -47,7 +47,6 @@ use {
     x86_64::structures::paging::{OffsetPageTable, PageTableFlags},
 };
 
-use itertools::Itertools;
 use log::*;
 
 pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
@@ -55,7 +54,7 @@ pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 pub static PCI_TABLE: RwLock<PciTable> = RwLock::new(PciTable::new());
 pub static PCI_DRIVER_COUNT: AtomicUsize = AtomicUsize::new(0);
 
-fn mcfg_brute_force_inner(r: core::ops::Range<u32>) -> impl Itertools<Item = Option<u64>> {
+fn mcfg_brute_force_inner(r: core::ops::Range<u32>) -> impl Iterator<Item = Option<u64>> {
     r.map(|i: u32| match get_mcfg() {
         Some(mcfg) => mcfg.physical_address(
             i.to_be_bytes()[0] as u16,
@@ -72,7 +71,7 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
     let mut deduped_scan = Vec::new();
     let mut deduped_kinds = Vec::new();
 
-    for addr in mcfg_brute_force_inner(0x0..0xffff).flatten().dedup() {
+    for addr in mcfg_brute_force_inner(0x0..0xffff).flatten() {
         let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
         let virt = test_page.start_address().as_u64() + get_phys_offset();
 
@@ -290,11 +289,11 @@ pub fn parse_bir(mut header: Header) -> u64 {
                 if let HeaderType::Normal(header) = header.header_type {
                     match msix.table.bir {
                         Bir::Bar10h => header.base_addresses.orig()[0] as u64,
-                        Bir::Bar14h => header.base_addresses.orig()[1] as u64 + 0x14,
-                        Bir::Bar18h => header.base_addresses.orig()[2] as u64 + 0x18,
-                        Bir::Bar1Ch => header.base_addresses.orig()[3] as u64 + 0x1C,
-                        Bir::Bar20h => header.base_addresses.orig()[4] as u64 + 0x20,
-                        Bir::Bar24h => header.base_addresses.orig()[5] as u64 + 0x24,
+                        Bir::Bar14h => header.base_addresses.orig()[1] as u64,
+                        Bir::Bar18h => header.base_addresses.orig()[2] as u64,
+                        Bir::Bar1Ch => header.base_addresses.orig()[3] as u64,
+                        Bir::Bar20h => header.base_addresses.orig()[4] as u64,
+                        Bir::Bar24h => header.base_addresses.orig()[5] as u64,
                         Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
                     }
                 } else {

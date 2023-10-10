@@ -82,7 +82,6 @@ use cralloc::{
     heap_init_inner, BEGIN_HEAP,
 };
 use drivers::{acpi_impl::UserAcpi, pci_impl::DeviceKind};
-use itertools::Itertools;
 use log::{debug, error, info};
 use pcics::{
     capabilities::pci_express::Device,
