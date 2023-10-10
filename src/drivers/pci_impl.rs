@@ -987,7 +987,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         entry.route_irq(irq, IrqMode::Fixed);
 
                         // TODO: split this into different interrupts depending on device functionality
-                        register_handler(msi_x);
+                        register_handler(irq, msi_x);
                     }
 
                     info!("MSI-X: {:#?}", msix);

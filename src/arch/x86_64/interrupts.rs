@@ -525,7 +525,7 @@ pub fn irqalloc() -> u8 {
 }
 
 /// Indexes a new handler at a new IDT entry created by `irqalloc()` fn
-pub fn register_handler(handler: extern "x86-interrupt" fn(InterruptStackFrame)) {
-    IDT.write()[irqalloc() as usize].set_handler_fn(handler);
+pub fn register_handler(irq: u8, handler: extern "x86-interrupt" fn(InterruptStackFrame)) {
+    IDT.write()[irq as usize].set_handler_fn(handler);
     init();
 }
