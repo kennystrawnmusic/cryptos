@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use core::arch::asm;
 
 use syscall::{
     Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE, ESRCH,
@@ -15,6 +16,12 @@ use super::{Process, State};
 // not defined upstream, so adding here
 pub const SIGINFO: usize = 32;
 
+/// Handles SIGKILL
+pub fn abort() -> ! {
+    unsafe { asm!("ret", options(noreturn)) }
+}
+
+/// Signal numbers
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(u64)]
 pub enum Signal {
@@ -107,8 +114,8 @@ impl Signal {
             Self::SIGABRT => Err(Error::new(ECANCELED)),
             Self::SIGBUS => Err(Error::new(EFAULT)),
             Self::SIGFPE => Err(Error::new(EDOM)),
-            Self::SIGKILL => core::intrinsics::abort(), // cannot be caught
-            Self::SIGUSR1 => Ok(()),                    // def by user
+            Self::SIGKILL => abort(), // cannot be caught
+            Self::SIGUSR1 => Ok(()),  // def by user
             Self::SIGSEGV => Err(Error::new(EFAULT)),
             Self::SIGUSR2 => Ok(()), // def by user
             Self::SIGPIPE => Err(Error::new(EPIPE)),
