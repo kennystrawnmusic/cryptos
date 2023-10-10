@@ -16,7 +16,7 @@ use super::{Process, State};
 // not defined upstream, so adding here
 pub const SIGINFO: usize = 32;
 
-/// Handles SIGKILL
+/// Exits current process immediately without cleaning up
 pub fn abort() -> ! {
     unsafe { asm!("ret", options(noreturn)) }
 }
