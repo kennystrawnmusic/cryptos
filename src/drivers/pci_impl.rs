@@ -35,7 +35,7 @@ use crate::{
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
-    interrupts::irqalloc,
+    interrupts::{irqalloc, register_handler},
     xhci::{xhci_init, XhciImpl},
 };
 
@@ -987,9 +987,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         entry.route_irq(irq, IrqMode::Fixed);
 
                         // TODO: split this into different interrupts depending on device functionality
-                        IDT.write()[irq as usize].set_handler_fn(msi_x);
-                        // Reload IDT
-                        crate::arch::x86_64::interrupts::init();
+                        register_handler(msi_x);
                     }
 
                     info!("MSI-X: {:#?}", msix);

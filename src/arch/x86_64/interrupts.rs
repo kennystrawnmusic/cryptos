@@ -523,3 +523,9 @@ pub fn irqalloc() -> u8 {
     // we've exhausted all entries at this point
     panic!("Out of IRQs!")
 }
+
+/// Indexes a new handler at a new IDT entry created by `irqalloc()` fn
+pub fn register_handler(handler: extern "x86-interrupt" fn(InterruptStackFrame)) {
+    IDT.write()[irqalloc() as usize].set_handler_fn(handler);
+    init();
+}
