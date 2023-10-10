@@ -439,7 +439,7 @@ impl Message {
 
         self.data.write_volatile(data);
         self.addr_low.write_volatile(addr);
-        self.addr_high.write_volatile(0);
+        self.addr_high.write_volatile(get_phys_offset() as u32);
     }
 }
 
