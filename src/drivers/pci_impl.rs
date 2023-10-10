@@ -89,16 +89,17 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
         let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
         let header = Header::try_from(raw_header.as_slice()).unwrap();
 
+        // don't push unknown devices
         if let DeviceKind::Unknown =
             DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
         {
-            // don't push unknown devices
             continue;
-        } else if deduped_kinds.contains(&DeviceKind::new(
+        }
+        // don't push duplicates
+        else if deduped_kinds.contains(&DeviceKind::new(
             header.class_code.base as u32,
             header.class_code.sub as u32,
         )) {
-            // don't push duplicates
             continue;
         } else {
             deduped_kinds.push(DeviceKind::new(
