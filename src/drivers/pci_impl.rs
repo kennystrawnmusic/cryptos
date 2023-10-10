@@ -9,6 +9,7 @@ use xhci::accessor::single::ReadWrite;
 use core::{
     iter::Map,
     mem::ManuallyDrop,
+    ops::Range,
     ptr::{addr_of, addr_of_mut},
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -54,7 +55,7 @@ pub const BLOCK_BITS: usize = core::mem::size_of::<usize>() * 8;
 pub static PCI_TABLE: RwLock<PciTable> = RwLock::new(PciTable::new());
 pub static PCI_DRIVER_COUNT: AtomicUsize = AtomicUsize::new(0);
 
-fn mcfg_brute_force_inner(r: core::ops::Range<u32>) -> impl Iterator<Item = Option<u64>> {
+fn mcfg_brute_force_inner(r: Range<u32>) -> impl Iterator<Item = Option<u64>> {
     r.map(|i: u32| match get_mcfg() {
         Some(mcfg) => mcfg.physical_address(
             i.to_be_bytes()[0] as u16,

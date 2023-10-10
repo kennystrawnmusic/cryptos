@@ -56,8 +56,12 @@ impl XhciImpl {
                                 - ((bar0 as u64 | ((bar1 as u64) << 32))
                                     % (core::mem::size_of::<Registers<XhciMapper>>() as u64));
 
-                        let regs =
-                            unsafe { Registers::new(full_bar as usize + get_phys_offset() as usize, MAPPER.read().clone()) };
+                        let regs = unsafe {
+                            Registers::new(
+                                full_bar as usize + get_phys_offset() as usize,
+                                MAPPER.read().clone(),
+                            )
+                        };
 
                         Some(regs)
                     } else {
