@@ -18,7 +18,7 @@ pub const SIGINFO: usize = 32;
 
 /// Exits current process immediately without cleaning up
 pub fn abort() -> ! {
-    unsafe { asm!("iret", options(noreturn)) }
+    unsafe { asm!("iretq", options(noreturn)) }
 }
 
 /// Signal numbers
