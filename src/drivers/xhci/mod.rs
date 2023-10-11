@@ -258,7 +258,7 @@ impl XhciImpl {
                     {
                         let frame = FRAME_ALLOCATOR
                             .get()
-                            .unwrap()
+                            .expect("Frame allocator not initialized")
                             .write()
                             .allocate_frame()
                             .expect("Failed to allocate frame for command ring");
