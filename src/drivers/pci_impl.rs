@@ -976,7 +976,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         .write()
                         .register_headers(raw_clone_2, header_clone_2);
 
-
                     if let DeviceKind::UsbController =
                         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     {

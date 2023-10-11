@@ -4,7 +4,10 @@ use core::{
     ptr::{addr_of, addr_of_mut},
     sync::atomic::AtomicU64,
 };
-use x86_64::{structures::paging::{Mapper, PageTableFlags, Size4KiB, Page}, VirtAddr};
+use x86_64::{
+    structures::paging::{Mapper, Page, PageTableFlags, Size4KiB},
+    VirtAddr,
+};
 
 use crate::{
     cralloc::frames::XhciMapper,
@@ -54,8 +57,7 @@ impl XhciImpl {
                         let bar1 = header.base_addresses.orig()[1];
 
                         // Align this properly
-                        let full_bar = bar0 as u64
-                            | ((bar1 as u64) << 32);
+                        let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
                         let offset_full_bar = {
                             let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
