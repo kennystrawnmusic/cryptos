@@ -29,7 +29,7 @@ use pcics::{
 use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
-    context::Slot,
+    context::{Device, Slot},
     registers::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
         Runtime,
@@ -252,8 +252,9 @@ impl XhciImpl {
 
             // Create command ring with (4096 / 16) entries
             // Doesn't matter which command TRB structure we use for the size_of method; they're all the same size
-            let entries_per_page = 4096 / core::mem::size_of::<CmdNoop>();
-            let _cmd_ring = unsafe {
+            let entries_per_page =
+                Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CmdNoop>();
+            let cmd_ring = unsafe {
                 core::slice::from_raw_parts_mut(
                     {
                         let frame = FRAME_ALLOCATOR
@@ -282,7 +283,233 @@ impl XhciImpl {
                     entries_per_page,
                 )
             };
+
+            // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
+            let dev_context_array = unsafe {
+                core::slice::from_raw_parts_mut(
+                    {
+                        let frame = FRAME_ALLOCATOR
+                            .get()
+                            .expect("Frame allocator not initialized")
+                            .write()
+                            .allocate_frame()
+                            .expect("Failed to allocate frame for slot context array");
+
+                        let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                            frame.start_address().as_u64() + get_phys_offset(),
+                        ));
+
+                        map_page!(
+                            frame.start_address().as_u64(),
+                            page.start_address().as_u64(),
+                            Size4KiB,
+                            PageTableFlags::PRESENT
+                                | PageTableFlags::WRITABLE
+                                | PageTableFlags::NO_CACHE
+                                | PageTableFlags::WRITE_THROUGH
+                        );
+
+                        page.start_address().as_u64() as *mut Device<16>
+                    },
+                    max_slots.unwrap() as usize,
+                )
+            };
+
+            // Set the DCBAAP
+            self.operational_mut().map(|op| {
+                op.dcbaap.update_volatile(|dcbaap| {
+                    dcbaap.set(
+                        dev_context_array
+                            .iter()
+                            .nth(0)
+                            .map(|dev| dev as *const _ as u64)
+                            .expect("No devices present in device context array"),
+                    )
+                })
+            });
+
+            // Set the command ring control register
+            self.operational_mut().map(|op| {
+                op.crcr.update_volatile(|crcr| {
+                    crcr.set_command_ring_pointer(
+                        cmd_ring
+                            .iter()
+                            .nth(0)
+                            .map(|cmd| cmd as *const _ as u64)
+                            .expect("No commands present in command ring"),
+                    )
+                })
+            });
+
+            // Set event ring segment table registers
+            self.interrupter_register_set_mut().map(|int| {
+                for i in 0..1023 {
+                    // Set table size
+                    int.interrupter_mut(i).erstsz.update_volatile(|erstsz| {
+                        erstsz.set({
+                            let frame = FRAME_ALLOCATOR
+                                .get()
+                                .expect("Frame allocator not initialized")
+                                .write()
+                                .allocate_frame()
+                                .expect("Failed to allocate frame for event ring segment table");
+
+                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                                frame.start_address().as_u64() + get_phys_offset(),
+                            ));
+
+                            map_page!(
+                                frame.start_address().as_u64(),
+                                page.start_address().as_u64(),
+                                Size4KiB,
+                                PageTableFlags::PRESENT
+                                    | PageTableFlags::WRITABLE
+                                    | PageTableFlags::NO_CACHE
+                                    | PageTableFlags::WRITE_THROUGH
+                            );
+
+                            page.start_address().as_u64() as u16
+                        })
+                    });
+                    
+                    // Set the event ring dequeue pointer
+                    int.interrupter_mut(i).erdp.update_volatile(|erdp| {
+                        erdp.set_event_ring_dequeue_pointer(
+                            cmd_ring
+                                .iter()
+                                .nth(0)
+                                .map(|cmd| cmd as *const _ as u64)
+                                .expect("No commands present in command ring"),
+                        )
+                    });
+
+                    // Set the event ring segment table base address
+                    int.interrupter_mut(i).erstba.update_volatile(|erstba| {
+                        erstba.set({
+                            let frame = FRAME_ALLOCATOR
+                                .get()
+                                .expect("Frame allocator not initialized")
+                                .write()
+                                .allocate_frame()
+                                .expect("Failed to allocate frame for event ring segment table");
+
+                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                                frame.start_address().as_u64() + get_phys_offset(),
+                            ));
+
+                            map_page!(
+                                frame.start_address().as_u64(),
+                                page.start_address().as_u64(),
+                                Size4KiB,
+                                PageTableFlags::PRESENT
+                                    | PageTableFlags::WRITABLE
+                                    | PageTableFlags::NO_CACHE
+                                    | PageTableFlags::WRITE_THROUGH
+                            );
+
+                            page.start_address().as_u64()
+                        })
+                    });
+
+                    // Set the interrupter moderation register
+                    int.interrupter_mut(i).imod.update_volatile(|imod| {
+                        imod.set_interrupt_moderation_interval(0);
+                        imod.set_interrupt_moderation_counter(0);
+                    });
+
+                    // Set the interrupter management register
+                    int.interrupter_mut(i).iman.update_volatile(|iman| {
+                        iman.set_0_interrupt_pending();
+                        iman.set_interrupt_enable();
+                    });
+                }
+            });
+
+            // Enable interrupts
+            self.operational_mut().map(|op| {
+                op.usbcmd.update_volatile(|cmd| {
+                    cmd.set_interrupter_enable();
+                })
+            });
+
+            // Set up the scratchpad buffers
+            let scratchpad_buf = self.capabilities_mut().map(|cap| {
+                let max_scratchpads = if cap.hcsparams2.read_volatile().max_scratchpad_buffers() == 0 {
+                    cap.hcsparams2.read_volatile().max_scratchpad_buffers() + 1
+                } else {
+                    cap.hcsparams2.read_volatile().max_scratchpad_buffers()
+                };
+
+                unsafe {
+                    core::slice::from_raw_parts_mut(
+                        {
+                            let frame = FRAME_ALLOCATOR
+                                .get()
+                                .expect("Frame allocator not initialized")
+                                .write()
+                                .allocate_frame()
+                                .expect("Failed to allocate frame for scratchpad buffer array");
+
+                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                                frame.start_address().as_u64() + get_phys_offset(),
+                            ));
+
+                            map_page!(
+                                frame.start_address().as_u64(),
+                                page.start_address().as_u64(),
+                                Size4KiB,
+                                PageTableFlags::PRESENT
+                                    | PageTableFlags::WRITABLE
+                                    | PageTableFlags::NO_CACHE
+                                    | PageTableFlags::WRITE_THROUGH
+                            );
+
+                            page.start_address().as_u64() as *mut ScratchpadEntry
+                        },
+                        max_scratchpads as usize,
+                    )
+                }
+            }).expect("No scratchpad buffer array present");
+
+            // Set the scratchpad buffer array address by updating the device context array
+            dev_context_array[0] = unsafe { *(addr_of!(scratchpad_buf[0]) as u64 as *mut Device<16>) };
+
+            // Note: because the DCBAAP is a pointer to the above, overwriting it automatically overwrites
+            // what the DCBAAP points to, so no need to update the DCBAAP again
+
+            // Start the host controller
+            self.operational_mut().map(|op| {
+                op.usbcmd.update_volatile(|cmd| {
+                    cmd.set_run_stop();
+                });
+
+                // Wait until controller is running
+                while op.usbsts.read_volatile().hc_halted() {
+                    core::hint::spin_loop();
+                }
+            });
+
+            // Ring doorbell
+            let doorbell = self.doorbell_mut().expect("No doorbell register present");
+            doorbell.update_volatile_at(0, |db| {
+                db.set_doorbell_target(0);
+            });
+
+            log::info!("Successfully initialized XHCI controller");
         }
+    }
+}
+
+#[repr(packed)]
+pub struct ScratchpadEntry {
+    pub addr_low: u32,
+    pub addr_high: u32,
+}
+
+impl ScratchpadEntry {
+    pub fn set_addr(&mut self, addr: u64) {
+        self.addr_low = addr as u32;
+        self.addr_high = (addr >> 32) as u32;
     }
 }
 

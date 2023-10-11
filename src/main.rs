@@ -18,7 +18,8 @@
     intrinsics,
     extract_if,
     strict_provenance,
-    split_array
+    split_array,
+    generic_arg_infer
 )]
 #![allow(internal_features)]
 #![allow(unused_imports)]
