@@ -34,12 +34,76 @@ use xhci::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
         Runtime,
     },
-    ring::trb::Link,
+    ring::trb::{
+        command::{
+            AddressDevice, ConfigureEndpoint, DisableSlot, EvaluateContext, ForceEvent,
+            ForceHeader, GetExtendedProperty, GetPortBandwidth, NegotiateBandwidth,
+            Noop as CmdNoop, ResetDevice, ResetEndpoint, SetExtendedProperty,
+            SetLatencyToleranceValue, SetTrDequeuePointer, StopEndpoint,
+        },
+        event::{
+            BandwidthRequest, CommandCompletion, DeviceNotification, Doorbell, HostController,
+            MfindexWrap, PortStatusChange, TransferEvent,
+        },
+        transfer::{
+            DataStage, EventData, Isoch, Noop as TransferNoop, Normal, SetupStage, StatusStage,
+        },
+        Link,
+    },
     Registers,
 };
 
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
+
+pub enum CommandKind {
+    AddressDevice(AddressDevice),
+    ConfigureEndpoint(ConfigureEndpoint),
+    DisableSlot(DisableSlot),
+    EvaluateContext(EvaluateContext),
+    ForceEvent(ForceEvent),
+    ForceHeader(ForceHeader),
+    GetExtendedProperty(GetExtendedProperty),
+    GetPortBandwidth(GetPortBandwidth),
+    NegotiateBandwidth(NegotiateBandwidth),
+    NoOp(CmdNoop),
+    ResetDevice(ResetDevice),
+    ResetEndpoint(ResetEndpoint),
+    SetExtendedProperty(SetExtendedProperty),
+    SetLatencyToleranceValue(SetLatencyToleranceValue),
+    SetTrDequeuePointer(SetTrDequeuePointer),
+    StopEndpoint(StopEndpoint),
+}
+
+pub enum EventKind {
+    BandwidthRequest(BandwidthRequest),
+    CommandCompletion(CommandCompletion),
+    DeviceNotification(DeviceNotification),
+    Doorbell(Doorbell),
+    HostController(HostController),
+    MfIndexWrap(MfindexWrap),
+    PortStatusChange(PortStatusChange),
+    Transfer(TransferEvent),
+}
+
+pub enum TransferKind {
+    DataStage(DataStage),
+    EventData(EventData),
+    Isoch(Isoch),
+    Noop(TransferNoop),
+    Normal(Normal),
+    SetupStage(SetupStage),
+    StatusStage(StatusStage),
+}
+
+pub enum TrbKind {
+    Command(CommandKind),
+    Event(EventKind),
+    Transfer(TransferKind),
+    Link(Link),
+}
+
+pub struct Ring<'a>(VecDeque<&'a mut TrbKind>);
 
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
