@@ -5,7 +5,7 @@ use core::{
     sync::atomic::AtomicU64,
 };
 use x86_64::{
-    structures::paging::{Mapper, Page, PageTableFlags, Size4KiB},
+    structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB},
     VirtAddr,
 };
 
@@ -241,6 +241,47 @@ impl XhciImpl {
                     log::debug!("Doorbell register {}: {:#?}", i, db.read_volatile_at(i));
                 }
             }
+
+            // Enumerate runtime registers
+            if let Some(rt) = self.runtime_mut() {
+                log::info!(
+                    "Microframe index: {:#?}",
+                    rt.mfindex.read_volatile().microframe_index()
+                );
+            }
+
+            // Create command ring with (4096 / 16) entries
+            // Doesn't matter which command TRB structure we use for the size_of method; they're all the same size
+            let entries_per_page = 4096 / core::mem::size_of::<CmdNoop>();
+            let _cmd_ring = unsafe {
+                core::slice::from_raw_parts_mut(
+                    {
+                        let frame = FRAME_ALLOCATOR
+                            .get()
+                            .unwrap()
+                            .write()
+                            .allocate_frame()
+                            .expect("Failed to allocate frame for command ring");
+
+                        let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                            frame.start_address().as_u64() + get_phys_offset(),
+                        ));
+
+                        map_page!(
+                            frame.start_address().as_u64(),
+                            page.start_address().as_u64(),
+                            Size4KiB,
+                            PageTableFlags::PRESENT
+                                | PageTableFlags::WRITABLE
+                                | PageTableFlags::NO_CACHE
+                                | PageTableFlags::WRITE_THROUGH
+                        );
+
+                        page.start_address().as_u64() as *mut CmdNoop
+                    },
+                    entries_per_page,
+                )
+            };
         }
     }
 }

@@ -191,7 +191,7 @@ unsafe impl Send for KernelFrameAlloc {}
 unsafe impl Sync for KernelFrameAlloc {}
 
 // Dummy type for getting around the issue of KernelFrameAlloc not implementing Clone
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct XhciMapper;
 
 impl xhci::accessor::Mapper for XhciMapper {
