@@ -299,10 +299,10 @@ pub fn parse_bir(mut header: Header) -> u64 {
                         Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
                     }
                 } else {
-                    panic!("Not a normal header");
+                    0
                 }
             } else {
-                panic!("Invalid MSI-X capability");
+                0
             }
         }
         None => 0,
