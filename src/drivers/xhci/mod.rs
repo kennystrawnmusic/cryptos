@@ -122,8 +122,8 @@ impl XhciImpl {
     }
     pub fn init(&mut self) {
         if let Some(op) = self.operational_mut() {
+            log::info!("XHCI: Waiting for controller");
             while op.usbsts.read_volatile().controller_not_ready() {
-                log::info!("Waiting for controller to be ready");
                 core::hint::spin_loop();
             }
 
@@ -133,8 +133,8 @@ impl XhciImpl {
             });
 
             // Wait for the host controller to stop
+            log::info!("XHCI: Stopping controller");
             while op.usbcmd.read_volatile().run_stop() {
-                log::info!("Waiting for controller to stop");
                 core::hint::spin_loop();
             }
 
