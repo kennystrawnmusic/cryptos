@@ -902,7 +902,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             );
 
             let raw_header = unsafe { *(virt as *const [u8; ECS_OFFSET]) };
-            let raw_header_addr = virt;
+            let header_addr = virt;
 
             // borrow checker
             let raw_clone = raw_header;
@@ -959,7 +959,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     let msg_table = unsafe {
                         core::slice::from_raw_parts_mut(
-                            (raw_header_addr + parsed + bar_offset) as *mut Message,
+                            (header_addr + parsed + bar_offset) as *mut Message,
                             table_len as usize,
                         )
                     }
@@ -972,13 +972,14 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
+                    PCI_TABLE
+                        .write()
+                        .register_headers(raw_clone_2, header_clone_2);
+
                     // Panics with assertion failure (help wanted)
                     // if let DeviceKind::UsbController =
                     //     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     // {
-                    //     PCI_TABLE
-                    //         .write()
-                    //         .register_headers(raw_clone_2, header_clone_2);
                     //     XhciImpl::new(&header).init();
                     // }
 

@@ -1,6 +1,9 @@
 use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use conquer_once::spin::OnceCell;
-use core::{ptr::addr_of, sync::atomic::AtomicU64};
+use core::{
+    ptr::{addr_of, addr_of_mut},
+    sync::atomic::AtomicU64,
+};
 use x86_64::structures::paging::{Mapper, PageTableFlags, Size4KiB};
 
 use crate::{
@@ -18,7 +21,7 @@ use pcics::{
         CapabilityKind, MsiX,
     },
     header::HeaderType,
-    Capabilities, Header,
+    Capabilities, Header, ECS_OFFSET,
 };
 use spin::{Once, RwLock};
 use xhci::{
@@ -56,12 +59,10 @@ impl XhciImpl {
                                 - ((bar0 as u64 | ((bar1 as u64) << 32))
                                     % (core::mem::size_of::<Registers<XhciMapper>>() as u64));
 
-                        let regs = unsafe {
-                            Registers::new(
-                                full_bar as usize + get_phys_offset() as usize,
-                                MAPPER.read().clone(),
-                            )
-                        };
+                        let offset_full_bar = full_bar as usize;
+
+                        let regs =
+                            unsafe { Registers::new(offset_full_bar, MAPPER.read().clone()) };
 
                         Some(regs)
                     } else {
@@ -116,38 +117,63 @@ impl XhciImpl {
             .map(|regs| &regs.interrupter_register_set)
     }
     pub fn init(&mut self) {
-        self.operational_mut()
-            .map(|op| {
-                while op.usbsts.read_volatile().controller_not_ready() {
-                    log::info!("Waiting for controller to be ready");
-                    core::hint::spin_loop();
+        if let Some(op) = self.operational_mut() {
+            while op.usbsts.read_volatile().controller_not_ready() {
+                log::info!("Waiting for controller to be ready");
+                core::hint::spin_loop();
+            }
+
+            // Stop the host controller
+            op.usbcmd.update_volatile(|cmd| {
+                cmd.clear_run_stop();
+            });
+
+            // Wait for the host controller to stop
+            while op.usbcmd.read_volatile().run_stop() {
+                log::info!("Waiting for controller to stop");
+                core::hint::spin_loop();
+            }
+
+            // Reset the host controller
+            op.usbcmd.update_volatile(|cmd| {
+                cmd.set_host_controller_reset();
+            });
+
+            let max_slots = self
+                .capabilities()
+                .map(|cap| cap.hcsparams1.read_volatile().number_of_device_slots());
+            let max_ports = self
+                .capabilities()
+                .map(|cap| cap.hcsparams1.read_volatile().number_of_ports());
+
+            // Read the max number of slots from the capabilities and write that value into the operational register
+            if let Some(slots) = max_slots {
+                self.operational_mut().map(|op| {
+                    op.config.update_volatile(|config| {
+                        config.set_max_device_slots_enabled(slots);
+                    })
+                });
+            }
+
+            // Same with ports
+            if let Some(ports) = max_ports {
+                self.port_register_set_mut().map(|prs| {
+                    for i in 0..ports {
+                        prs.update_volatile_at(i as usize, |port| {
+                            port.portsc.set_port_power();
+                            port.portpmsc.clear_hardware_lpm_enable();
+                        })
+                    }
+                });
+            }
+
+            // Enumerate doorbells
+            if let Some(db) = self.doorbell_mut() {
+                for i in 0..db.len() {
+                    log::info!("Doorbell register {}: {:#?}", i, db.read_volatile_at(i));
                 }
-
-                op.config.update_volatile(|config| {
-                    config.set_max_device_slots_enabled(255);
-                });
-
-                op.dcbaap.update_volatile(|dcbaap| {
-                    dcbaap.set(dcbaap.get() + get_phys_offset());
-                });
-
-                op.crcr.update_volatile(|crcr| {
-                    // First we actually need a TRB to place at the address we're telling the registers to access
-                    let l = Link::new();
-                    ROOT_LINK.get_or_init(move || RwLock::new(l));
-
-                    let phys = addr_of!(*ROOT_LINK.get().unwrap().read()) as u64;
-
-                    let virt = phys - (phys % (64 * 8)) + get_phys_offset();
-                    crcr.set_command_ring_pointer(virt);
-                });
-
-                op.usbcmd.update_volatile(|cmd| {
-                    cmd.set_run_stop();
-                    cmd.set_host_controller_reset();
-                });
-            })
-            .expect("XHCI controller not found");
+            }
+        }
     }
 }
 
