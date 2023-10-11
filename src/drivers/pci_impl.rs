@@ -976,12 +976,12 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         .write()
                         .register_headers(raw_clone_2, header_clone_2);
 
-                    // Panics with assertion failure (help wanted)
-                    // if let DeviceKind::UsbController =
-                    //     DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
-                    // {
-                    //     XhciImpl::new(&header).init();
-                    // }
+
+                    if let DeviceKind::UsbController =
+                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+                    {
+                        XhciImpl::new(&header).init();
+                    }
 
                     for entry in msg_table {
                         let irq = irqalloc();
