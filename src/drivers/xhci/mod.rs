@@ -174,7 +174,7 @@ impl XhciImpl {
             // Enumerate doorbells
             if let Some(db) = self.doorbell_mut() {
                 for i in 0..db.len() {
-                    log::info!("Doorbell register {}: {:#?}", i, db.read_volatile_at(i));
+                    log::debug!("Doorbell register {}: {:#?}", i, db.read_volatile_at(i));
                 }
             }
         }
