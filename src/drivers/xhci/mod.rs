@@ -53,6 +53,8 @@ use xhci::{
     Registers,
 };
 
+pub mod mass_storage;
+
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
