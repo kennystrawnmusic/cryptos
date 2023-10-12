@@ -109,6 +109,31 @@ pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
 }
 
+pub fn addralloc<T>() -> *mut T {
+    let frame = FRAME_ALLOCATOR
+        .get()
+        .expect("Frame allocator not initialized")
+        .write()
+        .allocate_frame()
+        .expect("Failed to allocate frame for command ring");
+
+    let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+        frame.start_address().as_u64() + get_phys_offset(),
+    ));
+
+    map_page!(
+        frame.start_address().as_u64(),
+        page.start_address().as_u64(),
+        Size4KiB,
+        PageTableFlags::PRESENT
+            | PageTableFlags::WRITABLE
+            | PageTableFlags::NO_CACHE
+            | PageTableFlags::WRITE_THROUGH
+    );
+
+    page.start_address().as_u64() as *mut T
+}
+
 impl XhciImpl {
     pub fn new(header: &Header) -> Self {
         Self {
@@ -260,30 +285,7 @@ impl XhciImpl {
                 Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CmdNoop>();
             let cmd_ring = unsafe {
                 core::slice::from_raw_parts_mut(
-                    {
-                        let frame = FRAME_ALLOCATOR
-                            .get()
-                            .expect("Frame allocator not initialized")
-                            .write()
-                            .allocate_frame()
-                            .expect("Failed to allocate frame for command ring");
-
-                        let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                            frame.start_address().as_u64() + get_phys_offset(),
-                        ));
-
-                        map_page!(
-                            frame.start_address().as_u64(),
-                            page.start_address().as_u64(),
-                            Size4KiB,
-                            PageTableFlags::PRESENT
-                                | PageTableFlags::WRITABLE
-                                | PageTableFlags::NO_CACHE
-                                | PageTableFlags::WRITE_THROUGH
-                        );
-
-                        page.start_address().as_u64() as *mut CmdNoop
-                    },
+                    addralloc::<CmdNoop>(),
                     entries_per_page,
                 )
             };
@@ -291,30 +293,7 @@ impl XhciImpl {
             // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
             let dev_context_array = unsafe {
                 core::slice::from_raw_parts_mut(
-                    {
-                        let frame = FRAME_ALLOCATOR
-                            .get()
-                            .expect("Frame allocator not initialized")
-                            .write()
-                            .allocate_frame()
-                            .expect("Failed to allocate frame for slot context array");
-
-                        let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                            frame.start_address().as_u64() + get_phys_offset(),
-                        ));
-
-                        map_page!(
-                            frame.start_address().as_u64(),
-                            page.start_address().as_u64(),
-                            Size4KiB,
-                            PageTableFlags::PRESENT
-                                | PageTableFlags::WRITABLE
-                                | PageTableFlags::NO_CACHE
-                                | PageTableFlags::WRITE_THROUGH
-                        );
-
-                        page.start_address().as_u64() as *mut Device<16>
-                    },
+                    addralloc::<Device<16>>(),
                     max_slots.unwrap() as usize,
                 )
             };
@@ -350,30 +329,7 @@ impl XhciImpl {
                 for i in 0..(max_interrupts as usize) {
                     // Set table size
                     int.interrupter_mut(i).erstsz.update_volatile(|erstsz| {
-                        erstsz.set({
-                            let frame = FRAME_ALLOCATOR
-                                .get()
-                                .expect("Frame allocator not initialized")
-                                .write()
-                                .allocate_frame()
-                                .expect("Failed to allocate frame for event ring segment table");
-
-                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                                frame.start_address().as_u64() + get_phys_offset(),
-                            ));
-
-                            map_page!(
-                                frame.start_address().as_u64(),
-                                page.start_address().as_u64(),
-                                Size4KiB,
-                                PageTableFlags::PRESENT
-                                    | PageTableFlags::WRITABLE
-                                    | PageTableFlags::NO_CACHE
-                                    | PageTableFlags::WRITE_THROUGH
-                            );
-
-                            page.start_address().as_u64() as u16
-                        })
+                        erstsz.set(unsafe { *(addralloc::<u16>()) });
                     });
 
                     // Set the event ring dequeue pointer
@@ -389,30 +345,7 @@ impl XhciImpl {
 
                     // Set the event ring segment table base address
                     int.interrupter_mut(i).erstba.update_volatile(|erstba| {
-                        erstba.set({
-                            let frame = FRAME_ALLOCATOR
-                                .get()
-                                .expect("Frame allocator not initialized")
-                                .write()
-                                .allocate_frame()
-                                .expect("Failed to allocate frame for event ring segment table");
-
-                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                                frame.start_address().as_u64() + get_phys_offset(),
-                            ));
-
-                            map_page!(
-                                frame.start_address().as_u64(),
-                                page.start_address().as_u64(),
-                                Size4KiB,
-                                PageTableFlags::PRESENT
-                                    | PageTableFlags::WRITABLE
-                                    | PageTableFlags::NO_CACHE
-                                    | PageTableFlags::WRITE_THROUGH
-                            );
-
-                            page.start_address().as_u64()
-                        })
+                        erstba.set(unsafe { *(addralloc::<u64>()) })
                     });
 
                     // Set the interrupter moderation register
@@ -449,30 +382,7 @@ impl XhciImpl {
 
                     unsafe {
                         core::slice::from_raw_parts_mut(
-                            {
-                                let frame = FRAME_ALLOCATOR
-                                    .get()
-                                    .expect("Frame allocator not initialized")
-                                    .write()
-                                    .allocate_frame()
-                                    .expect("Failed to allocate frame for scratchpad buffer array");
-
-                                let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                                    frame.start_address().as_u64() + get_phys_offset(),
-                                ));
-
-                                map_page!(
-                                    frame.start_address().as_u64(),
-                                    page.start_address().as_u64(),
-                                    Size4KiB,
-                                    PageTableFlags::PRESENT
-                                        | PageTableFlags::WRITABLE
-                                        | PageTableFlags::NO_CACHE
-                                        | PageTableFlags::WRITE_THROUGH
-                                );
-
-                                page.start_address().as_u64() as *mut ScratchpadEntry
-                            },
+                            addralloc::<ScratchpadEntry>(),
                             max_scratchpads as usize,
                         )
                     }
