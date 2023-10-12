@@ -213,6 +213,10 @@ impl XhciImpl {
             let max_ports = self
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_ports());
+            let max_interrupts = self
+                .capabilities()
+                .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
+                .expect("No interrupt vectors available");
 
             // Read the max number of slots from the capabilities and write that value into the operational register
             if let Some(slots) = max_slots {
@@ -343,7 +347,7 @@ impl XhciImpl {
 
             // Set event ring segment table registers
             self.interrupter_register_set_mut().map(|int| {
-                for i in 0..1023 {
+                for i in 0..(max_interrupts as usize) {
                     // Set table size
                     int.interrupter_mut(i).erstsz.update_volatile(|erstsz| {
                         erstsz.set({
@@ -371,7 +375,7 @@ impl XhciImpl {
                             page.start_address().as_u64() as u16
                         })
                     });
-                    
+
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
                         erdp.set_event_ring_dequeue_pointer(
@@ -433,46 +437,51 @@ impl XhciImpl {
             });
 
             // Set up the scratchpad buffers
-            let scratchpad_buf = self.capabilities_mut().map(|cap| {
-                let max_scratchpads = if cap.hcsparams2.read_volatile().max_scratchpad_buffers() == 0 {
-                    cap.hcsparams2.read_volatile().max_scratchpad_buffers() + 1
-                } else {
-                    cap.hcsparams2.read_volatile().max_scratchpad_buffers()
-                };
+            let scratchpad_buf = self
+                .capabilities_mut()
+                .map(|cap| {
+                    let max_scratchpads =
+                        if cap.hcsparams2.read_volatile().max_scratchpad_buffers() == 0 {
+                            cap.hcsparams2.read_volatile().max_scratchpad_buffers() + 1
+                        } else {
+                            cap.hcsparams2.read_volatile().max_scratchpad_buffers()
+                        };
 
-                unsafe {
-                    core::slice::from_raw_parts_mut(
-                        {
-                            let frame = FRAME_ALLOCATOR
-                                .get()
-                                .expect("Frame allocator not initialized")
-                                .write()
-                                .allocate_frame()
-                                .expect("Failed to allocate frame for scratchpad buffer array");
+                    unsafe {
+                        core::slice::from_raw_parts_mut(
+                            {
+                                let frame = FRAME_ALLOCATOR
+                                    .get()
+                                    .expect("Frame allocator not initialized")
+                                    .write()
+                                    .allocate_frame()
+                                    .expect("Failed to allocate frame for scratchpad buffer array");
 
-                            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                                frame.start_address().as_u64() + get_phys_offset(),
-                            ));
+                                let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                                    frame.start_address().as_u64() + get_phys_offset(),
+                                ));
 
-                            map_page!(
-                                frame.start_address().as_u64(),
-                                page.start_address().as_u64(),
-                                Size4KiB,
-                                PageTableFlags::PRESENT
-                                    | PageTableFlags::WRITABLE
-                                    | PageTableFlags::NO_CACHE
-                                    | PageTableFlags::WRITE_THROUGH
-                            );
+                                map_page!(
+                                    frame.start_address().as_u64(),
+                                    page.start_address().as_u64(),
+                                    Size4KiB,
+                                    PageTableFlags::PRESENT
+                                        | PageTableFlags::WRITABLE
+                                        | PageTableFlags::NO_CACHE
+                                        | PageTableFlags::WRITE_THROUGH
+                                );
 
-                            page.start_address().as_u64() as *mut ScratchpadEntry
-                        },
-                        max_scratchpads as usize,
-                    )
-                }
-            }).expect("No scratchpad buffer array present");
+                                page.start_address().as_u64() as *mut ScratchpadEntry
+                            },
+                            max_scratchpads as usize,
+                        )
+                    }
+                })
+                .expect("No scratchpad buffer array present");
 
             // Set the scratchpad buffer array address by updating the device context array
-            dev_context_array[0] = unsafe { *(addr_of!(scratchpad_buf[0]) as u64 as *mut Device<16>) };
+            dev_context_array[0] =
+                unsafe { *(addr_of!(scratchpad_buf[0]) as u64 as *mut Device<16>) };
 
             // Note: because the DCBAAP is a pointer to the above, overwriting it automatically overwrites
             // what the DCBAAP points to, so no need to update the DCBAAP again
