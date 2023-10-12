@@ -284,10 +284,7 @@ impl XhciImpl {
             let entries_per_page =
                 Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CmdNoop>();
             let cmd_ring = unsafe {
-                core::slice::from_raw_parts_mut(
-                    addralloc::<CmdNoop>(),
-                    entries_per_page,
-                )
+                core::slice::from_raw_parts_mut(addralloc::<CmdNoop>(), entries_per_page)
             };
 
             // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
@@ -344,9 +341,9 @@ impl XhciImpl {
                     });
 
                     // Set the event ring segment table base address
-                    int.interrupter_mut(i).erstba.update_volatile(|erstba| {
-                        erstba.set(unsafe { *(addralloc::<u64>()) })
-                    });
+                    int.interrupter_mut(i)
+                        .erstba
+                        .update_volatile(|erstba| erstba.set(unsafe { *(addralloc::<u64>()) }));
 
                     // Set the interrupter moderation register
                     int.interrupter_mut(i).imod.update_volatile(|imod| {
