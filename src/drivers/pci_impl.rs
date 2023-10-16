@@ -986,9 +986,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     if let DeviceKind::UsbController =
                         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     {
-                        super::xhci::DRIVER.call_once(|| {
-                            Arc::new(XhciProtected::new(&header))
-                        });
                         xhci_init();
                     }
                 }
