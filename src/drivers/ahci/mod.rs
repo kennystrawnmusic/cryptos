@@ -1109,7 +1109,7 @@ impl FOSSPciDeviceHandle for AhciDriver {
     fn handles(&self, vendor_id: Vendor, device_id: DeviceKind) -> bool {
         matches!(
             (vendor_id, device_id),
-            (Vendor::Intel, DeviceKind::SataController)
+            (_, DeviceKind::SataController)
         )
     }
 

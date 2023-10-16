@@ -431,12 +431,24 @@ impl ScratchpadEntry {
     }
 }
 
-pub(crate) static DRIVER: Once<Arc<XhciImpl>> = Once::new();
+pub(crate) static DRIVER: Once<Arc<XhciProtected>> = Once::new();
 
-pub(crate) fn get_xhci<'a>() -> &'a Arc<XhciImpl> {
+pub(crate) fn get_xhci<'a>() -> &'a Arc<XhciProtected> {
     DRIVER
         .get()
         .expect("Attempt to get XHCI controller before initializing it")
+}
+
+pub struct XhciProtected {
+    inner: RwLock<XhciImpl>,
+}
+
+impl XhciProtected {
+    pub fn new(header: &Header) -> Self {
+        Self {
+            inner: RwLock::new(XhciImpl::new(header)),
+        }
+    }
 }
 
 pub fn xhci_init() {
@@ -452,19 +464,19 @@ pub fn xhci_init() {
             )
         });
 
-        let out = header.map(|h| Arc::new(XhciImpl::new(h)));
+        let out = header.map(|h| Arc::new(XhciProtected::new(h)));
         out.expect("XHCI device not in the table")
     });
 
     register_device_driver(get_xhci().clone());
 }
 
-impl FOSSPciDeviceHandle for XhciImpl {
+impl FOSSPciDeviceHandle for XhciProtected {
     fn handles(&self, vendor_id: crate::pci_impl::Vendor, device_id: DeviceKind) -> bool {
         matches!((vendor_id, device_id), (_, DeviceKind::UsbController))
     }
 
-    fn start(&self, header: &mut pcics::Header) {
-        Self::new(&header).init();
+    fn start(&self, _: &mut pcics::Header) {
+        self.inner.write().init();
     }
 }

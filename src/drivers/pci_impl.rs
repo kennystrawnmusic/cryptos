@@ -36,7 +36,7 @@ use crate::{
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
-    xhci::{xhci_init, XhciImpl},
+    xhci::{xhci_init, XhciImpl, XhciProtected},
 };
 
 use {
@@ -980,7 +980,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     if let DeviceKind::UsbController =
                         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     {
-                        XhciImpl::new(&header).init();
+                        register_device_driver(Arc::new(XhciProtected::new(&header)));
                     }
 
                     for entry in msg_table {
