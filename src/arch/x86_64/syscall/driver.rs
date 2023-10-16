@@ -3,13 +3,14 @@ use x86_64::{
     structures::{
         idt::InterruptStackFrame,
         paging::{
-            frame::PhysFrameRangeInclusive, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB, page::PageRangeInclusive,
+            frame::PhysFrameRangeInclusive, page::PageRangeInclusive, Mapper, Page, PageTableFlags,
+            PhysFrame, Size4KiB,
         },
     },
     PhysAddr, VirtAddr,
 };
 
-use crate::{map_page, FRAME_ALLOCATOR, get_phys_offset};
+use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR};
 
 // Compatibility
 pub(crate) fn translate_flags(physmap: PhysmapFlags, map: MapFlags) -> PageTableFlags {
@@ -82,7 +83,7 @@ fn physalloc_inner(
             .allocate_multiple(size)
         {
             let offset = frame_range.start.start_address().as_u64() + get_phys_offset();
-            
+
             let page_range = Page::range_inclusive(
                 Page::<Size4KiB>::containing_address(VirtAddr::new(offset)),
                 Page::<Size4KiB>::containing_address(VirtAddr::new(offset + size as u64)),
@@ -99,7 +100,7 @@ fn physalloc_inner(
                         | PageTableFlags::WRITE_THROUGH
                 );
             }
-            
+
             Ok((size, page_range))
         } else {
             Err(Error::new(ENOMEM))

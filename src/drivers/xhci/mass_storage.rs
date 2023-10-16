@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use super::*;
 
-use alloc::{sync::Arc, boxed::Box};
+use alloc::{boxed::Box, sync::Arc};
 use spin::RwLock;
 use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
 
@@ -51,7 +51,7 @@ impl From<usize> for DeviceKind {
     }
 }
 
-#[allow(dead_code)]  // not ready to use this yet
+#[allow(dead_code)] // not ready to use this yet
 pub struct MassStorageDriver<'a, const N: usize> {
     xhci: Arc<RwLock<&'a mut XhciImpl>>,
     device: Arc<RwLock<DeviceKind>>,
@@ -62,7 +62,12 @@ pub struct MassStorageDriver<'a, const N: usize> {
 }
 
 impl<'a, const N: usize> MassStorageDriver<'a, N> {
-    pub fn new(xhci: &'a mut XhciImpl, endpoint: usize, transfer_block: usize, transfer_len: usize) -> Self {
+    pub fn new(
+        xhci: &'a mut XhciImpl,
+        endpoint: usize,
+        transfer_block: usize,
+        transfer_len: usize,
+    ) -> Self {
         let mut device = DeviceKind::from(N);
 
         let slot_id = device.slot().usb_device_address();

@@ -977,12 +977,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                         .write()
                         .register_headers(raw_clone_2, header_clone_2);
 
-                    if let DeviceKind::UsbController =
-                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
-                    {
-                        register_device_driver(Arc::new(XhciProtected::new(&header)));
-                    }
-
                     for entry in msg_table {
                         let irq = irqalloc();
                         entry.route_irq(irq, IrqMode::Fixed);
@@ -992,6 +986,12 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     }
 
                     info!("MSI-X: {:#?}", msix);
+
+                    if let DeviceKind::UsbController =
+                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+                    {
+                        register_device_driver(Arc::new(XhciProtected::new(&header)));
+                    }
                 }
             }
 
