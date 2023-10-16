@@ -79,7 +79,7 @@ impl<'a, const N: usize> MassStorageDriver<'a, N> {
         Self {
             xhci: Arc::new(RwLock::new(xhci)),
             device: Arc::new(RwLock::new(DeviceKind::from(N))),
-            slot_id: slot_id.clone(),
+            slot_id,
             max_packet_size,
             block_size,
             block_count,
