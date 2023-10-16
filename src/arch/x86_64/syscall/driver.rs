@@ -3,7 +3,7 @@ use x86_64::{
     structures::{
         idt::InterruptStackFrame,
         paging::{
-            frame::PhysFrameRangeInclusive, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB,
+            frame::PhysFrameRangeInclusive, Mapper, Page, PageTableFlags, PhysFrame, Size4KiB, page::PageRangeInclusive,
         },
     },
     PhysAddr, VirtAddr,
@@ -70,7 +70,7 @@ pub fn iopl(level: usize, frame: &mut InterruptStackFrame) -> Result<usize> {
 fn physalloc_inner(
     size: usize,
     flags: PhysallocFlags,
-) -> Result<(usize, PhysFrameRangeInclusive<Size4KiB>)> {
+) -> Result<(usize, PageRangeInclusive<Size4KiB>)> {
     if flags.contains(PhysallocFlags::SPACE_32 | PhysallocFlags::SPACE_64)
         || flags.contains(PhysallocFlags::SPACE_32)
         || flags.contains(PhysallocFlags::SPACE_64)
@@ -99,7 +99,7 @@ fn physalloc_inner(
                 );
             }
             
-            Ok((size, frame_range))
+            Ok((size, page_range))
         } else {
             Err(Error::new(ENOMEM))
         }
