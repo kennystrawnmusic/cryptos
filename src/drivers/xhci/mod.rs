@@ -456,7 +456,8 @@ pub fn xhci_init() {
         let guard = PCI_TABLE.read();
         let header = guard.headers.iter().find(|h| {
             matches!(
-                DeviceKind::new(h.class_code.base as u32, h.class_code.sub as u32), DeviceKind::UsbController
+                DeviceKind::new(h.class_code.base as u32, h.class_code.sub as u32),
+                DeviceKind::UsbController
             )
         });
 
