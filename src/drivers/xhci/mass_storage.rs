@@ -57,17 +57,10 @@ pub struct MassStorageDriver<'a, const N: usize> {
     device: Arc<RwLock<DeviceKind>>,
     slot_id: u8,
     max_packet_size: u16,
-    block_size: usize,
-    block_count: usize,
 }
 
 impl<'a, const N: usize> MassStorageDriver<'a, N> {
-    pub fn new(
-        xhci: &'a mut XhciImpl,
-        endpoint: usize,
-        transfer_block: usize,
-        transfer_len: usize,
-    ) -> Self {
+    pub fn new(xhci: &'a mut XhciImpl, endpoint: usize) -> Self {
         let mut device = DeviceKind::from(N);
 
         let slot_id = device.slot().usb_device_address();
@@ -78,16 +71,12 @@ impl<'a, const N: usize> MassStorageDriver<'a, N> {
         let endpoint = device.endpoint_mut(endpoint);
 
         let max_packet_size = endpoint.max_packet_size();
-        let block_size = transfer_block;
-        let block_count = transfer_len;
 
         Self {
             xhci: Arc::new(RwLock::new(xhci)),
             device: Arc::new(RwLock::new(DeviceKind::from(N))),
             slot_id,
             max_packet_size,
-            block_size,
-            block_count,
         }
     }
 }
