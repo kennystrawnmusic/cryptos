@@ -6,6 +6,7 @@ use alloc::{boxed::Box, sync::Arc};
 use spin::RwLock;
 use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
 
+/// Wrapper for handling both 32 and 64-byte device cases
 pub enum DeviceKind {
     Device8(Device<8>),
     Device16(Device<16>),
