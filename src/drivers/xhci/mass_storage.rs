@@ -61,15 +61,10 @@ pub struct MassStorageDriver<'a, const N: usize> {
 
 impl<'a, const N: usize> MassStorageDriver<'a, N> {
     pub fn new(xhci: &'a mut XhciImpl, endpoint: usize) -> Self {
-        let mut device = DeviceKind::from(N);
-
+        let device = DeviceKind::from(N);
         let slot_id = device.slot().usb_device_address();
 
-        // borrow checker
-        let slot_id = slot_id.clone();
-
-        let endpoint = device.endpoint_mut(endpoint);
-
+        let endpoint = device.endpoint(endpoint);
         let max_packet_size = endpoint.max_packet_size();
 
         Self {
