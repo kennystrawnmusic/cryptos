@@ -456,11 +456,7 @@ pub fn xhci_init() {
         let guard = PCI_TABLE.read();
         let header = guard.headers.iter().find(|h| {
             matches!(
-                (
-                    Vendor::new(h.vendor_id as u32),
-                    DeviceKind::new(h.vendor_id as u32, h.device_id as u32)
-                ),
-                (_, DeviceKind::UsbController)
+                DeviceKind::new(h.class_code.base as u32, h.class_code.sub as u32), DeviceKind::UsbController
             )
         });
 
@@ -472,8 +468,8 @@ pub fn xhci_init() {
 }
 
 impl FOSSPciDeviceHandle for XhciProtected {
-    fn handles(&self, vendor_id: crate::pci_impl::Vendor, device_id: DeviceKind) -> bool {
-        matches!((vendor_id, device_id), (_, DeviceKind::UsbController))
+    fn handles(&self, _: crate::pci_impl::Vendor, device_id: DeviceKind) -> bool {
+        matches!(device_id, DeviceKind::UsbController)
     }
 
     fn start(&self, _: &mut pcics::Header) {

@@ -474,8 +474,8 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
     get_hba().interrupt_status.set(status);
 
     // Read and write back port interrupt status
-    for port in get_ahci().lock().ports.as_mut().iter_mut().flatten() {
-        let port_status = port.inner.lock().hba_port().is.get();
+    for port in get_ahci().write().ports.as_mut().iter_mut().flatten() {
+        let port_status = port.inner.write().hba_port().is.get();
 
         // Check error bit and debug if set
         if port_status.contains(HbaPortIS::HBDS) {
@@ -488,7 +488,7 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
             warn!("AHCI: Cold port detected");
         }
 
-        port.inner.lock().hba_port().is.set(port_status);
+        port.inner.write().hba_port().is.set(port_status);
     }
 
     unsafe { get_active_lapic().end_of_interrupt() };

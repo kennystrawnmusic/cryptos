@@ -8,6 +8,7 @@ use core::sync::atomic::Ordering;
 use acpi::AcpiTables;
 use conquer_once::spin::OnceCell;
 use pcics::header::{HeaderType, InterruptPin};
+use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use x86_64::{
     instructions::interrupts::without_interrupts, registers::control::Cr3,
     structures::paging::FrameAllocator,
@@ -928,7 +929,7 @@ impl AhciPortProtected {
 
 #[derive(Debug)]
 pub(crate) struct AhciPort {
-    pub(crate) inner: Mutex<AhciPortProtected>,
+    pub(crate) inner: RwLock<AhciPortProtected>,
 }
 
 impl AhciPort {
@@ -937,7 +938,7 @@ impl AhciPort {
         const EMPTY: Option<AhciCommand> = None;
 
         Self {
-            inner: Mutex::new(AhciPortProtected {
+            inner: RwLock::new(AhciPortProtected {
                 address,
                 cmds: [EMPTY; 32],
                 free_cmds: 32,
@@ -950,7 +951,7 @@ impl AhciPort {
 
         // Run request and wait for it to complete.
         while offset < request.count {
-            offset = self.inner.lock().run_request(request.clone(), offset);
+            offset = self.inner.write().run_request(request.clone(), offset);
         }
 
         Some(request.count * 512)
@@ -1096,12 +1097,16 @@ impl AhciProtected {
 
 /// Structure representing the ACHI driver.
 pub struct AhciDriver {
-    inner: Mutex<AhciProtected>,
+    inner: RwLock<AhciProtected>,
 }
 
 impl AhciDriver {
-    pub(crate) fn lock(&self) -> MutexGuard<AhciProtected> {
-        self.inner.lock()
+    pub(crate) fn read(&self) -> RwLockReadGuard<AhciProtected> {
+        self.inner.read()
+    }
+
+    pub(crate) fn write(&self) -> RwLockWriteGuard<AhciProtected> {
+        self.inner.write()
     }
 }
 
@@ -1114,13 +1119,13 @@ impl FOSSPciDeviceHandle for AhciDriver {
         // keeps restarting endlessly if I don't put this check in here
         if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
             debug!("AHCI: Initializing");
-            get_ahci().lock().start_driver(header);
+            get_ahci().write().start_driver(header);
         }
     }
 }
 
 pub(crate) fn get_hba<'a>() -> &'a mut HbaMemory {
-    get_ahci().lock().hba_mem()
+    get_ahci().read().hba_mem()
 }
 
 /// Returns a reference-counting pointer to the AHCI driver.
@@ -1136,7 +1141,7 @@ pub(crate) fn ahci_init() {
         const EMPTY: Option<Arc<AhciPort>> = None; // To satisfy the Copy trait bound when the AHCI creating data.
 
         Arc::new(AhciDriver {
-            inner: Mutex::new(AhciProtected {
+            inner: RwLock::new(AhciProtected {
                 ports: [EMPTY; 32],    // Initialize the AHCI ports to an empty slice.
                 hba: VirtAddr::zero(), // Initialize the AHCI HBA address to zero.
             }),

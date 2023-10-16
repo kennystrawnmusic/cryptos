@@ -973,10 +973,6 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    PCI_TABLE
-                        .write()
-                        .register_headers(raw_clone_2, header_clone_2);
-
                     for entry in msg_table {
                         let irq = irqalloc();
                         entry.route_irq(irq, IrqMode::Fixed);
@@ -990,7 +986,10 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     if let DeviceKind::UsbController =
                         DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
                     {
-                        register_device_driver(Arc::new(XhciProtected::new(&header)));
+                        super::xhci::DRIVER.call_once(|| {
+                            Arc::new(XhciProtected::new(&header))
+                        });
+                        xhci_init();
                     }
                 }
             }
