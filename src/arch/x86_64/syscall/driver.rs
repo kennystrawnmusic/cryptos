@@ -82,14 +82,15 @@ fn physalloc_inner(
             .allocate_multiple(size)
         {
             let offset = frame_range.start.start_address().as_u64() + get_phys_offset();
+            
             let page_range = Page::range_inclusive(
                 Page::<Size4KiB>::containing_address(VirtAddr::new(offset)),
                 Page::<Size4KiB>::containing_address(VirtAddr::new(offset + size as u64)),
             );
 
-            for p in page_range {
+            for (p, f) in page_range.zip(frame_range) {
                 map_page!(
-                    p.start_address().as_u64(),
+                    f.start_address().as_u64(),
                     p.start_address().as_u64(),
                     Size4KiB,
                     PageTableFlags::PRESENT
