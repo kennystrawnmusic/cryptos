@@ -9,7 +9,7 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
-use crate::{map_page, FRAME_ALLOCATOR};
+use crate::{map_page, FRAME_ALLOCATOR, get_phys_offset};
 
 // Compatibility
 pub(crate) fn translate_flags(physmap: PhysmapFlags, map: MapFlags) -> PageTableFlags {
@@ -81,6 +81,24 @@ fn physalloc_inner(
             .write()
             .allocate_multiple(size)
         {
+            let offset = frame_range.start.start_address().as_u64() + get_phys_offset();
+            let page_range = Page::range_inclusive(
+                Page::<Size4KiB>::containing_address(VirtAddr::new(offset)),
+                Page::<Size4KiB>::containing_address(VirtAddr::new(offset + size as u64)),
+            );
+
+            for p in page_range {
+                map_page!(
+                    p.start_address().as_u64(),
+                    p.start_address().as_u64(),
+                    Size4KiB,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::NO_CACHE
+                        | PageTableFlags::WRITE_THROUGH
+                );
+            }
+            
             Ok((size, frame_range))
         } else {
             Err(Error::new(ENOMEM))
