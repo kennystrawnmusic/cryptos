@@ -15,7 +15,7 @@ use crate::{
     pci_impl::{
         register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
     },
-    FRAME_ALLOCATOR,
+    FRAME_ALLOCATOR, xhci::mass_storage::UsbDeviceKind,
 };
 use pcics::{
     capabilities::{
@@ -244,6 +244,7 @@ impl XhciImpl {
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
                 .expect("No interrupt vectors available");
+            let config_info = self.capabilities().map(|cap| cap.hccparams2.read_volatile().configuration_information_capability());
 
             // Read the max number of slots from the capabilities and write that value into the operational register
             if let Some(slots) = max_slots {
@@ -414,7 +415,47 @@ impl XhciImpl {
             });
 
             log::info!("Successfully initialized XHCI controller");
+
+            // Enable config info if config info capability is present
+            if let Some(config_info) = config_info {
+                if config_info {
+                    self.operational_mut().map(|op| {
+                        op.config.update_volatile(|config| {
+                            config.set_configuration_information_enable();
+                        })
+                    });
+                }
+            }
+
+            // Reset ports
+            self.port_register_set_mut().map(|prs| {
+                for (i, mut port) in prs.into_iter().enumerate() {
+                    log::info!("Resetting port {}", i);
+                    if port.portsc.port_enabled_disabled() {
+                        port.portsc.set_port_reset();
+                        while port.portsc.port_reset() {
+                            core::hint::spin_loop();
+                        }
+                        // TODO: timeout
+                    }
+                }
+            });
         }
+    }
+
+    pub fn probe(&self) -> Option<UsbDeviceKind> {
+        if let Some(prs) = self.port_register_set() {
+            for (i, port) in prs.into_iter().enumerate() {
+                if port.portsc.port_enabled_disabled() {
+                    log::info!("Probing port {}", i);
+                    if port.portsc.current_connect_status() {
+                        log::info!("Device connected to port {}", i);
+                        return Some(UsbDeviceKind::Device16(Device::new_64byte()));
+                    }
+                }
+            }
+        }
+        None
     }
 }
 

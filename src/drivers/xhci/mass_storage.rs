@@ -7,12 +7,12 @@ use spin::RwLock;
 use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
 
 /// Wrapper for handling both 32 and 64-byte device cases
-pub enum DeviceKind {
+pub enum UsbDeviceKind {
     Device8(Device<8>),
     Device16(Device<16>),
 }
 
-impl DeviceKind {
+impl UsbDeviceKind {
     pub fn slot<'a>(&'a self) -> &'a dyn SlotHandler {
         match self {
             Self::Device8(device) => device.slot(),
@@ -42,7 +42,7 @@ impl DeviceKind {
     }
 }
 
-impl From<usize> for DeviceKind {
+impl From<usize> for UsbDeviceKind {
     fn from(size: usize) -> Self {
         match size {
             8 => Self::Device8(Device::new_32byte()),
@@ -55,19 +55,19 @@ impl From<usize> for DeviceKind {
 #[allow(dead_code)] // not ready to use this yet
 pub struct MassStorageDriver<'a, const N: usize> {
     xhci: Arc<RwLock<&'a mut XhciImpl>>,
-    device: Arc<RwLock<DeviceKind>>,
+    device: Arc<RwLock<UsbDeviceKind>>,
     slot_id: u8,
     max_packet_size: u16,
 }
 
 impl<'a, const N: usize> MassStorageDriver<'a, N> {
     pub fn new(xhci: &'a mut XhciImpl, endpoint: usize) -> Self {
-        let slot_id = DeviceKind::from(N).slot().usb_device_address();
-        let max_packet_size = DeviceKind::from(N).endpoint(endpoint).max_packet_size();
+        let slot_id = UsbDeviceKind::from(N).slot().usb_device_address();
+        let max_packet_size = UsbDeviceKind::from(N).endpoint(endpoint).max_packet_size();
 
         Self {
             xhci: Arc::new(RwLock::new(xhci)),
-            device: Arc::new(RwLock::new(DeviceKind::from(N))),
+            device: Arc::new(RwLock::new(UsbDeviceKind::from(N))),
             slot_id,
             max_packet_size,
         }
