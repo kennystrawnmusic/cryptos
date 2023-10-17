@@ -1,4 +1,5 @@
 use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
+use bitflags::bitflags;
 use conquer_once::spin::OnceCell;
 use core::{
     ptr::{addr_of, addr_of_mut},
@@ -33,7 +34,7 @@ use xhci::{
     context::{Device, Slot},
     registers::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
-        Runtime,
+        Runtime, operational::PortStatusAndControlRegister,
     },
     ring::trb::{
         command::{
@@ -51,7 +52,7 @@ use xhci::{
         },
         Link,
     },
-    Registers,
+    Registers, extended_capabilities::List,
 };
 
 pub mod mass_storage;
@@ -110,6 +111,7 @@ pub struct Ring<'a>(VecDeque<&'a mut TrbKind<'a>>);
 
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
+    extcaps: Option<List<XhciMapper>>,
 }
 
 pub fn addralloc<T>() -> *mut T {
@@ -139,36 +141,43 @@ pub fn addralloc<T>() -> *mut T {
 
 impl XhciImpl {
     pub fn new(header: &Header) -> Self {
-        Self {
-            regs: {
-                if let DeviceKind::UsbController =
-                    DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
-                {
-                    if let HeaderType::Normal(header) = header.header_type.clone() {
-                        let bar0 = header.base_addresses.orig()[0];
-                        let bar1 = header.base_addresses.orig()[1];
+        let offset_full_bar_outer = OnceCell::<usize>::uninit();
+        let regs = {
+            if let DeviceKind::UsbController =
+                DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+            {
+                if let HeaderType::Normal(header) = header.header_type.clone() {
+                    let bar0 = header.base_addresses.orig()[0];
+                    let bar1 = header.base_addresses.orig()[1];
 
-                        // Align this properly
-                        let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
+                    // Align this properly
+                    let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
-                        let offset_full_bar = {
-                            let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                                full_bar as u64,
-                            ));
-                            test.start_address().as_u64()
-                        } as usize;
+                    let offset_full_bar = {
+                        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                            full_bar as u64,
+                        ));
+                        test.start_address().as_u64()
+                    } as usize;
+                    offset_full_bar_outer.get_or_init(move || offset_full_bar);
 
-                        let regs =
-                            unsafe { Registers::new(offset_full_bar, MAPPER.read().clone()) };
-                        Some(regs)
-                    } else {
-                        None
-                    }
+                    let regs =
+                        unsafe { Registers::new(offset_full_bar_outer.get().cloned().unwrap(), MAPPER.read().clone()) };
+                    Some(regs)
                 } else {
                     None
                 }
-            },
-        }
+            } else {
+                None
+            }
+        };
+
+        let extcaps = regs.as_ref().map(|regs| {
+            let extended_caps = unsafe { List::new(offset_full_bar_outer.get().cloned().unwrap(), regs.capability.hccparams1.read_volatile(), MAPPER.read().clone()) };
+            extended_caps.map(|caps| caps)
+        }).flatten();
+
+        Self { regs, extcaps }
     }
     pub fn capabilities_mut(&mut self) -> Option<&mut Capability<XhciMapper>> {
         self.regs.as_mut().map(|regs| &mut regs.capability)
@@ -211,6 +220,12 @@ impl XhciImpl {
         self.regs
             .as_ref()
             .map(|regs| &regs.interrupter_register_set)
+    }
+    pub fn extcaps(&self) -> Option<&List<XhciMapper>> {
+        self.extcaps.as_ref().map(|caps| caps)
+    }
+    pub fn extcaps_mut(&mut self) -> Option<&mut List<XhciMapper>> {
+        self.extcaps.as_mut().map(|caps| caps)
     }
     pub fn init(&mut self) {
         if let Some(op) = self.operational_mut() {
@@ -445,14 +460,20 @@ impl XhciImpl {
                     }
                 }
             });
+
+            self.probe::<16>();
         }
     }
 
-    pub fn probe<const N: usize>(&self) -> Option<UsbDeviceKind> {
+    pub fn probe<const N: usize>(&mut self) -> Option<UsbDeviceKind> {
         if let Some(prs) = self.port_register_set() {
-            for (i, port) in prs.into_iter().enumerate() {
-                if port.portsc.port_enabled_disabled() {
+            for (i, mut port) in prs.into_iter().enumerate() {
+                if port.portsc.port_power() {
                     log::info!("Probing port {}", i);
+                    port.portsc.set_0_port_enabled_disabled();
+                    while port.portsc.port_enabled_disabled() {
+                        core::hint::spin_loop();
+                    }
                     if port.portsc.current_connect_status() {
                         log::info!("Device connected to port {}", i);
                         return Some(UsbDeviceKind::from(N));
