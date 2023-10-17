@@ -448,14 +448,14 @@ impl XhciImpl {
         }
     }
 
-    pub fn probe(&self) -> Option<UsbDeviceKind> {
+    pub fn probe<const N: usize>(&self) -> Option<UsbDeviceKind> {
         if let Some(prs) = self.port_register_set() {
             for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_enabled_disabled() {
                     log::info!("Probing port {}", i);
                     if port.portsc.current_connect_status() {
                         log::info!("Device connected to port {}", i);
-                        return Some(UsbDeviceKind::from(16));
+                        return Some(UsbDeviceKind::from(N));
                     }
                 }
             }
