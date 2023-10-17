@@ -15,7 +15,8 @@ use crate::{
     pci_impl::{
         register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
     },
-    FRAME_ALLOCATOR, xhci::mass_storage::UsbDeviceKind,
+    xhci::mass_storage::UsbDeviceKind,
+    FRAME_ALLOCATOR,
 };
 use pcics::{
     capabilities::{
@@ -244,7 +245,11 @@ impl XhciImpl {
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
                 .expect("No interrupt vectors available");
-            let config_info = self.capabilities().map(|cap| cap.hccparams2.read_volatile().configuration_information_capability());
+            let config_info = self.capabilities().map(|cap| {
+                cap.hccparams2
+                    .read_volatile()
+                    .configuration_information_capability()
+            });
 
             // Read the max number of slots from the capabilities and write that value into the operational register
             if let Some(slots) = max_slots {
