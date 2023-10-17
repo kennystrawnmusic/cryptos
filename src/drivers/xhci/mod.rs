@@ -450,7 +450,7 @@ impl XhciImpl {
                     log::info!("Probing port {}", i);
                     if port.portsc.current_connect_status() {
                         log::info!("Device connected to port {}", i);
-                        return Some(UsbDeviceKind::Device16(Device::new_64byte()));
+                        return Some(UsbDeviceKind::from(16));
                     }
                 }
             }
