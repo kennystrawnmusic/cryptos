@@ -59,54 +59,54 @@ pub mod mass_storage;
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
-pub enum CommandKind {
-    AddressDevice(AddressDevice),
-    ConfigureEndpoint(ConfigureEndpoint),
-    DisableSlot(DisableSlot),
-    EvaluateContext(EvaluateContext),
-    ForceEvent(ForceEvent),
-    ForceHeader(ForceHeader),
-    GetExtendedProperty(GetExtendedProperty),
-    GetPortBandwidth(GetPortBandwidth),
-    NegotiateBandwidth(NegotiateBandwidth),
-    NoOp(CmdNoop),
-    ResetDevice(ResetDevice),
-    ResetEndpoint(ResetEndpoint),
-    SetExtendedProperty(SetExtendedProperty),
-    SetLatencyToleranceValue(SetLatencyToleranceValue),
-    SetTrDequeuePointer(SetTrDequeuePointer),
-    StopEndpoint(StopEndpoint),
+pub enum CommandKind<'a> {
+    AddressDevice(&'a mut AddressDevice),
+    ConfigureEndpoint(&'a mut ConfigureEndpoint),
+    DisableSlot(&'a mut DisableSlot),
+    EvaluateContext(&'a mut EvaluateContext),
+    ForceEvent(&'a mut ForceEvent),
+    ForceHeader(&'a mut ForceHeader),
+    GetExtendedProperty(&'a mut GetExtendedProperty),
+    GetPortBandwidth(&'a mut GetPortBandwidth),
+    NegotiateBandwidth(&'a mut NegotiateBandwidth),
+    NoOp(&'a mut CmdNoop),
+    ResetDevice(&'a mut ResetDevice),
+    ResetEndpoint(&'a mut ResetEndpoint),
+    SetExtendedProperty(&'a mut SetExtendedProperty),
+    SetLatencyToleranceValue(&'a mut SetLatencyToleranceValue),
+    SetTrDequeuePointer(&'a mut SetTrDequeuePointer),
+    StopEndpoint(&'a mut StopEndpoint),
 }
 
-pub enum EventKind {
-    BandwidthRequest(BandwidthRequest),
-    CommandCompletion(CommandCompletion),
-    DeviceNotification(DeviceNotification),
-    Doorbell(Doorbell),
-    HostController(HostController),
-    MfIndexWrap(MfindexWrap),
-    PortStatusChange(PortStatusChange),
-    Transfer(TransferEvent),
+pub enum EventKind<'a> {
+    BandwidthRequest(&'a mut BandwidthRequest),
+    CommandCompletion(&'a mut CommandCompletion),
+    DeviceNotification(&'a mut DeviceNotification),
+    Doorbell(&'a mut Doorbell),
+    HostController(&'a mut HostController),
+    MfIndexWrap(&'a mut MfindexWrap),
+    PortStatusChange(&'a mut PortStatusChange),
+    Transfer(&'a mut TransferEvent),
 }
 
-pub enum TransferKind {
-    DataStage(DataStage),
-    EventData(EventData),
-    Isoch(Isoch),
-    Noop(TransferNoop),
-    Normal(Normal),
-    SetupStage(SetupStage),
-    StatusStage(StatusStage),
+pub enum TransferKind<'a> {
+    DataStage(&'a mut DataStage),
+    EventData(&'a mut EventData),
+    Isoch(&'a mut Isoch),
+    Noop(&'a mut TransferNoop),
+    Normal(&'a mut Normal),
+    SetupStage(&'a mut SetupStage),
+    StatusStage(&'a mut StatusStage),
 }
 
-pub enum TrbKind {
-    Command(CommandKind),
-    Event(EventKind),
-    Transfer(TransferKind),
-    Link(Link),
+pub enum TrbKind<'a> {
+    Command(CommandKind<'a>),
+    Event(EventKind<'a>),
+    Transfer(TransferKind<'a>),
+    Link(&'a mut Link),
 }
 
-pub struct Ring<'a>(VecDeque<&'a mut TrbKind>);
+pub struct Ring<'a>(VecDeque<&'a mut TrbKind<'a>>);
 
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
@@ -290,14 +290,14 @@ impl XhciImpl {
             // Create command ring with (4096 / 16) entries
             // Doesn't matter which command TRB structure we use for the size_of method; they're all the same size
             let entries_per_page =
-                Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CmdNoop>();
+                Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>();
             let cmd_ring = unsafe {
-                core::slice::from_raw_parts_mut(addralloc::<CmdNoop>(), entries_per_page)
+                core::slice::from_raw_parts_mut::<'static>(addralloc::<CommandKind<'_>>(), entries_per_page)
             };
 
             // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
             let dev_context_array = unsafe {
-                core::slice::from_raw_parts_mut(
+                core::slice::from_raw_parts_mut::<'static>(
                     addralloc::<Device<16>>(),
                     max_slots.unwrap() as usize,
                 )
@@ -386,7 +386,7 @@ impl XhciImpl {
                         };
 
                     unsafe {
-                        core::slice::from_raw_parts_mut(
+                        core::slice::from_raw_parts_mut::<'static>(
                             addralloc::<ScratchpadEntry>(),
                             max_scratchpads as usize,
                         )
