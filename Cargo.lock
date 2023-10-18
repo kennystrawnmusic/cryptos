@@ -567,9 +567,9 @@ dependencies = [
 
 [[package]]
 name = "embedded-layout"
-version = "0.3.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b08725b7f9021377a7f84f14089b4980a30b06c5e424288b34482f17cf513369"
+checksum = "bd38d6d83acd193889e7fbdffc9d16bb82d4328d372c7c75826619a8eb8cbcda"
 dependencies = [
  "embedded-graphics",
  "embedded-layout-macros",
@@ -577,9 +577,9 @@ dependencies = [
 
 [[package]]
 name = "embedded-layout-macros"
-version = "0.2.1"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "491e0adbc526da63474799123a3140523b30fc0d14739a24e023ec5cd92e651f"
+checksum = "4f6e621fe4c7e05b695274b722dc0a60bacd1c8696b58191baa0154713d52400"
 dependencies = [
  "proc-macro2",
  "quote",

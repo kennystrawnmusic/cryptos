@@ -5,3 +5,4 @@ bindeps = true
 bin = "run --release --package runner --"
 asm = "rustc --package runner -- --emit=asm -o target/x86_64-unknown-none/debug/cryptos.S"
 kclippy = "clippy --allow-dirty --fix --package runner --"
+hmfs = "run --release --package hmfsprogs --"
