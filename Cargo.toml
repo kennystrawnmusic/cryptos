@@ -10,7 +10,10 @@ license = "GPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = [ "runner" ]
+members = [ 
+    "runner",
+    "hmfsprogs"
+]
 
 [dependencies]
 acpi = { git = "https://github.com/rust-osdev/acpi" }

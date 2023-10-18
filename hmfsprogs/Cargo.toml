@@ -1,0 +1,11 @@
+[package]
+name = "hmfsprogs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hashbrown = "0.14.1"
+mr-mime = { version = "0.1.1", default-features = false, features = ["alloc"] }
+redox_syscall = { version = "0.4.1" }
+sha3 = { version = "0.10.8", default-features = false, features = ["asm"] }
+unix_path = { version = "1.0.1", default-features = false, features = ["alloc"] }
