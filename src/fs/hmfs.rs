@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 use alloc::alloc::Global;
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -9,7 +10,7 @@ use core::hash::{BuildHasher, BuildHasherDefault, Hash, Hasher};
 use mr_mime::Mime;
 use sha3::{Digest, Sha3_512};
 use syscall::{Error, EACCES, ENOTDIR};
-use unix_path::PathBuf;
+use unix_path::{Path, PathBuf};
 
 // return the first 64 bits of a 512-bit hash
 pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
@@ -244,6 +245,7 @@ impl<'a> Entry<'a> {
 #[non_exhaustive]
 pub struct Properties<'a> {
     name: String,
+    full_path: PathBuf,
     entry_kind: EntryKind<'a>,
     mime_type: Option<Mime<'a>>,
     mode: u32,
@@ -265,8 +267,12 @@ impl<'a> Properties<'a> {
         date_modified: time_t,
         owner: String,
     ) -> Self {
+        // borrow checker
+        let cloned = name.clone();
+
         Self {
             name,
+            full_path: Path::new(cloned.as_str()).to_owned(),
             entry_kind,
             mime_type,
             mode,
@@ -360,6 +366,7 @@ impl<'a> RootEntry<'a> {
         new_entry_parent
     }
     pub fn get_root_dir(&self) -> Entry {
+        assert_eq!(self.magic, 0x90a7cafe); // TODO: find a compiler-level way to do this
         self.dir.clone()
     }
 }
