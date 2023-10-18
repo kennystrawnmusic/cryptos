@@ -288,7 +288,7 @@ impl<'a> Properties<'a> {
 pub fn root_entry_bytes(entry: RootEntry) -> &'static mut [u8] {
     let map_addr = &entry as *const _ as usize as u64;
     unsafe {
-        core::slice::from_raw_parts_mut(map_addr as *mut u8, core::mem::size_of::<RootEntry>())
+        core::slice::from_raw_parts_mut::<'static>(map_addr as *mut u8, core::mem::size_of::<RootEntry>())
     }
 }
 
