@@ -354,11 +354,19 @@ impl XhciImpl {
 
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
+
+                        let event_ring_dequeue = unsafe {
+                            core::slice::from_raw_parts_mut::<'static>(
+                                addralloc::<EventKind<'_>>(),
+                                4096 / core::mem::size_of::<EventKind<'_>>(),
+                            )
+                        };
+
                         erdp.set_event_ring_dequeue_pointer(
-                            cmd_ring
+                            event_ring_dequeue
                                 .iter()
                                 .nth(0)
-                                .map(|cmd| cmd as *const _ as u64)
+                                .map(|event| event as *const _ as u64)
                                 .expect("No commands present in command ring"),
                         )
                     });
