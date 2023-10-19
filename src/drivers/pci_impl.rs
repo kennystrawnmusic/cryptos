@@ -966,7 +966,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     let bar_offset = table.offset as u64;
 
                     let msg_table = unsafe {
-                        core::slice::from_raw_parts_mut(
+                        core::slice::from_raw_parts_mut::<'static>(
                             (header_addr + parsed + bar_offset) as *mut Message,
                             table_len as usize,
                         )
