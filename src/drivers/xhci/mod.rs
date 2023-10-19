@@ -71,7 +71,7 @@ pub enum CommandKind<'a> {
     GetExtendedProperty(&'a mut GetExtendedProperty),
     GetPortBandwidth(&'a mut GetPortBandwidth),
     NegotiateBandwidth(&'a mut NegotiateBandwidth),
-    NoOp(&'a mut CmdNoop),
+    CmdNoop(&'a mut CmdNoop),
     ResetDevice(&'a mut ResetDevice),
     ResetEndpoint(&'a mut ResetEndpoint),
     SetExtendedProperty(&'a mut SetExtendedProperty),
@@ -86,16 +86,16 @@ pub enum EventKind<'a> {
     DeviceNotification(&'a mut DeviceNotification),
     Doorbell(&'a mut Doorbell),
     HostController(&'a mut HostController),
-    MfIndexWrap(&'a mut MfindexWrap),
+    MfindexWrap(&'a mut MfindexWrap),
     PortStatusChange(&'a mut PortStatusChange),
-    Transfer(&'a mut TransferEvent),
+    TransferEvent(&'a mut TransferEvent),
 }
 
 pub enum TransferKind<'a> {
     DataStage(&'a mut DataStage),
     EventData(&'a mut EventData),
     Isoch(&'a mut Isoch),
-    Noop(&'a mut TransferNoop),
+    TransferNoop(&'a mut TransferNoop),
     Normal(&'a mut Normal),
     SetupStage(&'a mut SetupStage),
     StatusStage(&'a mut StatusStage),
@@ -114,6 +114,50 @@ pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
     extcaps: Option<List<XhciMapper>>,
 }
+
+macro_rules! impl_from_ref_for_kind {
+    ($sub:ident, $kind:ident) => {
+        impl<'a> From<&'a mut $sub> for $kind<'a> {
+            fn from(sub: &'a mut $sub) -> Self {
+                $kind::$sub(sub)
+            }
+        }
+    };
+}
+
+impl_from_ref_for_kind!(AddressDevice, CommandKind);
+impl_from_ref_for_kind!(ConfigureEndpoint, CommandKind);
+impl_from_ref_for_kind!(DisableSlot, CommandKind);
+impl_from_ref_for_kind!(EvaluateContext, CommandKind);
+impl_from_ref_for_kind!(ForceEvent, CommandKind);
+impl_from_ref_for_kind!(ForceHeader, CommandKind);
+impl_from_ref_for_kind!(GetExtendedProperty, CommandKind);
+impl_from_ref_for_kind!(GetPortBandwidth, CommandKind);
+impl_from_ref_for_kind!(NegotiateBandwidth, CommandKind);
+impl_from_ref_for_kind!(CmdNoop, CommandKind);
+impl_from_ref_for_kind!(ResetDevice, CommandKind);
+impl_from_ref_for_kind!(ResetEndpoint, CommandKind);
+impl_from_ref_for_kind!(SetExtendedProperty, CommandKind);
+impl_from_ref_for_kind!(SetLatencyToleranceValue, CommandKind);
+impl_from_ref_for_kind!(SetTrDequeuePointer, CommandKind);
+impl_from_ref_for_kind!(StopEndpoint, CommandKind);
+
+impl_from_ref_for_kind!(BandwidthRequest, EventKind);
+impl_from_ref_for_kind!(CommandCompletion, EventKind);
+impl_from_ref_for_kind!(DeviceNotification, EventKind);
+impl_from_ref_for_kind!(Doorbell, EventKind);
+impl_from_ref_for_kind!(HostController, EventKind);
+impl_from_ref_for_kind!(MfindexWrap, EventKind);
+impl_from_ref_for_kind!(PortStatusChange, EventKind);
+impl_from_ref_for_kind!(TransferEvent, EventKind);
+
+impl_from_ref_for_kind!(DataStage, TransferKind);
+impl_from_ref_for_kind!(EventData, TransferKind);
+impl_from_ref_for_kind!(Isoch, TransferKind);
+impl_from_ref_for_kind!(TransferNoop, TransferKind);
+impl_from_ref_for_kind!(Normal, TransferKind);
+impl_from_ref_for_kind!(SetupStage, TransferKind);
+impl_from_ref_for_kind!(StatusStage, TransferKind);
 
 pub fn addralloc<T>() -> *mut T {
     let frame = FRAME_ALLOCATOR
