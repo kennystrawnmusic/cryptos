@@ -432,6 +432,9 @@ impl Message {
         data.set_bits(16..32, 0);
 
         let mut addr = 0;
+
+        // Since we're already sending IPIs in a cycle to schedule tasks,
+        // this always changes, so pointless to fix it to a specific ID
         addr.set_bits(12..20, unsafe { get_active_lapic().id() });
 
         // Use the IA32_APIC_BASE MSR to ensure that these bits actually match the first 12 bits
