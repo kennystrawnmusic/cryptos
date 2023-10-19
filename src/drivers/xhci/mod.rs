@@ -69,7 +69,7 @@ pub trait TrbAnalyzer: AsRef<[u32]> + TryFrom<[u32; 4]> {
     {
         Self::try_from(raw).expect("Failed to convert raw TRB to TRB")
     }
-    
+
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
             1 => TrbType::Normal,
@@ -652,7 +652,8 @@ impl XhciImpl {
                 }
             });
 
-            self.probe::<16>();
+            // Debug
+            // self.probe::<16>();
         }
     }
 
@@ -660,7 +661,7 @@ impl XhciImpl {
         if let Some(prs) = self.port_register_set() {
             for (i, mut port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
-                    log::debug!("Probing port {}", i);
+                    log::info!("Probing port {}", i);
                     port.portsc.set_0_port_enabled_disabled();
                     while port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();

@@ -31,12 +31,13 @@ use x86_64::{
 
 use crate::{
     acpi_impl::{aml_init, aml_route, system_shutdown, KernelAcpi},
+    ahci::ahci_init,
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
-    xhci::{xhci_init, XhciImpl, XhciProtected}, ahci::ahci_init,
+    xhci::{xhci_init, XhciImpl, XhciProtected},
 };
 
 use {
@@ -989,8 +990,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     info!("MSI-X: {:#?}", msix);
 
-                    if let DeviceKind::UsbController = kind
-                    {
+                    if let DeviceKind::UsbController = kind {
                         xhci_init();
                     }
                 }
