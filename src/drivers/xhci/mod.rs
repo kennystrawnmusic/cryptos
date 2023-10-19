@@ -1,4 +1,5 @@
-use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, collections::VecDeque, sync::Arc, vec::Vec};
+use bit_field::BitField;
 use bitflags::bitflags;
 use conquer_once::spin::OnceCell;
 use core::{
@@ -39,7 +40,7 @@ use xhci::{
     },
     ring::trb::{
         command::{
-            AddressDevice, ConfigureEndpoint, DisableSlot, EvaluateContext, ForceEvent,
+            AddressDevice, ConfigureEndpoint, DisableSlot, EnableSlot, EvaluateContext, ForceEvent,
             ForceHeader, GetExtendedProperty, GetPortBandwidth, NegotiateBandwidth,
             Noop as CmdNoop, ResetDevice, ResetEndpoint, SetExtendedProperty,
             SetLatencyToleranceValue, SetTrDequeuePointer, StopEndpoint,
@@ -51,7 +52,7 @@ use xhci::{
         transfer::{
             DataStage, EventData, Isoch, Noop as TransferNoop, Normal, SetupStage, StatusStage,
         },
-        Link,
+        Link, Type as TrbType,
     },
     Registers,
 };
@@ -61,10 +62,101 @@ pub mod mass_storage;
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
+pub trait TrbAnalyzer: AsRef<[u32]> + TryFrom<[u32; 4]> {
+    fn new(raw: [u32; 4]) -> Self
+    where
+        <Self as TryFrom<[u32; 4]>>::Error: core::fmt::Debug,
+    {
+        Self::try_from(raw).expect("Failed to convert raw TRB to TRB")
+    }
+    
+    fn get_type(&self) -> TrbType {
+        match self.as_ref()[3].get_bits(10..=15) {
+            1 => TrbType::Normal,
+            2 => TrbType::SetupStage,
+            3 => TrbType::DataStage,
+            4 => TrbType::StatusStage,
+            5 => TrbType::Isoch,
+            6 => TrbType::Link,
+            7 => TrbType::EventData,
+            8 => TrbType::NoopTransfer,
+            9 => TrbType::EnableSlot,
+            10 => TrbType::DisableSlot,
+            11 => TrbType::AddressDevice,
+            12 => TrbType::ConfigureEndpoint,
+            13 => TrbType::EvaluateContext,
+            14 => TrbType::ResetEndpoint,
+            15 => TrbType::StopEndpoint,
+            16 => TrbType::SetTrDequeuePointer,
+            17 => TrbType::ResetDevice,
+            18 => TrbType::ForceEvent,
+            19 => TrbType::NegotiateBandwidth,
+            20 => TrbType::SetLatencyToleranceValue,
+            21 => TrbType::GetPortBandwidth,
+            22 => TrbType::ForceHeader,
+            23 => TrbType::NoopCommand,
+            24 => TrbType::GetExtendedProperty,
+            25 => TrbType::SetExtendedProperty,
+            32 => TrbType::TransferEvent,
+            33 => TrbType::CommandCompletion,
+            34 => TrbType::PortStatusChange,
+            35 => TrbType::BandwidthRequest,
+            36 => TrbType::Doorbell,
+            37 => TrbType::HostController,
+            38 => TrbType::DeviceNotification,
+            39 => TrbType::MfindexWrap,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl TrbAnalyzer for AddressDevice {}
+impl TrbAnalyzer for ConfigureEndpoint {}
+impl TrbAnalyzer for DisableSlot {}
+impl TrbAnalyzer for EnableSlot {}
+impl TrbAnalyzer for EvaluateContext {}
+impl TrbAnalyzer for ForceEvent {}
+impl TrbAnalyzer for ForceHeader {}
+impl TrbAnalyzer for GetExtendedProperty {}
+impl TrbAnalyzer for GetPortBandwidth {}
+impl TrbAnalyzer for NegotiateBandwidth {}
+impl TrbAnalyzer for CmdNoop {}
+impl TrbAnalyzer for ResetDevice {}
+impl TrbAnalyzer for ResetEndpoint {}
+impl TrbAnalyzer for SetExtendedProperty {}
+impl TrbAnalyzer for SetLatencyToleranceValue {}
+impl TrbAnalyzer for SetTrDequeuePointer {}
+impl TrbAnalyzer for StopEndpoint {}
+
+impl TrbAnalyzer for BandwidthRequest {}
+impl TrbAnalyzer for CommandCompletion {}
+impl TrbAnalyzer for DeviceNotification {}
+impl TrbAnalyzer for Doorbell {}
+impl TrbAnalyzer for HostController {}
+impl TrbAnalyzer for MfindexWrap {}
+impl TrbAnalyzer for PortStatusChange {}
+impl TrbAnalyzer for TransferEvent {}
+
+impl TrbAnalyzer for DataStage {}
+impl TrbAnalyzer for EventData {}
+impl TrbAnalyzer for Isoch {}
+impl TrbAnalyzer for TransferNoop {}
+impl TrbAnalyzer for Normal {}
+impl TrbAnalyzer for SetupStage {}
+impl TrbAnalyzer for StatusStage {}
+
+pub trait TrbKindMarker {}
+
+impl TrbKindMarker for CommandKind<'_> {}
+impl TrbKindMarker for EventKind<'_> {}
+impl TrbKindMarker for TransferKind<'_> {}
+impl<'a> TrbKindMarker for &'a mut Link {}
+
 pub enum CommandKind<'a> {
     AddressDevice(&'a mut AddressDevice),
     ConfigureEndpoint(&'a mut ConfigureEndpoint),
     DisableSlot(&'a mut DisableSlot),
+    EnableSlot(&'a mut EnableSlot),
     EvaluateContext(&'a mut EvaluateContext),
     ForceEvent(&'a mut ForceEvent),
     ForceHeader(&'a mut ForceHeader),
@@ -128,6 +220,7 @@ macro_rules! impl_from_ref_for_kind {
 impl_from_ref_for_kind!(AddressDevice, CommandKind);
 impl_from_ref_for_kind!(ConfigureEndpoint, CommandKind);
 impl_from_ref_for_kind!(DisableSlot, CommandKind);
+impl_from_ref_for_kind!(EnableSlot, CommandKind);
 impl_from_ref_for_kind!(EvaluateContext, CommandKind);
 impl_from_ref_for_kind!(ForceEvent, CommandKind);
 impl_from_ref_for_kind!(ForceHeader, CommandKind);
@@ -158,6 +251,37 @@ impl_from_ref_for_kind!(TransferNoop, TransferKind);
 impl_from_ref_for_kind!(Normal, TransferKind);
 impl_from_ref_for_kind!(SetupStage, TransferKind);
 impl_from_ref_for_kind!(StatusStage, TransferKind);
+
+macro_rules! impl_from_kind_for_trb_kind {
+    ($sub:ident, $kind:ident) => {
+        impl<'a> From<$sub<'a>> for TrbKind<'a> {
+            fn from(sub: $sub<'a>) -> Self {
+                TrbKind::$kind(sub)
+            }
+        }
+    };
+}
+
+impl_from_kind_for_trb_kind!(CommandKind, Command);
+impl_from_kind_for_trb_kind!(EventKind, Event);
+impl_from_kind_for_trb_kind!(TransferKind, Transfer);
+
+impl<'a> From<&'a mut Link> for TrbKind<'a> {
+    fn from(link: &'a mut Link) -> Self {
+        TrbKind::Link(link)
+    }
+}
+
+impl<'a> TrbKind<'a> {
+    pub fn as_inner(&'a mut self) -> &'a mut dyn TrbKindMarker {
+        match self {
+            TrbKind::Command(cmd) => cmd,
+            TrbKind::Event(event) => event,
+            TrbKind::Transfer(transfer) => transfer,
+            TrbKind::Link(link) => link,
+        }
+    }
+}
 
 pub fn addralloc<T>() -> *mut T {
     let frame = FRAME_ALLOCATOR
@@ -360,7 +484,7 @@ impl XhciImpl {
             }
 
             // Create command ring with (4096 / 16) entries
-            // Doesn't matter which command TRB structure we use for the size_of method; they're all the same size
+            // All TRBs are arrays of [u32; 4] at their core
             let entries_per_page =
                 Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>();
             let cmd_ring = unsafe {
