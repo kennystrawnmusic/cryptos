@@ -36,7 +36,7 @@ use crate::{
     cralloc::frames::XhciMapper,
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
-    xhci::{xhci_init, XhciImpl, XhciProtected},
+    xhci::{xhci_init, XhciImpl, XhciProtected}, ahci::ahci_init,
 };
 
 use {
@@ -530,7 +530,7 @@ impl Vendor {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeviceKind {
     Unknown,
 
@@ -917,14 +917,20 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
             let _ = aml_route(&header);
 
+            let kind = DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32);
+
             info!(
                 "PCI device {:04x?}:{:04x?} (device={:?}, vendor={:?}) with capabilities pointer {:#x?}",
                 header.vendor_id,
                 header.device_id,
-                DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32),
+                kind,
                 Vendor::new(header.vendor_id as u32),
                 header.capabilities_pointer
             );
+
+            if let DeviceKind::SataController = kind {
+                ahci_init();
+            }
 
             // borrow checker
             let raw_clone_2 = raw_header;
@@ -983,8 +989,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     info!("MSI-X: {:#?}", msix);
 
-                    if let DeviceKind::UsbController =
-                        DeviceKind::new(header.class_code.base as u32, header.class_code.sub as u32)
+                    if let DeviceKind::UsbController = kind
                     {
                         xhci_init();
                     }

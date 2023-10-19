@@ -274,8 +274,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
                 debug!("Interrupt model: {:#?}", INTERRUPT_MODEL.get().unwrap());
 
                 debug!("TLS template: {:#x?}", boot_info.tls_template);
-
-                ahci_init();
                 pci_impl::init(&tables);
             }
         }
