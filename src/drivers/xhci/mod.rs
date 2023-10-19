@@ -32,9 +32,10 @@ use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
     context::{Device, Slot},
+    extended_capabilities::List,
     registers::{
-        doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
-        Runtime, operational::PortStatusAndControlRegister,
+        doorbell::Register, operational::PortStatusAndControlRegister, Capability,
+        InterrupterRegisterSet, Operational, PortRegisterSet, Runtime,
     },
     ring::trb::{
         command::{
@@ -52,7 +53,7 @@ use xhci::{
         },
         Link,
     },
-    Registers, extended_capabilities::List,
+    Registers,
 };
 
 pub mod mass_storage;
@@ -154,15 +155,18 @@ impl XhciImpl {
                     let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
                     let offset_full_bar = {
-                        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
-                            full_bar as u64,
-                        ));
+                        let test =
+                            Page::<Size4KiB>::containing_address(VirtAddr::new(full_bar as u64));
                         test.start_address().as_u64()
                     } as usize;
                     offset_full_bar_outer.get_or_init(move || offset_full_bar);
 
-                    let regs =
-                        unsafe { Registers::new(offset_full_bar_outer.get().cloned().unwrap(), MAPPER.read().clone()) };
+                    let regs = unsafe {
+                        Registers::new(
+                            offset_full_bar_outer.get().cloned().unwrap(),
+                            MAPPER.read().clone(),
+                        )
+                    };
                     Some(regs)
                 } else {
                     None
@@ -172,10 +176,19 @@ impl XhciImpl {
             }
         };
 
-        let extcaps = regs.as_ref().map(|regs| {
-            let extended_caps = unsafe { List::new(offset_full_bar_outer.get().cloned().unwrap(), regs.capability.hccparams1.read_volatile(), MAPPER.read().clone()) };
-            extended_caps.map(|caps| caps)
-        }).flatten();
+        let extcaps = regs
+            .as_ref()
+            .map(|regs| {
+                let extended_caps = unsafe {
+                    List::new(
+                        offset_full_bar_outer.get().cloned().unwrap(),
+                        regs.capability.hccparams1.read_volatile(),
+                        MAPPER.read().clone(),
+                    )
+                };
+                extended_caps.map(|caps| caps)
+            })
+            .flatten();
 
         Self { regs, extcaps }
     }
@@ -307,7 +320,10 @@ impl XhciImpl {
             let entries_per_page =
                 Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>();
             let cmd_ring = unsafe {
-                core::slice::from_raw_parts_mut::<'static>(addralloc::<CommandKind<'_>>(), entries_per_page)
+                core::slice::from_raw_parts_mut::<'static>(
+                    addralloc::<CommandKind<'_>>(),
+                    entries_per_page,
+                )
             };
 
             // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
@@ -354,7 +370,6 @@ impl XhciImpl {
 
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
-
                         let event_ring_dequeue = unsafe {
                             core::slice::from_raw_parts_mut::<'static>(
                                 addralloc::<EventKind<'_>>(),
