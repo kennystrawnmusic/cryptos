@@ -183,7 +183,6 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
             // we've reached the end of PTABLE, so time to reset this
             PTABLE_IDX.store(0, Ordering::SeqCst);
         }
-        
     }
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
