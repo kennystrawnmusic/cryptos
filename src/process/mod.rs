@@ -127,8 +127,8 @@ impl<'a> Process<'a> {
         Self {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: PTABLE.read().len(), // necessary for cleanup
-            tid: PTABLE.read().len(),
+            pid: PTABLE.read().len() - 1, // necessary for cleanup
+            tid: PTABLE.read().len() - 1,
             sid: AtomicU64::new(PTABLE.read().len() as u64),
             gid: AtomicU64::new(PTABLE.read().len() as u64),
             parent: RwLock::new(None),
@@ -146,7 +146,7 @@ impl<'a> Process<'a> {
     /// Creates a new process using and automatically adds it to `PTABLE`
     pub fn create(exec: ElfFile<'static>) {
         PTABLE.write().insert(
-            PTABLE.read().len(),
+            PTABLE.read().len() - 1,
             Arc::new(RwLock::new(Process::<'static>::from(exec))),
         );
     }
