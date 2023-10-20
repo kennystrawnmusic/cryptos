@@ -175,14 +175,15 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
                 .run()
                 .unwrap(); // TODO: handle error cases using file descriptors
         }
-    }
 
-    if PTABLE_IDX.load(Ordering::SeqCst) < (PTABLE.read().len()) {
-        // ensure that the next CPU core runs the next process when it receives this interrupt
-        PTABLE_IDX.fetch_add(1, Ordering::SeqCst);
-    } else {
-        // we've reached the end of PTABLE, so time to reset this
-        PTABLE_IDX.store(0, Ordering::SeqCst);
+        if PTABLE_IDX.load(Ordering::SeqCst) < (PTABLE.read().len()) {
+            // ensure that the next CPU core runs the next process when it receives this interrupt
+            PTABLE_IDX.fetch_add(1, Ordering::SeqCst);
+        } else {
+            // we've reached the end of PTABLE, so time to reset this
+            PTABLE_IDX.store(0, Ordering::SeqCst);
+        }
+        
     }
 
     if ACTIVE_LAPIC_ID.load(Ordering::SeqCst) == 0 {
