@@ -207,4 +207,5 @@ impl RelaxStrategy for IrqRelaxStrategy {
     }
 }
 
+/// RwLock that works by disabling interrupts when held
 pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
