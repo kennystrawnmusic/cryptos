@@ -56,7 +56,7 @@ impl<'a, T> DerefMut for SeqLockWriteGuard<'a, T> {
 unsafe impl<T: Send> Send for SeqLock<T> {}
 unsafe impl<T: Send> Sync for SeqLock<T> {}
 
-impl<T> SeqLock<T> {
+impl<T: Copy> SeqLock<T> {
     pub fn new(inner: T) -> Self {
         Self {
             lock: AtomicUsize::new(0),
