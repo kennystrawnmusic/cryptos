@@ -27,13 +27,13 @@
 extern crate alloc;
 
 pub mod arch;
+pub mod common;
 pub mod cralloc;
 pub mod drivers;
 pub mod drm;
 pub mod fs;
 pub mod process;
 pub mod scheme;
-pub mod common;
 
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},

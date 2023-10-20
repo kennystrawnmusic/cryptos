@@ -141,7 +141,7 @@ impl<'a> Process<'a> {
             main,
         }
     }
-    
+
     /// Creates a new process using and automatically adds it to `PTABLE`
     #[deprecated = "use `create_from_executable()` instead"]
     pub fn create(data: Option<FileData>, main: MainLoop) {
@@ -152,9 +152,9 @@ impl<'a> Process<'a> {
 
     /// Creates a new process using and automatically adds it to `PTABLE` using an ELF file
     pub fn create_from_executable(exec: ElfFile<'static>) {
-        PTABLE.write().push(Arc::new(RwLock::new(
-            Process::<'static>::from(exec),
-        )));
+        PTABLE
+            .write()
+            .push(Arc::new(RwLock::new(Process::<'static>::from(exec))));
     }
 
     /// Runs this process
@@ -260,7 +260,6 @@ impl<'a> Process<'a> {
 
 unsafe impl<'a> Send for Process<'a> {}
 unsafe impl<'a> Sync for Process<'a> {}
-
 
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
