@@ -123,12 +123,14 @@ pub struct Process<'a> {
 impl<'a> Process<'a> {
     fn new(data: Option<FileData>, main: MainLoop) -> Self {
         let open_files = data.map(|data| alloc::vec![data]);
+
+        // necessary for cleanup
         let global_id = PTABLE.read().len() - 1;
 
         Self {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: global_id, // necessary for cleanup
+            pid: global_id,
             tid: global_id,
             sid: AtomicU64::new(global_id as u64),
             gid: AtomicU64::new(global_id as u64),
@@ -144,6 +146,7 @@ impl<'a> Process<'a> {
             main,
         }
     }
+
     /// Creates a new process using and automatically adds it to `PTABLE`
     pub fn create(exec: ElfFile<'static>) {
         PTABLE.write().insert(
