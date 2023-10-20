@@ -287,6 +287,8 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::NO_CACHE
                 | PageTableFlags::WRITE_THROUGH
         );
+
+        unsafe { frame.iretq() }
     } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl() {
         // kernel mode
         panic!(
