@@ -9,6 +9,7 @@ use core::{
 
 use alloc::{
     boxed::Box,
+    collections::BTreeMap,
     sync::{Arc, Weak},
     vec::Vec,
 };
@@ -62,7 +63,8 @@ impl From<(u8, u64)> for State {
     }
 }
 
-pub(crate) static PTABLE: RwLock<Vec<Arc<RwLock<Process>>>> = RwLock::new(Vec::new());
+pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
+    RwLock::new(BTreeMap::new());
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
 /// Enum of `main()` fn signatures for the kernel to accept
@@ -143,9 +145,10 @@ impl<'a> Process<'a> {
     }
     /// Creates a new process using and automatically adds it to `PTABLE`
     pub fn create(exec: ElfFile<'static>) {
-        PTABLE
-            .write()
-            .push(Arc::new(RwLock::new(Process::<'static>::from(exec))));
+        PTABLE.write().insert(
+            PTABLE.read().len(),
+            Arc::new(RwLock::new(Process::<'static>::from(exec))),
+        );
     }
 
     /// Runs this process
@@ -185,18 +188,17 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
-                            // TODO: redefine the process table as a `BTreeMap<usize, Arc<RwLock<Process>>>` for proper management of this
-                            PTABLE.write().remove(self.pid - 1);
+                            PTABLE.write().remove(&(self.pid - 1));
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
                             // as that's the arm that the exit status is set from
                             return Ok(());
                         } else {
-                            PTABLE.write().remove(self.pid - 1);
+                            PTABLE.write().remove(&(self.pid - 1));
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        PTABLE.write().remove(self.pid - 1);
+                        PTABLE.write().remove(&(self.pid - 1));
 
                         // borrow checker
                         let signal = self.signal_received;

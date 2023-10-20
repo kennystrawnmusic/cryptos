@@ -152,25 +152,25 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     if !(PTABLE.read().is_empty()) {
         if PTABLE.read().len() == 1 {
             // always runnable as only one process exists
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
                 .set_state(State::Runnable);
 
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
                 .run()
                 .unwrap(); // TODO: handle error cases
         } else {
             // need to preempt previous process in the table
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst) - 1]
+            (PTABLE.read())[&(PTABLE_IDX.load(Ordering::SeqCst) - 1)]
                 .write()
                 .set_state(State::Blocked);
 
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
                 .set_state(State::Runnable);
 
-            (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
                 .run()
                 .unwrap(); // TODO: handle error cases
@@ -219,7 +219,7 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Bound range exceeded\nStack frame: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&(PTABLE_IDX.load(Ordering::SeqCst))]
             .write()
             .kill(Signal::SIGFPE);
     }
@@ -235,7 +235,7 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
             frame
         );
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGILL);
     }
@@ -245,7 +245,7 @@ extern "x86-interrupt" fn navail(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Device not available\nStack frame: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGSYS);
     }
@@ -297,7 +297,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
         );
     } else {
         // user mode
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGSEGV);
     }
@@ -307,7 +307,7 @@ extern "x86-interrupt" fn sigfpe(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Attempt to divide by zero\nBacktrace: {:#?}", frame);
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGFPE);
     }
@@ -350,7 +350,7 @@ extern "x86-interrupt" fn sigbus(frame: InterruptStackFrame, code: u64) {
             frame
         );
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGBUS);
     }
@@ -385,7 +385,7 @@ extern "x86-interrupt" fn sigsegv(frame: InterruptStackFrame, code: u64) {
             );
         }
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGSEGV);
     }
@@ -433,7 +433,7 @@ extern "x86-interrupt" fn general_protection(frame: InterruptStackFrame, code: u
             )
         }
     } else {
-        (PTABLE.read())[PTABLE_IDX.load(Ordering::SeqCst)]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGABRT);
     }
