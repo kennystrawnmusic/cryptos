@@ -279,7 +279,7 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point() as usize;
-        let main = MainLoop::from(start as *mut () as *mut dyn Any);
+        let main = MainLoop::from(start as *mut ! as *mut dyn Any);
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
