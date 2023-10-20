@@ -19,9 +19,14 @@
     extract_if,
     strict_provenance,
     split_array,
-    generic_arg_infer
+    generic_arg_infer,
+    box_into_inner,
+    unsized_locals,
+    associated_type_bounds,
+    ptr_metadata
 )]
 #![allow(internal_features)]
+#![allow(incomplete_features)]
 #![allow(unused_imports)]
 
 extern crate alloc;

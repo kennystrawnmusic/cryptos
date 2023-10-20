@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use core::{
+    any::{Any, TypeId},
     intrinsics::abort,
     ops::{Generator, GeneratorState},
     pin::Pin,
+    ptr::DynMetadata,
     sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize},
 };
 
@@ -87,6 +89,20 @@ impl From<fn() -> ()> for MainLoop {
 impl From<fn() -> syscall::Result<()>> for MainLoop {
     fn from(value: fn() -> syscall::Result<()>) -> Self {
         Self::WithResult(value)
+    }
+}
+
+impl From<*mut dyn Any> for MainLoop {
+    fn from(value: *mut dyn Any) -> Self {
+        let type_id = unsafe { (*value).type_id() };
+
+        if type_id == TypeId::of::<fn() -> ()>() {
+            Self::from(unsafe { *(value as *mut fn() -> ()) })
+        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
+            Self::from(unsafe { *(value as *mut fn() -> syscall::Result<()>) })
+        } else {
+            panic!("Invalid main() function signature");
+        }
     }
 }
 
@@ -262,7 +278,7 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point() as usize;
-        let main = unsafe { *(start as *mut MainLoop) };
+        let main = MainLoop::from(start as *mut () as *mut dyn Any);
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
