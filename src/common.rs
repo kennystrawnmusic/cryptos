@@ -1,10 +1,10 @@
+use bootloader_api::info::FrameBufferInfo;
+use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use core::arch::asm;
 use core::cell::UnsafeCell;
 use core::fmt::Write;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
-use bootloader_api::info::FrameBufferInfo;
-use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use spin::{RelaxStrategy, RwLock, RwLockWriteGuard};
 use x86_64::instructions::interrupts::without_interrupts;
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
