@@ -277,7 +277,10 @@ impl<'a> Process<'a> {
         if self.open_files.read().is_none() {
             self.open_files = Arc::new(RwLock::new(Some(alloc::vec![file])));
         } else {
-            self.open_files.write().as_mut().map(|files| files.push(file));
+            self.open_files
+                .write()
+                .as_mut()
+                .map(|files| files.push(file));
         }
     }
 }
