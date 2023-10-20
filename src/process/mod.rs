@@ -123,16 +123,17 @@ pub struct Process<'a> {
 impl<'a> Process<'a> {
     fn new(data: Option<FileData>, main: MainLoop) -> Self {
         let open_files = data.map(|data| alloc::vec![data]);
+        let global_id = PTABLE.read().len() - 1;
 
         Self {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: PTABLE.read().len() - 1, // necessary for cleanup
-            tid: PTABLE.read().len() - 1,
-            sid: AtomicU64::new(PTABLE.read().len() as u64),
-            gid: AtomicU64::new(PTABLE.read().len() as u64),
+            pid: global_id, // necessary for cleanup
+            tid: global_id,
+            sid: AtomicU64::new(global_id as u64),
+            gid: AtomicU64::new(global_id as u64),
             parent: RwLock::new(None),
-            sleep: AtomicU64::new(PTABLE.read().len() as u64),
+            sleep: AtomicU64::new(global_id as u64),
             signal_received: Signal::Success,
             io_pending: AtomicBool::new(false),
             executable: OnceCell::uninit(),
