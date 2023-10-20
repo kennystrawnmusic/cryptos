@@ -629,7 +629,7 @@ impl XhciImpl {
             });
 
             // Debug
-            // self.probe::<16>();
+            self.probe::<16>();
         }
     }
 
@@ -637,7 +637,7 @@ impl XhciImpl {
         if let Some(prs) = self.port_register_set() {
             for (i, mut port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
-                    log::info!("Probing port {}", i);
+                    log::debug!("Probing port {}", i);
                     port.portsc.set_0_port_enabled_disabled();
                     while port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();
