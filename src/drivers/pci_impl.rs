@@ -129,6 +129,13 @@ pub struct Bitmap<A: Allocator> {
     bitmap: Vec<usize, A>,
 }
 
+impl Bitmap<Global> {
+    /// Shorthand for `Bitmap::new_in(Global, size)`
+    pub fn new(size: usize) -> Self {
+        Self::new_in(Global, size)
+    }
+}
+
 impl<A: Allocator> Bitmap<A> {
     /// Constructs a new bitmap with `size` bits and uses `alloc`
     /// as the alloctor.
