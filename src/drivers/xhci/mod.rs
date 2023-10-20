@@ -12,6 +12,7 @@ use x86_64::{
 };
 
 use crate::{
+    common::addralloc,
     cralloc::frames::XhciMapper,
     get_phys_offset, map_page,
     pci_impl::{
@@ -281,31 +282,6 @@ impl<'a> TrbKind<'a> {
             TrbKind::Link(link) => link,
         }
     }
-}
-
-pub fn addralloc<T>() -> *mut T {
-    let frame = FRAME_ALLOCATOR
-        .get()
-        .expect("Frame allocator not initialized")
-        .write()
-        .allocate_frame()
-        .expect("Failed to allocate frame for command ring");
-
-    let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
-        frame.start_address().as_u64() + get_phys_offset(),
-    ));
-
-    map_page!(
-        frame.start_address().as_u64(),
-        page.start_address().as_u64(),
-        Size4KiB,
-        PageTableFlags::PRESENT
-            | PageTableFlags::WRITABLE
-            | PageTableFlags::NO_CACHE
-            | PageTableFlags::WRITE_THROUGH
-    );
-
-    page.start_address().as_u64() as *mut T
 }
 
 impl XhciImpl {

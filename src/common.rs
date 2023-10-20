@@ -2,6 +2,10 @@ use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::{RwLock, RwLockWriteGuard};
+use x86_64::VirtAddr;
+use x86_64::structures::paging::{Mapper, Page, Size4KiB, FrameAllocator, PageTableFlags};
+
+use crate::{FRAME_ALLOCATOR, map_page, get_phys_offset};
 
 /// A SeqLock that is supposed to work on bare metal
 /// TODO: figure out why this is deadlocking when I try to use it to lock the frame allocators
@@ -136,4 +140,59 @@ impl<T: Copy> SeqLock<T> {
     pub fn into_inner(self) -> T {
         self.data.into_inner()
     }
+}
+
+pub fn addralloc<T>() -> *mut T {
+    let frame = FRAME_ALLOCATOR
+        .get()
+        .expect("Frame allocator not initialized")
+        .write()
+        .allocate_frame()
+        .expect("Failed to allocate frame for command ring");
+
+    let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+        frame.start_address().as_u64() + get_phys_offset(),
+    ));
+
+    map_page!(
+        frame.start_address().as_u64(),
+        page.start_address().as_u64(),
+        Size4KiB,
+        PageTableFlags::PRESENT
+            | PageTableFlags::WRITABLE
+            | PageTableFlags::NO_CACHE
+            | PageTableFlags::WRITE_THROUGH
+    );
+
+    if core::mem::size_of::<T>() as u64 > Page::<Size4KiB>::SIZE {
+        let total_size = core::mem::size_of::<T>() as u64;
+        let mut i = Page::<Size4KiB>::SIZE;
+
+        while i < total_size {
+            let frame = FRAME_ALLOCATOR
+                .get()
+                .expect("Frame allocator not initialized")
+                .write()
+                .allocate_frame()
+                .expect("Failed to allocate frame for command ring");
+
+            let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                frame.start_address().as_u64() + get_phys_offset(),
+            ));
+
+            map_page!(
+                frame.start_address().as_u64(),
+                page.start_address().as_u64(),
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
+
+            i += Page::<Size4KiB>::SIZE;
+        }
+    }
+
+    page.start_address().as_u64() as *mut T
 }

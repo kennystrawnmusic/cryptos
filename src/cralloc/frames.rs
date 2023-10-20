@@ -120,6 +120,9 @@ macro_rules! map_page {
             // suppress warnings if this macro is called from an unsafe fn
             #[allow(unused_unsafe)]
             let res = unsafe {
+                // in case this macro is called from a file that doesn't import this
+                use x86_64::structures::paging::Mapper as MacroMapper;
+                
                 $crate::MAPPER.get().unwrap().write().map_to(
                     page,
                     frame,
