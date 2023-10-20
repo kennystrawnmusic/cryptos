@@ -68,7 +68,7 @@ use bootloader_api::{
     *,
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
-use common::SeqLock;
+use common::{SeqLock, IrqLock};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
@@ -175,8 +175,8 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
-pub static MAPPER: OnceCell<RwLock<OffsetPageTable>> = OnceCell::uninit();
-pub static FRAME_ALLOCATOR: OnceCell<RwLock<KernelFrameAlloc>> = OnceCell::uninit();
+pub static MAPPER: OnceCell<IrqLock<OffsetPageTable>> = OnceCell::uninit();
+pub static FRAME_ALLOCATOR: OnceCell<IrqLock<KernelFrameAlloc>> = OnceCell::uninit();
 
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {
