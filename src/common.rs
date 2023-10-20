@@ -142,6 +142,7 @@ impl<T: Copy> SeqLock<T> {
     }
 }
 
+/// Helper function for creating raw pointers safely
 pub fn addralloc<T>() -> *mut T {
     let frame = FRAME_ALLOCATOR
         .get()
