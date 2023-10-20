@@ -68,6 +68,7 @@ pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 /// Enum of `main()` fn signatures for the kernel to accept
 ///
 /// Implements `From` for easy signature parsing
+#[derive(Copy, Clone)]
 pub enum MainLoop {
     WithoutResult(fn() -> ()),
     WithResult(fn() -> syscall::Result<()>),
@@ -108,7 +109,7 @@ pub struct Process<'a> {
     io_pending: AtomicBool,
     executable: OnceCell<ElfFile<'a>>,
 
-    open_files: Arc<Vec<FileData>>,
+    open_files: Arc<Option<Vec<FileData>>>,
     pwd: RwLock<Option<Entry<'a>>>,
 
     exit_status: OnceCell<u64>,
@@ -118,8 +119,8 @@ pub struct Process<'a> {
 }
 
 impl<'a> Process<'a> {
-    fn new(data: FileData, main: MainLoop) -> Self {
-        let open_files = alloc::vec![data];
+    fn new(data: Option<FileData>, main: MainLoop) -> Self {
+        let open_files = data.map(|data| alloc::vec![data]);
 
         Self {
             self_reference: Weak::new(),
@@ -140,12 +141,20 @@ impl<'a> Process<'a> {
             main,
         }
     }
-
-    /// Creates a new process and automatically adds it to `PTABLE`
-    pub fn create(data: FileData, main: MainLoop) {
+    
+    /// Creates a new process using and automatically adds it to `PTABLE`
+    #[deprecated = "use `create_from_executable()` instead"]
+    pub fn create(data: Option<FileData>, main: MainLoop) {
         PTABLE
             .write()
             .push(Arc::new(RwLock::new(Process::<'static>::new(data, main))));
+    }
+
+    /// Creates a new process using and automatically adds it to `PTABLE` using an ELF file
+    pub fn create_from_executable(exec: ElfFile<'static>) {
+        PTABLE.write().push(Arc::new(RwLock::new(
+            Process::<'static>::from(exec),
+        )));
     }
 
     /// Runs this process
@@ -251,3 +260,17 @@ impl<'a> Process<'a> {
 
 unsafe impl<'a> Send for Process<'a> {}
 unsafe impl<'a> Sync for Process<'a> {}
+
+
+impl<'a> From<ElfFile<'a>> for Process<'a> {
+    fn from(value: ElfFile<'a>) -> Self {
+        let start = value.header.pt2.entry_point() as usize;
+
+        // TODO: figure out why Rust won't let me detect the signature at runtime
+        let main = unsafe { *(start as *mut MainLoop) };
+
+        let out = Self::new(None, main);
+        out.executable.get_or_init(move || value);
+        out
+    }
+}
