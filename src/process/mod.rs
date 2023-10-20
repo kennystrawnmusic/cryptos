@@ -92,6 +92,7 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
     }
 }
 
+// Needed for extracting raw main from ELF files
 impl From<*mut dyn Any> for MainLoop {
     fn from(value: *mut dyn Any) -> Self {
         let type_id = unsafe { (*value).type_id() };
