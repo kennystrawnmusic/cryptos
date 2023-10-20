@@ -2,10 +2,10 @@ use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::{RwLock, RwLockWriteGuard};
+use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
 use x86_64::VirtAddr;
-use x86_64::structures::paging::{Mapper, Page, Size4KiB, FrameAllocator, PageTableFlags};
 
-use crate::{FRAME_ALLOCATOR, map_page, get_phys_offset};
+use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR};
 
 /// A SeqLock that is supposed to work on bare metal
 /// TODO: figure out why this is deadlocking when I try to use it to lock the frame allocators
@@ -149,7 +149,7 @@ pub fn addralloc<T>() -> *mut T {
         .expect("Frame allocator not initialized")
         .write()
         .allocate_frame()
-        .expect("Failed to allocate frame for command ring");
+        .expect("Out of memory");
 
     let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
         frame.start_address().as_u64() + get_phys_offset(),
@@ -175,7 +175,7 @@ pub fn addralloc<T>() -> *mut T {
                 .expect("Frame allocator not initialized")
                 .write()
                 .allocate_frame()
-                .expect("Failed to allocate frame for command ring");
+                .expect("Out of memory");
 
             let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
                 frame.start_address().as_u64() + get_phys_offset(),
