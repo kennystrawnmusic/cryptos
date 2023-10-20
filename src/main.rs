@@ -67,7 +67,7 @@ use bootloader_api::{
     info::{FrameBufferInfo, MemoryRegions, Optional, TlsTemplate},
     *,
 };
-use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
+use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use common::{SeqLock, IrqLock};
 use conquer_once::spin::OnceCell;
 use core::{
@@ -172,7 +172,39 @@ pub fn page_align(size: u64, addr: u64) -> usize {
     (((size as usize) - 1) / test_size + 1) * test_size
 }
 
-pub static PRINTK: OnceCell<LockedLogger> = OnceCell::uninit();
+/// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock` instead of `spinning_top::Spinlock` for improved performance
+pub struct Printk {
+    framebuffer: IrqLock<FrameBufferWriter>,
+}
+
+impl Printk {
+    pub fn new(buffer: &'static mut [u8], info: FrameBufferInfo) -> Self {
+        Self {
+            framebuffer: IrqLock::new(FrameBufferWriter::new(buffer, info)),
+        }
+    }
+
+    pub unsafe fn force_unlock(&self) {
+        self.framebuffer.force_write_unlock();
+    }
+}
+
+impl log::Log for Printk {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::max_level()
+    }
+
+    fn flush(&self) {}
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let mut fb = self.framebuffer.write();
+            writeln!(fb, "{:5}: {}", record.level(), record.args()).unwrap();
+        }
+    }
+}
+
+pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
 pub static MAPPER: OnceCell<IrqLock<OffsetPageTable>> = OnceCell::uninit();
@@ -203,7 +235,7 @@ pub fn get_mcfg<'a>() -> &'a Option<PciConfigRegions<'a, Global>> {
 }
 
 pub fn printk_init(buffer: &'static mut [u8], info: FrameBufferInfo) {
-    let p = PRINTK.get_or_init(move || LockedLogger::new(buffer, info, true, false));
+    let p = PRINTK.get_or_init(move || Printk::new(buffer, info));
     log::set_logger(p).expect("Logger has already been set!");
 
     // Don't flood users with excessive messages if compiled with "--release"
