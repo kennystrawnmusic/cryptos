@@ -101,6 +101,8 @@ use x86_64::{
     },
     PhysAddr, VirtAddr,
 };
+
+// needed for running user-level software in the future
 use xmas_elf::ElfFile;
 
 //compatibility
