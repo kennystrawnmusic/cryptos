@@ -1,6 +1,9 @@
 use core::cell::UnsafeCell;
+use core::fmt::Write;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
+use bootloader_api::info::FrameBufferInfo;
+use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use spin::{RelaxStrategy, RwLock, RwLockWriteGuard};
 use x86_64::instructions::interrupts::without_interrupts;
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
@@ -209,3 +212,35 @@ impl RelaxStrategy for IrqRelaxStrategy {
 
 /// RwLock that works by disabling interrupts when held
 pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
+
+/// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock` instead of `spinning_top::Spinlock` for improved performance
+pub struct Printk {
+    framebuffer: IrqLock<FrameBufferWriter>,
+}
+
+impl Printk {
+    pub fn new(buffer: &'static mut [u8], info: FrameBufferInfo) -> Self {
+        Self {
+            framebuffer: IrqLock::new(FrameBufferWriter::new(buffer, info)),
+        }
+    }
+
+    pub unsafe fn force_unlock(&self) {
+        self.framebuffer.force_write_unlock();
+    }
+}
+
+impl log::Log for Printk {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::max_level()
+    }
+
+    fn flush(&self) {}
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let mut fb = self.framebuffer.write();
+            writeln!(fb, "{:5}: {}", record.level(), record.args()).unwrap();
+        }
+    }
+}

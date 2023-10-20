@@ -68,7 +68,7 @@ use bootloader_api::{
     *,
 };
 use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
-use common::{SeqLock, IrqLock};
+use common::{IrqLock, Printk};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
@@ -170,38 +170,6 @@ pub fn page_align(size: u64, addr: u64) -> usize {
     let test_size = test.size() as usize;
 
     (((size as usize) - 1) / test_size + 1) * test_size
-}
-
-/// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock` instead of `spinning_top::Spinlock` for improved performance
-pub struct Printk {
-    framebuffer: IrqLock<FrameBufferWriter>,
-}
-
-impl Printk {
-    pub fn new(buffer: &'static mut [u8], info: FrameBufferInfo) -> Self {
-        Self {
-            framebuffer: IrqLock::new(FrameBufferWriter::new(buffer, info)),
-        }
-    }
-
-    pub unsafe fn force_unlock(&self) {
-        self.framebuffer.force_write_unlock();
-    }
-}
-
-impl log::Log for Printk {
-    fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.level() <= log::max_level()
-    }
-
-    fn flush(&self) {}
-
-    fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let mut fb = self.framebuffer.write();
-            writeln!(fb, "{:5}: {}", record.level(), record.args()).unwrap();
-        }
-    }
 }
 
 pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
