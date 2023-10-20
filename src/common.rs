@@ -214,6 +214,9 @@ impl RelaxStrategy for IrqRelaxStrategy {
 /// RwLock that works by disabling interrupts when held
 pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
 
+/// Mutex that works the same way as the above
+pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
+
 /// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock` instead of `spinning_top::Spinlock` for improved performance
 pub struct Printk {
     framebuffer: IrqLock<FrameBufferWriter>,
