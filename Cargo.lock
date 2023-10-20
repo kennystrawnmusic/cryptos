@@ -43,7 +43,7 @@ dependencies = [
  "bitvec",
  "byteorder",
  "log",
- "spinning_top",
+ "spinning_top 0.2.5",
 ]
 
 [[package]]
@@ -318,7 +318,7 @@ dependencies = [
  "rand",
  "rand_hc",
  "raw-cpuid 10.7.0",
- "spinning_top",
+ "spinning_top 0.2.5",
  "uart_16550",
  "usize_conversions",
  "x86_64",
@@ -511,7 +511,7 @@ dependencies = [
  "sha3",
  "slab_allocator_rs",
  "spin 0.9.8",
- "spinning_top",
+ "spinning_top 0.3.0",
  "strum",
  "tinybmp",
  "u8g2-fonts",
@@ -1464,6 +1464,15 @@ name = "spinning_top"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b9eb1a2f4c41445a3a0ff9abc5221c5fcd28e1f13cd7c0397706f9ac938ddb0"
+dependencies = [
+ "lock_api",
+]
+
+[[package]]
+name = "spinning_top"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d96d2d1d716fb500937168cc09353ffdc7a012be8475ac7308e1bdf0e3923300"
 dependencies = [
  "lock_api",
 ]
