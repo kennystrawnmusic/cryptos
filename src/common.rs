@@ -1,3 +1,4 @@
+use core::arch::asm;
 use core::cell::UnsafeCell;
 use core::fmt::Write;
 use core::ops::{Deref, DerefMut};
@@ -206,7 +207,7 @@ pub struct IrqRelaxStrategy;
 
 impl RelaxStrategy for IrqRelaxStrategy {
     fn relax() {
-        without_interrupts(|| core::hint::spin_loop());
+        without_interrupts(|| unsafe { asm!("hlt") });
     }
 }
 
