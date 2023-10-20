@@ -219,7 +219,7 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
     if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
         panic!("Bound range exceeded\nStack frame: {:#?}", frame);
     } else {
-        (PTABLE.read())[&(PTABLE_IDX.load(Ordering::SeqCst))]
+        (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
             .kill(Signal::SIGFPE);
     }
