@@ -1,7 +1,8 @@
 use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
-use spin::{RwLock, RwLockWriteGuard};
+use spin::{RelaxStrategy, RwLock, RwLockWriteGuard};
+use x86_64::instructions::interrupts::without_interrupts;
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
 use x86_64::VirtAddr;
 
@@ -197,3 +198,13 @@ pub fn addralloc<T>() -> *mut T {
 
     page.start_address().as_u64() as *mut T
 }
+
+pub struct IrqRelaxStrategy;
+
+impl RelaxStrategy for IrqRelaxStrategy {
+    fn relax() {
+        without_interrupts(|| core::hint::spin_loop());
+    }
+}
+
+pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
