@@ -265,8 +265,6 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point() as usize;
-
-        // TODO: figure out why Rust won't let me detect the signature at runtime
         let main = unsafe { *(start as *mut MainLoop) };
 
         let out = Self::new(None, main);
