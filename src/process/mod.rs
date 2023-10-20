@@ -188,17 +188,17 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
-                            PTABLE.write().remove(&(self.pid - 1));
+                            PTABLE.write().remove(&(self.pid));
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
                             // as that's the arm that the exit status is set from
                             return Ok(());
                         } else {
-                            PTABLE.write().remove(&(self.pid - 1));
+                            PTABLE.write().remove(&(self.pid));
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        PTABLE.write().remove(&(self.pid - 1));
+                        PTABLE.write().remove(&(self.pid));
 
                         // borrow checker
                         let signal = self.signal_received;
