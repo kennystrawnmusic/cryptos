@@ -33,6 +33,7 @@ pub mod drm;
 pub mod fs;
 pub mod process;
 pub mod scheme;
+pub mod common;
 
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
@@ -62,6 +63,7 @@ use bootloader_api::{
     *,
 };
 use bootloader_x86_64_common::logger::{LockedLogger, LOGGER};
+use common::SeqLock;
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,

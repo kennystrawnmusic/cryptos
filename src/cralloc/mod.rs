@@ -10,7 +10,7 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER};
+use crate::{get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER, common::SeqLock};
 use spin::{Mutex, RwLock};
 
 use self::frames::KernelFrameAlloc;
