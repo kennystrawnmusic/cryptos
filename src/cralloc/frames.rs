@@ -230,7 +230,7 @@ impl xhci::accessor::Mapper for XhciMapper {
                         | PageTableFlags::WRITE_THROUGH
                 );
 
-                i += 4096;
+                i += Page::<Size4KiB>::SIZE as usize;
             }
         }
 
