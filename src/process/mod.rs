@@ -129,7 +129,7 @@ pub struct Process<'a> {
     io_pending: AtomicBool,
     executable: OnceCell<ElfFile<'a>>,
 
-    open_files: Arc<Option<Vec<FileData>>>,
+    open_files: Arc<RwLock<Option<Vec<FileData>>>>,
     pwd: RwLock<Option<Entry<'a>>>,
 
     exit_status: OnceCell<u64>,
@@ -157,7 +157,7 @@ impl<'a> Process<'a> {
             signal_received: Signal::Success,
             io_pending: AtomicBool::new(false),
             executable: OnceCell::uninit(),
-            open_files: Arc::new(open_files),
+            open_files: Arc::new(RwLock::new(open_files)),
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
@@ -270,6 +270,15 @@ impl<'a> Process<'a> {
     /// Sends signal
     pub fn kill(&mut self, signal: Signal) {
         self.signal_received = signal;
+    }
+
+    /// Opens a file using a stream of bytes
+    pub fn fopen(&mut self, file: FileData) {
+        if self.open_files.read().is_none() {
+            self.open_files = Arc::new(RwLock::new(Some(alloc::vec![file])));
+        } else {
+            self.open_files.write().as_mut().map(|files| files.push(file));
+        }
     }
 }
 
