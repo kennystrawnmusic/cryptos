@@ -185,7 +185,7 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
-                            // TODO: redefine the process table as a HashMap for proper management of this
+                            // TODO: redefine the process table as a `BTreeMap<u64, Process>` for proper management of this
                             PTABLE.write().remove(self.pid - 1);
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
