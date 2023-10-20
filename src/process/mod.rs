@@ -102,7 +102,7 @@ impl From<*mut dyn Any> for MainLoop {
         } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
             Self::from(unsafe { *(value as *mut fn() -> syscall::Result<()>) })
         } else {
-            unreachable!("the Rust compiler already rules this out");
+            unreachable!("the Rust compiler throws an error if none of the two above signatures match");
         }
     }
 }
