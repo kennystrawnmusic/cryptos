@@ -63,6 +63,7 @@ pub mod mass_storage;
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
+/// Helper trait for parsing the specific TRBs we're dealing with
 pub trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
@@ -192,13 +193,6 @@ pub enum TrbKind<'a> {
     Event(EventKind<'a>),
     Transfer(TransferKind<'a>),
     Link(&'a mut Link),
-}
-
-pub struct Ring<'a>(VecDeque<&'a mut TrbKind<'a>>);
-
-pub struct XhciImpl {
-    regs: Option<Registers<XhciMapper>>,
-    extcaps: Option<List<XhciMapper>>,
 }
 
 macro_rules! impl_from_ref_for_kind {
@@ -386,6 +380,11 @@ impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
             TrbType::MfindexWrap => TrbKind::from(unsafe { &mut *(value as *mut MfindexWrap) }),
         }
     }
+}
+
+pub struct XhciImpl {
+    regs: Option<Registers<XhciMapper>>,
+    extcaps: Option<List<XhciMapper>>,
 }
 
 impl XhciImpl {
