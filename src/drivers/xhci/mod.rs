@@ -63,14 +63,7 @@ pub mod mass_storage;
 pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
-pub trait TrbAnalyzer: AsRef<[u32]> + TryFrom<[u32; 4]> {
-    fn new(raw: [u32; 4]) -> Self
-    where
-        <Self as TryFrom<[u32; 4]>>::Error: core::fmt::Debug,
-    {
-        Self::try_from(raw).expect("Failed to convert raw TRB to TRB")
-    }
-
+pub trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
             1 => TrbType::Normal,
@@ -273,6 +266,51 @@ impl<'a> From<&'a mut Link> for TrbKind<'a> {
     }
 }
 
+macro_rules! impl_from_ref_for_trb_kind {
+    ($sub:ident, $kind:ident) => {
+        impl<'a> From<&'a mut $sub> for TrbKind<'a> {
+            fn from(sub: &'a mut $sub) -> Self {
+                TrbKind::$kind(sub.into())
+            }
+        }
+    };
+}
+
+impl_from_ref_for_trb_kind!(AddressDevice, Command);
+impl_from_ref_for_trb_kind!(ConfigureEndpoint, Command);
+impl_from_ref_for_trb_kind!(DisableSlot, Command);
+impl_from_ref_for_trb_kind!(EnableSlot, Command);
+impl_from_ref_for_trb_kind!(EvaluateContext, Command);
+impl_from_ref_for_trb_kind!(ForceEvent, Command);
+impl_from_ref_for_trb_kind!(ForceHeader, Command);
+impl_from_ref_for_trb_kind!(GetExtendedProperty, Command);
+impl_from_ref_for_trb_kind!(GetPortBandwidth, Command);
+impl_from_ref_for_trb_kind!(NegotiateBandwidth, Command);
+impl_from_ref_for_trb_kind!(CmdNoop, Command);
+impl_from_ref_for_trb_kind!(ResetDevice, Command);
+impl_from_ref_for_trb_kind!(ResetEndpoint, Command);
+impl_from_ref_for_trb_kind!(SetExtendedProperty, Command);
+impl_from_ref_for_trb_kind!(SetLatencyToleranceValue, Command);
+impl_from_ref_for_trb_kind!(SetTrDequeuePointer, Command);
+impl_from_ref_for_trb_kind!(StopEndpoint, Command);
+
+impl_from_ref_for_trb_kind!(BandwidthRequest, Event);
+impl_from_ref_for_trb_kind!(CommandCompletion, Event);
+impl_from_ref_for_trb_kind!(DeviceNotification, Event);
+impl_from_ref_for_trb_kind!(Doorbell, Event);
+impl_from_ref_for_trb_kind!(HostController, Event);
+impl_from_ref_for_trb_kind!(MfindexWrap, Event);
+impl_from_ref_for_trb_kind!(PortStatusChange, Event);
+impl_from_ref_for_trb_kind!(TransferEvent, Event);
+
+impl_from_ref_for_trb_kind!(DataStage, Transfer);
+impl_from_ref_for_trb_kind!(EventData, Transfer);
+impl_from_ref_for_trb_kind!(Isoch, Transfer);
+impl_from_ref_for_trb_kind!(TransferNoop, Transfer);
+impl_from_ref_for_trb_kind!(Normal, Transfer);
+impl_from_ref_for_trb_kind!(SetupStage, Transfer);
+impl_from_ref_for_trb_kind!(StatusStage, Transfer);
+
 impl<'a> TrbKind<'a> {
     pub fn as_inner(&'a mut self) -> &'a mut dyn TrbKindMarker {
         match self {
@@ -280,6 +318,72 @@ impl<'a> TrbKind<'a> {
             TrbKind::Event(event) => event,
             TrbKind::Transfer(transfer) => transfer,
             TrbKind::Link(link) => link,
+        }
+    }
+}
+
+impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
+    fn from(value: *mut dyn TrbAnalyzer) -> Self {
+        match unsafe { &*(value) }.get_type() {
+            TrbType::Normal => TrbKind::from(unsafe { &mut *(value as *mut Normal) }),
+            TrbType::SetupStage => TrbKind::from(unsafe { &mut *(value as *mut SetupStage) }),
+            TrbType::DataStage => TrbKind::from(unsafe { &mut *(value as *mut DataStage) }),
+            TrbType::StatusStage => TrbKind::from(unsafe { &mut *(value as *mut StatusStage) }),
+            TrbType::Isoch => TrbKind::from(unsafe { &mut *(value as *mut Isoch) }),
+            TrbType::Link => TrbKind::from(unsafe { &mut *(value as *mut Link) }),
+            TrbType::EventData => TrbKind::from(unsafe { &mut *(value as *mut EventData) }),
+            TrbType::NoopTransfer => TrbKind::from(unsafe { &mut *(value as *mut TransferNoop) }),
+            TrbType::EnableSlot => TrbKind::from(unsafe { &mut *(value as *mut EnableSlot) }),
+            TrbType::DisableSlot => TrbKind::from(unsafe { &mut *(value as *mut DisableSlot) }),
+            TrbType::AddressDevice => TrbKind::from(unsafe { &mut *(value as *mut AddressDevice) }),
+            TrbType::ConfigureEndpoint => {
+                TrbKind::from(unsafe { &mut *(value as *mut ConfigureEndpoint) })
+            }
+            TrbType::EvaluateContext => {
+                TrbKind::from(unsafe { &mut *(value as *mut EvaluateContext) })
+            }
+            TrbType::ResetEndpoint => TrbKind::from(unsafe { &mut *(value as *mut ResetEndpoint) }),
+            TrbType::StopEndpoint => TrbKind::from(unsafe { &mut *(value as *mut StopEndpoint) }),
+            TrbType::SetTrDequeuePointer => {
+                TrbKind::from(unsafe { &mut *(value as *mut SetTrDequeuePointer) })
+            }
+            TrbType::ResetDevice => TrbKind::from(unsafe { &mut *(value as *mut ResetDevice) }),
+            TrbType::ForceEvent => TrbKind::from(unsafe { &mut *(value as *mut ForceEvent) }),
+            TrbType::NegotiateBandwidth => {
+                TrbKind::from(unsafe { &mut *(value as *mut NegotiateBandwidth) })
+            }
+            TrbType::SetLatencyToleranceValue => {
+                TrbKind::from(unsafe { &mut *(value as *mut SetLatencyToleranceValue) })
+            }
+            TrbType::GetPortBandwidth => {
+                TrbKind::from(unsafe { &mut *(value as *mut GetPortBandwidth) })
+            }
+            TrbType::ForceHeader => TrbKind::from(unsafe { &mut *(value as *mut ForceHeader) }),
+            TrbType::NoopCommand => TrbKind::from(unsafe { &mut *(value as *mut CmdNoop) }),
+            TrbType::GetExtendedProperty => {
+                TrbKind::from(unsafe { &mut *(value as *mut GetExtendedProperty) })
+            }
+            TrbType::SetExtendedProperty => {
+                TrbKind::from(unsafe { &mut *(value as *mut SetExtendedProperty) })
+            }
+            TrbType::TransferEvent => TrbKind::from(unsafe { &mut *(value as *mut TransferEvent) }),
+            TrbType::CommandCompletion => {
+                TrbKind::from(unsafe { &mut *(value as *mut CommandCompletion) })
+            }
+            TrbType::PortStatusChange => {
+                TrbKind::from(unsafe { &mut *(value as *mut PortStatusChange) })
+            }
+            TrbType::BandwidthRequest => {
+                TrbKind::from(unsafe { &mut *(value as *mut BandwidthRequest) })
+            }
+            TrbType::Doorbell => TrbKind::from(unsafe { &mut *(value as *mut Doorbell) }),
+            TrbType::HostController => {
+                TrbKind::from(unsafe { &mut *(value as *mut HostController) })
+            }
+            TrbType::DeviceNotification => {
+                TrbKind::from(unsafe { &mut *(value as *mut DeviceNotification) })
+            }
+            TrbType::MfindexWrap => TrbKind::from(unsafe { &mut *(value as *mut MfindexWrap) }),
         }
     }
 }
