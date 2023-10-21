@@ -217,19 +217,15 @@ pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
 pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
 
 /// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock` instead of `spinning_top::Spinlock` for improved performance
-pub struct Printk {
-    framebuffer: IrqLock<FrameBufferWriter>,
-}
+pub struct Printk(IrqLock<FrameBufferWriter>);
 
 impl Printk {
     pub fn new(buffer: &'static mut [u8], info: FrameBufferInfo) -> Self {
-        Self {
-            framebuffer: IrqLock::new(FrameBufferWriter::new(buffer, info)),
-        }
+        Self(IrqLock::new(FrameBufferWriter::new(buffer, info)))
     }
 
     pub unsafe fn force_unlock(&self) {
-        self.framebuffer.force_write_unlock();
+        self.0.force_write_unlock();
     }
 }
 
@@ -242,7 +238,7 @@ impl log::Log for Printk {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let mut fb = self.framebuffer.write();
+            let mut fb = self.0.write();
             writeln!(fb, "{:5}: {}", record.level(), record.args()).unwrap();
         }
     }
