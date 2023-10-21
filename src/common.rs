@@ -219,7 +219,7 @@ pub type IrqLockWriteGuard<'a, T> = spin::rwlock::RwLockWriteGuard<'a, T, IrqRel
 /// Mutex that works by disabling interrupts and halting the CPU while held
 pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
 
-/// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock`
+/// Re-implementation of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock`
 /// instead of `spinning_top::Spinlock` for improved performance
 pub struct Printk(IrqLock<FrameBufferWriter>);
 
