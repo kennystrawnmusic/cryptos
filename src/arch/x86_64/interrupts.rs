@@ -147,6 +147,10 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
+/// Round-robin preemptive scheduler
+/// 
+/// Uses an IPI instead of the timer or the loop at the end of maink for optimization reasons:
+/// an IPI can send itself to every CPU on the system, making it possible to evenly distribute all that power
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
     // use index of an atomic to ensure that only one process is being run at a time
     if !(PTABLE.read().is_empty()) {
