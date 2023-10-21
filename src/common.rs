@@ -210,10 +210,10 @@ impl RelaxStrategy for IrqRelaxStrategy {
     }
 }
 
-/// RwLock that works by disabling interrupts when held
+/// RwLock that works by disabling interrupts and halting the CPU while held
 pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
 
-/// Mutex that works by disabling interrupts when held
+/// Mutex that works by disabling interrupts and halting the CPU while held
 pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
 
 /// Replication of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock`
