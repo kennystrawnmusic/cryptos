@@ -252,6 +252,12 @@ impl log::Log for Printk {
     }
 }
 
+impl Write for Printk {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.0.write().write_str(s)
+    }
+}
+
 // Dummy type for getting around the issue of KernelFrameAlloc not implementing Clone
 #[derive(Clone, Debug)]
 pub struct XhciMapper;

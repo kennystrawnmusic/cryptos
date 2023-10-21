@@ -187,3 +187,19 @@ macro_rules! int_like {
         }
     }
 }
+
+/// Kernel-mode version of the standard library's `println!` macro
+/// TODO: figure out how to get around the borrow checker here (perhaps using const new method?)
+#[macro_export]
+macro_rules! printk {
+    () => ({
+        use core::fmt::Write;
+        let mut writer = $crate::PRINTK.get().unwrap();
+        writer.write_str("\n").unwrap();
+    });
+    ($($arg:tt)*) => ({
+        use core::fmt::Write;
+        let mut writer = $crate::PRINTK.get().unwrap();
+        writer.write_fmt(format_args!($($arg)*)).unwrap();
+    });
+}
