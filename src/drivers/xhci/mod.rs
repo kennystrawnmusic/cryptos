@@ -13,7 +13,7 @@ use x86_64::{
 
 use crate::{
     common::addralloc,
-    cralloc::frames::XhciMapper,
+    common::XhciMapper,
     get_phys_offset, map_page,
     pci_impl::{
         register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,

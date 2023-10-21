@@ -2,6 +2,7 @@ use bootloader_api::info::FrameBufferInfo;
 use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use core::cell::UnsafeCell;
 use core::fmt::Write;
+use core::num::NonZeroUsize;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::{RelaxStrategy, RwLock, RwLockWriteGuard};
@@ -11,7 +12,7 @@ use x86_64::VirtAddr;
 
 pub mod macros;
 
-use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR};
+use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR, unmap_page};
 
 /// A SeqLock that is supposed to work on bare metal
 /// TODO: figure out why this is deadlocking when I try to use it to lock the frame allocators
@@ -250,3 +251,71 @@ impl log::Log for Printk {
         }
     }
 }
+
+// Dummy type for getting around the issue of KernelFrameAlloc not implementing Clone
+#[derive(Clone, Debug)]
+pub struct XhciMapper;
+
+impl xhci::accessor::Mapper for XhciMapper {
+    unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
+        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys_start as u64));
+
+        map_page!(
+            phys_start,
+            test.start_address().as_u64(),
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+
+        if bytes > Page::<Size4KiB>::SIZE as usize {
+            let mut i = Page::<Size4KiB>::SIZE as usize;
+
+            while i < bytes {
+                let phys = phys_start + i;
+                let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys as u64));
+
+                let virt = test.start_address().as_u64();
+
+                map_page!(
+                    phys,
+                    virt,
+                    Size4KiB,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::WRITABLE
+                        | PageTableFlags::NO_CACHE
+                        | PageTableFlags::WRITE_THROUGH
+                );
+
+                i += Page::<Size4KiB>::SIZE as usize;
+            }
+        }
+
+        NonZeroUsize::new(phys_start as usize).unwrap()
+    }
+
+    fn unmap(&mut self, virt_start: usize, bytes: usize) {
+        if bytes > 4096 {
+            let mut i = 4096;
+
+            while i < bytes {
+                let virt = (virt_start + i) as u64;
+                let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt));
+
+                unmap_page!(p);
+
+                i += 4096;
+            }
+        } else {
+            let p = Page::<Size4KiB>::containing_address(VirtAddr::new(virt_start as u64));
+
+            unmap_page!(p);
+        }
+    }
+}
+
+// Needed to allow access from statics
+unsafe impl Send for XhciMapper {}
+unsafe impl Sync for XhciMapper {}

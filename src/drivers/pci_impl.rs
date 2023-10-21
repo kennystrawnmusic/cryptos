@@ -34,7 +34,7 @@ use crate::{
     ahci::ahci_init,
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
-    cralloc::frames::XhciMapper,
+    common::XhciMapper,
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
     xhci::{xhci_init, XhciImpl, XhciProtected},
