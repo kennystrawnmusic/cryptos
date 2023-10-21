@@ -148,7 +148,7 @@ extern "x86-interrupt" fn lapic_err(_frame: InterruptStackFrame) {
 }
 
 /// Round-robin preemptive scheduler
-/// 
+///
 /// Uses an IPI instead of the timer or the loop at the end of maink for optimization reasons:
 /// an IPI can send itself to every CPU on the system, making it possible to evenly distribute all that power
 extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {

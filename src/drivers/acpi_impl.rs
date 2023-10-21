@@ -894,15 +894,13 @@ pub unsafe fn system_shutdown() -> ! {
     let fadt_lock = Arc::clone(FADT.get().unwrap());
     let fadt = fadt_lock.write();
 
-    let pm1a_block = match fadt.pm1a_control_block() {
-        Ok(block) => Some(block.address),
-        Err(_) => None,
-    };
+    let pm1a_block = fadt.pm1a_control_block().ok().map(|block| block.address);
 
-    let pm1b_block = match fadt.pm1b_control_block() {
-        Ok(block_opt) => block_opt.map(|block| block.address),
-        Err(_) => None,
-    };
+    let pm1b_block = fadt
+        .pm1b_control_block()
+        .ok()
+        .map(|block_opt| block_opt.map(|block| block.address))
+        .flatten();
 
     let no_value = [None, None, None, None, None, None, None];
 
