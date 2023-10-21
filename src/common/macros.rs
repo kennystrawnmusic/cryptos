@@ -83,3 +83,107 @@ macro_rules! unmap_page {
         }
     };
 }
+
+/// One-to-one replacement for Redox's `int_like!` macro
+#[macro_export]
+macro_rules! int_like {
+    ($new:ident, $backing:ident) => {
+        pub struct $new($backing);
+
+        impl $new {
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn new(val: $backing) -> Self {
+                $new(val)
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn get(&self) -> $backing {
+                self.0
+            }
+        }
+
+        impl ::core::convert::From<$backing> for $new {
+            #[inline(always)]
+            fn from(val: $backing) -> Self {
+                Self::new(val)
+            }
+        }
+
+        impl ::core::convert::From<$new> for $backing {
+            #[inline(always)]
+            fn from(val: $new) -> Self {
+                val.get()
+            } 
+        }
+    };
+
+    ($new:ident, $new_atomic:ident, $backing:ident, $backing_atomic:ident) => {
+        int_like!($new, $backing);
+
+        pub struct $new_atomic($backing_atomic);
+
+        impl $new_atomic {
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn new(x: $new) -> Self {
+                $new_atomic($backing_atomic::new(x.get()))
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn load(&self, order: ::core::sync::atomic::Ordering) -> $new {
+                $new::new(self.0.load(order))
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn store(&self, val: $new, order: ::core::sync::atomic::Ordering) {
+                self.0.store(val.get(), order)
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn swap(&self, val: $new, order: ::core::sync::atomic::Ordering) -> $new {
+                $new::from(self.0.swap(val.get(), order))
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn compare_exchange(
+                &self,
+                current: $new,
+                new: $new,
+                success: ::core::sync::atomic::Ordering,
+                failure: ::core::sync::atomic::Ordering,
+            ) -> ::core::result::Result<$new, $new> {
+                match self.0.compare_exchange(current.get(), new.get(), success, failure) {
+                    Ok(x) => Ok($new::from(x)),
+                    Err(x) => Err($new::from(x)),
+                }
+            }
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn compare_exchange_weak(
+                &self,
+                current: $new,
+                new: $new,
+                success: ::core::sync::atomic::Ordering,
+                failure: ::core::sync::atomic::Ordering,
+            ) -> ::core::result::Result<$new, $new> {
+                match self.0.compare_exchange_weak(current.get(), new.get(), success, failure) {
+                    Ok(x) => Ok($new::from(x)),
+                    Err(x) => Err($new::from(x)),
+                }
+            }
+        }
+        impl ::core::default::Default for $new_atomic {
+            #[inline(always)]
+            fn default() -> Self {
+                Self::new($new::new(0))
+            }
+        }
+    }
+}
