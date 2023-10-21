@@ -202,6 +202,7 @@ pub fn addralloc<T>() -> *mut T {
     page.start_address().as_u64() as *mut T
 }
 
+/// Relax strategy that disables interrupts and halts the CPU
 pub struct IrqRelaxStrategy;
 
 impl RelaxStrategy for IrqRelaxStrategy {
