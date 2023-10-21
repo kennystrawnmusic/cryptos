@@ -16,7 +16,7 @@ use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR};
 pub struct SeqLock<T> {
     lock: AtomicUsize,
     data: UnsafeCell<T>,
-    semaphore: RwLock<()>,
+    semaphore: IrqLock<()>,
 }
 
 pub struct SeqLockReadGuard<'a, T> {
@@ -38,7 +38,7 @@ impl<'a, T> Deref for SeqLockReadGuard<'a, T> {
 pub struct SeqLockWriteGuard<'a, T> {
     lock: &'a AtomicUsize,
     data: *mut T,
-    _semaphore: RwLockWriteGuard<'a, ()>,
+    _semaphore: IrqLockWriteGuard<'a, ()>,
 }
 
 impl<'a, T> Deref for SeqLockWriteGuard<'a, T> {
@@ -69,7 +69,7 @@ impl<T: Copy> SeqLock<T> {
         Self {
             lock: AtomicUsize::new(0),
             data: UnsafeCell::new(inner),
-            semaphore: RwLock::new(()),
+            semaphore: IrqLock::new(()),
         }
     }
 
@@ -212,6 +212,9 @@ impl RelaxStrategy for IrqRelaxStrategy {
 
 /// RwLock that works by disabling interrupts and halting the CPU while held
 pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
+
+/// RwLockWriteGuard that works by disabling interrupts and halting the CPU while held
+pub type IrqLockWriteGuard<'a, T> = spin::rwlock::RwLockWriteGuard<'a, T, IrqRelaxStrategy>;
 
 /// Mutex that works by disabling interrupts and halting the CPU while held
 pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
