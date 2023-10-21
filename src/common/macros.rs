@@ -1,4 +1,7 @@
-use x86_64::{VirtAddr, structures::paging::{Size4KiB, Page, PageTableFlags}};
+use x86_64::{
+    structures::paging::{Page, PageTableFlags, Size4KiB},
+    VirtAddr,
+};
 
 /// Macro for ensuring pages are properly mapped
 ///
@@ -115,7 +118,7 @@ macro_rules! int_like {
             #[inline(always)]
             fn from(val: $new) -> Self {
                 val.get()
-            } 
+            }
         }
     };
 
@@ -158,7 +161,10 @@ macro_rules! int_like {
                 success: ::core::sync::atomic::Ordering,
                 failure: ::core::sync::atomic::Ordering,
             ) -> ::core::result::Result<$new, $new> {
-                match self.0.compare_exchange(current.get(), new.get(), success, failure) {
+                match self
+                    .0
+                    .compare_exchange(current.get(), new.get(), success, failure)
+                {
                     Ok(x) => Ok($new::from(x)),
                     Err(x) => Err($new::from(x)),
                 }
@@ -173,7 +179,10 @@ macro_rules! int_like {
                 success: ::core::sync::atomic::Ordering,
                 failure: ::core::sync::atomic::Ordering,
             ) -> ::core::result::Result<$new, $new> {
-                match self.0.compare_exchange_weak(current.get(), new.get(), success, failure) {
+                match self
+                    .0
+                    .compare_exchange_weak(current.get(), new.get(), success, failure)
+                {
                     Ok(x) => Ok($new::from(x)),
                     Err(x) => Err($new::from(x)),
                 }
@@ -185,7 +194,7 @@ macro_rules! int_like {
                 Self::new($new::new(0))
             }
         }
-    }
+    };
 }
 
 /// Kernel-mode version of the standard library's `println!` macro

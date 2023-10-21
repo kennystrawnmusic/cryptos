@@ -12,7 +12,7 @@ use x86_64::VirtAddr;
 
 pub mod macros;
 
-use crate::{get_phys_offset, map_page, FRAME_ALLOCATOR, unmap_page};
+use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR};
 
 /// A SeqLock that is supposed to work on bare metal
 /// TODO: figure out why this is deadlocking when I try to use it to lock the frame allocators
