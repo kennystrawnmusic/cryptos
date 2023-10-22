@@ -2,7 +2,6 @@
 
 use core::{
     any::{Any, TypeId},
-    intrinsics::abort,
     ops::{Generator, GeneratorState},
     pin::Pin,
     ptr::DynMetadata,
@@ -26,8 +25,9 @@ use crate::{
 };
 
 pub use self::signal::Signal;
-
 pub mod signal;
+
+use signal::abort;
 
 int_like!(Pid, AtomicPid, usize, AtomicUsize);
 
@@ -271,6 +271,16 @@ impl<'a> Process<'a> {
     /// This paves the way for proper preemption
     pub(crate) fn set_state(&mut self, state: State) {
         self.state = state;
+    }
+
+    /// Blocks this process
+    pub fn block(&mut self) {
+        self.set_state(State::Blocked);
+    }
+
+    /// Unblocks this process
+    pub fn unblock(&mut self) {
+        self.set_state(State::Runnable);
     }
 
     /// Exits this process
