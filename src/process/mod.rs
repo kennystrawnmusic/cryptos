@@ -109,15 +109,7 @@ impl From<*mut dyn Any> for MainLoop {
 
 impl From<Box<dyn Any>> for MainLoop {
     fn from(value: Box<dyn Any>) -> Self {
-        let type_id = value.type_id();
-
-        if type_id == TypeId::of::<fn() -> ()>() {
-            Self::from(unsafe { *(Box::into_raw(value) as *mut fn() -> ()) })
-        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
-            Self::from(unsafe { *(Box::into_raw(value) as *mut fn() -> syscall::Result<()>) })
-        } else {
-            unreachable!("Rust won't compile if none of the two above signatures match");
-        }
+        Self::from(Box::into_raw(value))
     }
 }
 
