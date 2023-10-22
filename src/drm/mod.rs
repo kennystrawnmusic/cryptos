@@ -74,6 +74,48 @@ impl PixelColorKind {
             _ => panic!("Unknown pixel format"),
         }
     }
+
+    // Safety: Attempting to call this before AVX is initialized or after it's disabled again will cause the CPU to fault
+    unsafe fn alpha_blend_inner(&self, alpha: f32, other: PixelColorKind) -> Self {
+        if !(0.0..=1.0).contains(&alpha) {
+            panic!("Alpha value must be a value between 0 and 1");
+        }
+
+        let this_simd = match self {
+            Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
+            Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
+            Self::U8(grayscale) => {
+                Simd::<u8, 4>::from_slice(&[grayscale.luma(), grayscale.luma(), grayscale.luma(), 0])
+            }
+        };
+
+        let other_simd = match other {
+            Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
+            Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
+            Self::U8(grayscale) => {
+                Simd::<u8, 4>::from_slice(&[grayscale.luma(), grayscale.luma(), grayscale.luma(), 0])
+            }
+        };
+
+        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
+
+        let this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
+            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd) * (other_simd.cast::<f32>())))
+        .cast::<u8>();
+
+        let out_simd = this_simd.to_array();
+
+        match self {
+            Self::Rgb(_) => Self::Rgb(Rgb888::new(out_simd[0], out_simd[1], out_simd[2])),
+            Self::Bgr(_) => Self::Bgr(Bgr888::new(out_simd[2], out_simd[1], out_simd[0])),
+            Self::U8(_) => Self::U8(Gray8::new(out_simd[0])),
+        }
+    }
+
+    /// Method for computing alpha values on the fly in the exact same manner as the `alpha_blend` method of CanvasBuf below
+    pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
+        with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) })
+    }
 }
 
 impl Clone for PixelColorKind {
@@ -171,7 +213,7 @@ impl CanvasBuf {
         }
     }
 
-    #[target_feature(enable = "avx")]
+    // Safety: Attempting to call this before AVX is initialized or after it's disabled again will cause the CPU to fault
     unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CanvasBuf) {
         if !(0.0..=1.0).contains(&alpha) {
             panic!("Alpha value must be a value between 0 and 1");
