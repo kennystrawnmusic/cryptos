@@ -57,5 +57,29 @@
           "isDefault": true
         },
       },
+      {
+        "label": "Clean and rebuild",
+        "type": "shell",
+        "command": [
+          "cargo",
+          "cache",
+          "-r",
+          "all",
+          "&&",
+          "cargo",
+          "clean",
+          "&&",
+          "cargo",
+          "run",
+          "--package",
+          "runner",
+          "--",
+          "--boot",
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+      }
     ]
   }

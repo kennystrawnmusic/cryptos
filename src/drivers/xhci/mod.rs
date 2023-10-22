@@ -726,7 +726,8 @@ impl XhciImpl {
                         while port.portsc.port_reset() {
                             core::hint::spin_loop();
                         }
-                        // TODO: timeout
+                        
+                        log::info!("Ports successfully reset");
                     }
                 }
             });

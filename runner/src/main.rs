@@ -7,6 +7,7 @@ use std::{
     path::Path,
     process::{exit, Command, Stdio},
 };
+use raw_cpuid::{CpuId, Hypervisor};
 
 fn main() {
     if cfg!(target_os = "linux") {
@@ -20,15 +21,24 @@ fn main() {
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
 
-    let mut fb_phys = FrameBuffer::default();
-    fb_phys.minimum_framebuffer_width = Some(1920);
-    fb_phys.minimum_framebuffer_height = Some(1080);
-
-    let fb_virt = FrameBuffer::default();
+    let framebuf = if let Some(hypervisor) = CpuId::new().get_hypervisor_info() {
+        if let Hypervisor::QEMU = hypervisor.identify() {
+            FrameBuffer::default()
+        } else {
+            let mut fb = FrameBuffer::default();
+            fb.minimum_framebuffer_height = Some(1920);
+            fb.minimum_framebuffer_width = Some(1080);
+            fb
+        }
+    } else {
+        let mut fb = FrameBuffer::default();
+        fb.minimum_framebuffer_height = Some(1920);
+        fb.minimum_framebuffer_width = Some(1080);
+        fb
+    };
 
     let mut c = BootConfig::default();
-    c.frame_buffer_physical = fb_phys;
-    c.frame_buffer_virtual = fb_virt;
+    c.frame_buffer = framebuf;
 
     // Suppress excessive output in release mode
     if cfg!(opt_level = "0") {
@@ -404,10 +414,6 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
     }
 
     let mut uefi_cmd = Command::new("qemu-system-x86_64");
-
-    if cfg!(target_os = "linux") {
-        uefi_cmd.arg("-accel").arg("kvm");
-    }
 
     uefi_cmd
         .arg("-drive")
