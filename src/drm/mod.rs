@@ -234,6 +234,14 @@ impl CanvasBuf {
         }
     }
 
+    /// Shortcut for draw_iter to avoid needing to call `unwrap` every time I need to use this
+    pub fn draw_iter_shorthand<I>(&mut self, pixels: I)
+    where
+        I: IntoIterator<Item = embedded_graphics::Pixel<<CanvasBuf as DrawTarget>::Color>>,
+    {
+        self.draw_iter(pixels).unwrap()
+    }
+
     /// Computes alpha values on the fly
     pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
         let own_pixels = self.pixels.clone();

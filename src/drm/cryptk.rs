@@ -243,8 +243,8 @@ impl<'a> DesktopBackground<'a> {
     pub fn draw(&mut self) {
         match self.img {
             // Direct framebuffer writes never fail, as stated also in the `impl` of `DrawTarget` for `CanvasBuf`
-            ImageKind::Bmp(ref bmp) => self.canvas.draw_iter(bmp.pixels()).unwrap(),
-            ImageKind::Png(ref png) => self.canvas.draw_iter(png_pixels(png)).unwrap(),
+            ImageKind::Bmp(ref bmp) => self.canvas.draw_iter_shorthand(bmp.pixels()),
+            ImageKind::Png(ref png) => self.canvas.draw_iter_shorthand(png_pixels(png)),
         }
     }
 }
