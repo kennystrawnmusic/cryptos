@@ -228,7 +228,6 @@ pub struct DesktopBackground<'a> {
 impl<'a> DesktopBackground<'a> {
     pub fn new(img: ImageKind<'a>, fb: &'a mut FrameBuffer) -> Self {
         let canvas = CanvasBuf::new(fb);
-
         Self { img, canvas }
     }
 
