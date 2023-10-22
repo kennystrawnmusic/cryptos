@@ -107,6 +107,20 @@ impl From<*mut dyn Any> for MainLoop {
     }
 }
 
+impl From<Box<dyn Any>> for MainLoop {
+    fn from(value: Box<dyn Any>) -> Self {
+        let type_id = value.type_id();
+
+        if type_id == TypeId::of::<fn() -> ()>() {
+            Self::from(unsafe { *(Box::into_raw(value) as *mut fn() -> ()) })
+        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
+            Self::from(unsafe { *(Box::into_raw(value) as *mut fn() -> syscall::Result<()>) })
+        } else {
+            unreachable!("Rust won't compile if none of the two above signatures match");
+        }
+    }
+}
+
 /// Process object
 ///
 /// Uses `core::ops::Generator` behind the scenes for easy preemption
@@ -292,10 +306,7 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
 
-        // need to force this to be 16 bytes long in order to cast to a wide pointer
-        let castable = &mut [start, 0];
-
-        let main = MainLoop::from(castable as *mut dyn Any);
+        let main = MainLoop::from(start as *mut TypeId as *mut dyn Any);
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
