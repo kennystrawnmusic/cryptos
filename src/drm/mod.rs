@@ -237,7 +237,7 @@ impl CanvasBuf {
     /// Shortcut for draw_iter to avoid needing to call `unwrap` every time I need to use this
     pub fn draw_iter_shorthand<I>(&mut self, pixels: I)
     where
-        I: IntoIterator<Item = embedded_graphics::Pixel<<Self as DrawTarget>::Color>>,
+        I: IntoIterator<Item = Pixel<<Self as DrawTarget>::Color>>,
     {
         self.draw_iter(pixels).unwrap()
     }
@@ -307,7 +307,7 @@ impl DrawTarget for CanvasBuf {
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
-        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
+        I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         let pixels = pixels.into_iter().collect::<Vec<_>>();
         let colors = pixels.iter().map(|p| p.1).collect::<Vec<_>>();
