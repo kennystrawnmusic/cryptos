@@ -131,7 +131,7 @@ impl PixelColorKind {
         }
     }
 
-    /// Method for computing alpha values on the fly in the exact same manner as the `alpha_blend` method of CanvasBuf
+    /// Method for computing alpha values on the fly
     pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) })
     }
@@ -232,103 +232,18 @@ impl CanvasBuf {
         }
     }
 
-    // Safety: Attempting to call this before AVX is initialized or after it's disabled again will cause the CPU to fault
-    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CanvasBuf) {
-        if !(0.0..=1.0).contains(&alpha) {
-            panic!("Alpha value must be a value between 0 and 1");
-        }
+    /// Computes alpha values on the fly
+    pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
+        let own_pixels = self.pixels.clone();
+        let other_pixels = other.pixels.clone();
 
-        let own_colors = self.pixels.iter().map(|p| p.1).collect::<Vec<_>>();
-        let other_colors = other.pixels.iter().map(|p| p.1).collect::<Vec<_>>();
-
-        let pixels = self.pixels.clone(); // borrow checker
-
-        for (i, p) in pixels.iter().map(|p| p.0).enumerate() {
+        for (i, p) in own_pixels.iter().map(|p| p.0).enumerate() {
             let pixel_offset = p.y as usize * self.info.stride + p.x as usize;
 
-            // first, copy all color values from layer we're currently on
-            let mut this_simd = match own_colors[i] {
-                PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0])
-                }
-                PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0])
-                }
-                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    0,
-                ]),
-            };
-
-            // next, copy all color values from layer we want to blend with
-            let other_simd = match other_colors[i] {
-                PixelColorKind::Bgr(bgr) => {
-                    Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0])
-                }
-                PixelColorKind::Rgb(rgb) => {
-                    Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0])
-                }
-                PixelColorKind::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    0,
-                ]),
-            };
-
-            // alpha value to compute
-            let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
-
-            // here's where the magic happens
-            this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
-                + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                    * (other_simd.cast::<f32>())))
-            .cast::<u8>();
-
-            // extract result of the alpha-blend formula
-            let out_simd = this_simd.to_array();
-
-            // finally, overwrite the pixels with the new values
-            self.pixels[pixel_offset] = match own_colors[i] {
-                PixelColorKind::Rgb(_) => Pixel(
-                    p,
-                    PixelColorKind::from_framebuffer(
-                        self.info,
-                        out_simd[0],
-                        out_simd[1],
-                        out_simd[2],
-                    ),
-                ),
-                PixelColorKind::Bgr(_) => Pixel(
-                    p,
-                    PixelColorKind::from_framebuffer(
-                        self.info,
-                        out_simd[2],
-                        out_simd[1],
-                        out_simd[0],
-                    ),
-                ),
-                PixelColorKind::U8(_) => {
-                    let luma = {
-                        let red_blend = out_simd[0] as u32;
-                        let green_blend = out_simd[1] as u32;
-                        let blue_blend = out_simd[2] as u32;
-                        ((red_blend * green_blend * blue_blend) / 3) as u8
-                    };
-                    Pixel(
-                        p,
-                        PixelColorKind::from_framebuffer(self.info, luma, luma, luma),
-                    )
-                }
-            }
+            self.pixels[pixel_offset].1 = own_pixels[i].1.alpha_blend(alpha, other_pixels[i].1);
         }
     }
-    /// Computes alpha values relative to those associated with another canvas
-    pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
-        with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
-    }
+
     /// Writes finished canvas render to an existing root framebuffer after computations
     ///
     /// Automatically called by the rendering loop at the end of maink
