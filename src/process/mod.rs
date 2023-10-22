@@ -20,11 +20,13 @@ use spin::RwLock;
 use syscall::{Error, EBADF, ESRCH};
 use xmas_elf::ElfFile;
 
-use crate::fs::hmfs::{Entry, FileData};
+use crate::{fs::hmfs::{Entry, FileData}, int_like};
 
 pub use self::signal::Signal;
 
 pub mod signal;
+
+int_like!(Pid, AtomicPid, usize, AtomicUsize);
 
 /// State that the context is left in
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -122,8 +124,8 @@ pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
     state: State,
 
-    pid: usize,
-    tid: usize,
+    pid: AtomicPid,
+    tid: AtomicPid,
 
     sid: AtomicU64,
     gid: AtomicU64,
@@ -155,8 +157,8 @@ impl<'a> Process<'a> {
         Self {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: global_id,
-            tid: global_id,
+            pid: AtomicPid::new(Pid::new(global_id)),
+            tid: AtomicPid::new(Pid::new(global_id)),
             sid: AtomicU64::new(global_id as u64),
             gid: AtomicU64::new(global_id as u64),
             parent: RwLock::new(None),
@@ -217,17 +219,17 @@ impl<'a> Process<'a> {
 
                     if self.signal_received == Signal::Success {
                         if status == 0 {
-                            PTABLE.write().remove(&(self.pid));
+                            PTABLE.write().remove(self.pid.0.get_mut());
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
                             // as that's the arm that the exit status is set from
                             return Ok(());
                         } else {
-                            PTABLE.write().remove(&(self.pid));
+                            PTABLE.write().remove(self.pid.0.get_mut());
                             return Err(Error::new(status as i32));
                         }
                     } else {
-                        PTABLE.write().remove(&(self.pid));
+                        PTABLE.write().remove(self.pid.0.get_mut());
 
                         // borrow checker
                         let signal = self.signal_received;
