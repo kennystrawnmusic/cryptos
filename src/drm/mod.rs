@@ -292,7 +292,7 @@ impl CanvasBuf {
 }
 
 impl OriginDimensions for CanvasBuf {
-    fn size(&self) -> embedded_graphics::prelude::Size {
+    fn size(&self) -> Size {
         let horiz = self.info.width as u32;
         let vert = self.info.height as u32;
         Size::new(horiz, vert)
