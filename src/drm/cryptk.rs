@@ -179,7 +179,6 @@ pub struct Widget<'a> {
     kind: WidgetKind<'a>,
 }
 
-#[allow(unused)] // not finished
 pub struct DesktopBackground<'a>(ImageKind<'a>);
 
 pub fn png_points<'a>(inner: &'a ImageData) -> impl Iterator<Item = Point> + 'a {
