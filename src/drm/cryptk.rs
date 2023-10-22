@@ -224,8 +224,7 @@ impl<'a> DesktopBackground<'a> {
     pub fn draw(&self, c: &mut CanvasBuf) {
         match self.image() {
             ImageKind::Bmp(bmp) => {
-                let bmp_pixels = bmp.pixels();
-                c.draw_iter(bmp_pixels).unwrap(); // error is type-aliased to `!` anyway
+                c.draw_iter(bmp.pixels()).unwrap(); // error is type-aliased to `!` anyway
             }
             ImageKind::Png(png) => {
                 c.draw_iter(png_pixels(png)).unwrap(); // error is type-aliased to `!` anyway
