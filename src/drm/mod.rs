@@ -80,7 +80,7 @@ impl PixelColorKind {
         }
     }
 
-    // Safety: Attempting to call this before AVX is initialized or after it's disabled again will cause the CPU to fault
+    // Safety: Attempting to call this before AVX is initialized or after it's disabled again will cause a #GP
     unsafe fn alpha_blend_inner(&self, alpha: f32, other: PixelColorKind) -> Self {
         if !(0.0..=1.0).contains(&alpha) {
             panic!("Alpha value must be a value between 0 and 1");
