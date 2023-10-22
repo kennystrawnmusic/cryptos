@@ -65,7 +65,7 @@ impl PixelColorKind {
             )),
         }
     }
-    pub fn new(info: FrameBufferInfo, red: u8, green: u8, blue: u8) -> Self {
+    pub fn from_framebuffer(info: FrameBufferInfo, red: u8, green: u8, blue: u8) -> Self {
         let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match info.pixel_format {
             PixelFormat::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
@@ -123,7 +123,7 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
             Box::new(
                 red.zip(green)
                     .zip(blue)
-                    .map(move |((r, g), b)| PixelColorKind::new(info, *r, *g, *b)),
+                    .map(move |((r, g), b)| PixelColorKind::from_framebuffer(info, *r, *g, *b)),
             )
         }
         PixelFormat::Bgr => {
@@ -133,12 +133,12 @@ pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorK
             Box::new(
                 red.zip(green)
                     .zip(blue)
-                    .map(move |((r, g), b)| PixelColorKind::new(info, *r, *g, *b)),
+                    .map(move |((r, g), b)| PixelColorKind::from_framebuffer(info, *r, *g, *b)),
             )
         }
         PixelFormat::U8 => {
             let gray = buffer.buffer().iter().step_by(info.bytes_per_pixel);
-            Box::new(gray.map(move |g| PixelColorKind::new(info, *g, *g, *g)))
+            Box::new(gray.map(move |g| PixelColorKind::from_framebuffer(info, *g, *g, *g)))
         }
         _ => panic!("Unknown pixel format"),
     }
@@ -233,11 +233,21 @@ impl CanvasBuf {
             self.pixels[pixel_offset] = match own_colors[i] {
                 PixelColorKind::Rgb(_) => Pixel(
                     p,
-                    PixelColorKind::new(self.info, out_simd[0], out_simd[1], out_simd[2]),
+                    PixelColorKind::from_framebuffer(
+                        self.info,
+                        out_simd[0],
+                        out_simd[1],
+                        out_simd[2],
+                    ),
                 ),
                 PixelColorKind::Bgr(_) => Pixel(
                     p,
-                    PixelColorKind::new(self.info, out_simd[2], out_simd[1], out_simd[0]),
+                    PixelColorKind::from_framebuffer(
+                        self.info,
+                        out_simd[2],
+                        out_simd[1],
+                        out_simd[0],
+                    ),
                 ),
                 PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
             }
@@ -315,15 +325,20 @@ impl DrawTarget for CanvasBuf {
             self.pixels[pixel_offset] = match colors[index] {
                 PixelColorKind::Rgb(_) => Pixel(
                     point,
-                    PixelColorKind::new(self.info, color[0], color[1], color[2]),
+                    PixelColorKind::from_framebuffer(self.info, color[0], color[1], color[2]),
                 ),
                 PixelColorKind::Bgr(_) => Pixel(
                     point,
-                    PixelColorKind::new(self.info, color[2], color[1], color[0]),
+                    PixelColorKind::from_framebuffer(self.info, color[2], color[1], color[0]),
                 ),
                 PixelColorKind::U8(gray) => Pixel(
                     point,
-                    PixelColorKind::new(self.info, gray.luma(), gray.luma(), gray.luma()),
+                    PixelColorKind::from_framebuffer(
+                        self.info,
+                        gray.luma(),
+                        gray.luma(),
+                        gray.luma(),
+                    ),
                 ),
             };
         }
