@@ -102,6 +102,251 @@ impl core::ops::IndexMut<u256> for u256 {
     }
 }
 
+impl core::fmt::Display for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}{}", self.0[1], self.0[0])
+    }
+}
+
+impl core::fmt::LowerHex for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{:x}{:x}", self.0[1], self.0[0])
+    }
+}
+
+impl core::fmt::UpperHex for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{:X}{:X}", self.0[1], self.0[0])
+    }
+}
+
+impl core::fmt::Binary for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{:b}{:b}", self.0[1], self.0[0])
+    }
+}
+
+impl core::fmt::Octal for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{:o}{:o}", self.0[1], self.0[0])
+    }
+}
+
+impl core::fmt::Debug for u256 {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        let out = alloc::format!("{:?}{:?}", self.0[1], self.0[0]);
+        write!(f, "{:#?}", out)
+    }
+}
+
+impl core::cmp::PartialEq<u256> for u256 {
+    fn eq(&self, other: &u256) -> bool {
+        self.0[0] == other.0[0] && self.0[1] == other.0[1]
+    }
+}
+
+impl core::cmp::PartialEq<u128> for u256 {
+    fn eq(&self, other: &u128) -> bool {
+        self.0[0] == *other && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<u64> for u256 {
+    fn eq(&self, other: &u64) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<u32> for u256 {
+    fn eq(&self, other: &u32) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<u16> for u256 {
+    fn eq(&self, other: &u16) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<u8> for u256 {
+    fn eq(&self, other: &u8) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<usize> for u256 {
+    fn eq(&self, other: &usize) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<i128> for u256 {
+    fn eq(&self, other: &i128) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<i64> for u256 {
+    fn eq(&self, other: &i64) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<i32> for u256 {
+    fn eq(&self, other: &i32) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<i16> for u256 {
+    fn eq(&self, other: &i16) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<i8> for u256 {
+    fn eq(&self, other: &i8) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::PartialEq<isize> for u256 {
+    fn eq(&self, other: &isize) -> bool {
+        self.0[0] == *other as u128 && self.0[1] == 0
+    }
+}
+
+impl core::cmp::Eq for u256 {}
+
+impl core::cmp::PartialOrd<u256> for u256 {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        if self.0[1] > other.0[1] {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < other.0[1] {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > other.0[0] {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < other.0[0] {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u128> for u256 {
+    fn partial_cmp(&self, other: &u128) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u64> for u256 {
+    fn partial_cmp(&self, other: &u64) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other as u128 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other as u128 {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u32> for u256 {
+    fn partial_cmp(&self, other: &u32) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other as u128 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other as u128 {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u16> for u256 {
+    fn partial_cmp(&self, other: &u16) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other as u128 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other as u128 {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u8> for u256 {
+    fn partial_cmp(&self, other: &u8) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other as u128 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other as u128 {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<usize> for u256 {
+    fn partial_cmp(&self, other: &usize) -> Option<core::cmp::Ordering> {
+        if self.0[1] > 0 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] == 0 {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other as u128 {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other as u128 {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::Ord for u256 {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        if self.0[1] > other.0[1] {
+            core::cmp::Ordering::Greater
+        } else if self.0[1] < other.0[1] {
+            core::cmp::Ordering::Less
+        } else if self.0[0] > other.0[0] {
+            core::cmp::Ordering::Greater
+        } else if self.0[0] < other.0[0] {
+            core::cmp::Ordering::Less
+        } else {
+            core::cmp::Ordering::Equal
+        }
+    }
+}
+
 impl Clone for u256 {
     fn clone(&self) -> Self {
         Self(self.0)
@@ -262,6 +507,12 @@ impl From<i32> for u256 {
 
 impl From<i64> for u256 {
     fn from(value: i64) -> Self {
+        Self([value as u128, 0])
+    }
+}
+
+impl From<i128> for u256 {
+    fn from(value: i128) -> Self {
         Self([value as u128, 0])
     }
 }
@@ -1497,5 +1748,235 @@ impl core::ops::Shr<u128> for u512 {
 impl core::ops::ShrAssign<u128> for u512 {
     fn shr_assign(&mut self, rhs: u128) {
         *self = *self >> rhs;
+    }
+}
+
+impl core::cmp::PartialEq<u512> for u512 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0[0] == other.0[0] && self.0[1] == other.0[1]
+    }
+}
+
+impl core::cmp::PartialEq<u256> for u512 {
+    fn eq(&self, other: &u256) -> bool {
+        self.0[0] == *other && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<u128> for u512 {
+    fn eq(&self, other: &u128) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<u64> for u512 {
+    fn eq(&self, other: &u64) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<u32> for u512 {
+    fn eq(&self, other: &u32) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<u16> for u512 {
+    fn eq(&self, other: &u16) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<u8> for u512 {
+    fn eq(&self, other: &u8) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<usize> for u512 {
+    fn eq(&self, other: &usize) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<i128> for u512 {
+    fn eq(&self, other: &i128) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<i64> for u512 {
+    fn eq(&self, other: &i64) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<i32> for u512 {
+    fn eq(&self, other: &i32) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<i16> for u512 {
+    fn eq(&self, other: &i16) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<i8> for u512 {
+    fn eq(&self, other: &i8) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::PartialEq<isize> for u512 {
+    fn eq(&self, other: &isize) -> bool {
+        self.0[0] == u256::from(*other) && self.0[1] == u256::from(0)
+    }
+}
+
+impl core::cmp::Eq for u512 {}
+
+impl core::cmp::PartialOrd<u512> for u512 {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        if self.0[1] > other.0[1] {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < other.0[1] {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > other.0[0] {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < other.0[0] {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u256> for u512 {
+    fn partial_cmp(&self, other: &u256) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > *other {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < *other {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u128> for u512 {
+    fn partial_cmp(&self, other: &u128) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u64> for u512 {
+    fn partial_cmp(&self, other: &u64) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u32> for u512 {
+    fn partial_cmp(&self, other: &u32) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u16> for u512 {
+    fn partial_cmp(&self, other: &u16) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<u8> for u512 {
+    fn partial_cmp(&self, other: &u8) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::PartialOrd<usize> for u512 {
+    fn partial_cmp(&self, other: &usize) -> Option<core::cmp::Ordering> {
+        if self.0[1] > u256::from(0) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[1] < u256::from(0) {
+            Some(core::cmp::Ordering::Less)
+        } else if self.0[0] > u256::from(*other) {
+            Some(core::cmp::Ordering::Greater)
+        } else if self.0[0] < u256::from(*other) {
+            Some(core::cmp::Ordering::Less)
+        } else {
+            Some(core::cmp::Ordering::Equal)
+        }
+    }
+}
+
+impl core::cmp::Ord for u512 {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        if self.0[1] > other.0[1] {
+            core::cmp::Ordering::Greater
+        } else if self.0[1] < other.0[1] {
+            core::cmp::Ordering::Less
+        } else if self.0[0] > other.0[0] {
+            core::cmp::Ordering::Greater
+        } else if self.0[0] < other.0[0] {
+            core::cmp::Ordering::Less
+        } else {
+            core::cmp::Ordering::Equal
+        }
     }
 }
