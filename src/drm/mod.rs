@@ -20,7 +20,7 @@ use embedded_graphics_core::{
     pixelcolor::{raw::RawU24, Rgb555, Rgb565},
     prelude::RawData,
 };
-use minipng::ImageData;
+use minipng::{ImageData, ColorType};
 use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};
@@ -49,16 +49,16 @@ impl PixelColorKind {
         red: u8,
         green: u8,
         blue: u8,
-        kind: minipng::ColorType,
+        kind: ColorType,
         data: &ImageData,
     ) -> Self {
         let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match kind {
-            minipng::ColorType::Gray => Self::U8(Gray8::new(luma)),
-            minipng::ColorType::GrayAlpha => Self::U8(Gray8::new(luma)),
-            minipng::ColorType::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
-            minipng::ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)),
-            minipng::ColorType::Indexed => Self::Rgb(Rgb888::new(
+            ColorType::Gray => Self::U8(Gray8::new(luma)),
+            ColorType::GrayAlpha => Self::U8(Gray8::new(luma)),
+            ColorType::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
+            ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)),
+            ColorType::Indexed => Self::Rgb(Rgb888::new(
                 data.palette(luma)[0],
                 data.palette(luma)[1],
                 data.palette(luma)[2],
