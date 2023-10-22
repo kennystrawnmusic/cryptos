@@ -191,7 +191,7 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
         let pixel_chunk = inner
             .pixels()
             .chunks_exact(4)
-            .nth(point.y as usize)
+            .nth(((point.x as u32) + (point.y as u32) * inner.width()) as usize)
             .unwrap();
 
         let red = pixel_chunk[0];
