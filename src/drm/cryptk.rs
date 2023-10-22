@@ -228,8 +228,7 @@ impl<'a> DesktopBackground<'a> {
                 c.draw_iter(bmp_pixels).unwrap(); // error is type-aliased to `!` anyway
             }
             ImageKind::Png(png) => {
-                let png_pixels = png_pixels(png);
-                c.draw_iter(png_pixels).unwrap(); // error is type-aliased to `!` anyway
+                c.draw_iter(png_pixels(png)).unwrap(); // error is type-aliased to `!` anyway
             }
         }
     }
