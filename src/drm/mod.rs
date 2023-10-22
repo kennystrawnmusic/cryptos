@@ -286,7 +286,7 @@ impl CanvasBuf {
             chunk.copy_from_slice(new_chunk.as_mut_array());
         }
     }
-    /// Adds the given canvas to the compositing table
+    /// Adds this canvas to the compositing table
     pub fn register(self) {
         COMPOSITING_TABLE.write().push(self);
     }
