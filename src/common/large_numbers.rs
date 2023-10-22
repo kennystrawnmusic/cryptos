@@ -697,6 +697,7 @@ impl core::ops::ShrAssign<u128> for u256 {
     }
 }
 
+/// 512-bit unsigned integer
 #[allow(non_camel_case_types)]
 pub struct u512([u256; 2]);
 
