@@ -294,7 +294,7 @@ impl OriginDimensions for CanvasBuf {
 impl DrawTarget for CanvasBuf {
     type Color = PixelColorKind;
 
-    // this is why calling `unwrap` is always safe: direct framebuffer writes never fail
+    // this is why calling `unwrap` on `draw_iter` is always safe: direct framebuffer writes never fail
     type Error = !;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
