@@ -502,6 +502,7 @@ dependencies = [
  "hashbrown",
  "lazy_static",
  "log",
+ "minipng",
  "mr-mime",
  "nalgebra 0.32.3",
  "noto-sans-mono-bitmap",
@@ -975,6 +976,12 @@ name = "micromath"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39617bc909d64b068dcffd0e3e31679195b5576d0c83fadc52690268cc2b2b55"
+
+[[package]]
+name = "minipng"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44aaf824f3dbcc8a4ab8fd66964fed5200a632d5794775a2426e77e3833776a8"
 
 [[package]]
 name = "mr-mime"

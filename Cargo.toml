@@ -32,6 +32,7 @@ embedded-layout = "^0.4.1"
 hashbrown = { version = "^0.14.1", default-features = false, features = ["inline-more"] }
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = { version = "0.4.17", default-features = false }
+minipng = { version = "0.1.1", features = ["adler"] }
 mr-mime = { version = "0.1.1", default-features = false, features = ["alloc"] }
 nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"

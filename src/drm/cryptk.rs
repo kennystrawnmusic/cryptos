@@ -15,8 +15,14 @@ use embedded_layout::{
         Chain,
     },
 };
+use minipng::ImageData;
 use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
+
+pub enum ImageKind<'a> {
+    Bmp(&'a Bmp<'a, PixelColorKind>),
+    Png(&'a ImageData<'a>),
+}
 
 use super::{CanvasBuf, PixelColorKind};
 
@@ -25,7 +31,7 @@ pub type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKi
 #[allow(unused)] // not finished
 pub struct IconButton<'a> {
     bg: Rectangle,
-    fg: Bmp<'a, PixelColorKind>,
+    fg: ImageKind<'a>,
 }
 
 #[allow(unused)] // not finished
@@ -170,3 +176,6 @@ pub struct Widget<'a> {
     canvas: CanvasBuf,
     kind: WidgetKind<'a>,
 }
+
+#[allow(unused)] // not finished
+pub struct DesktopBackground(ImageKind<'static>);
