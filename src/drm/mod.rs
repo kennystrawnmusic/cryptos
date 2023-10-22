@@ -15,8 +15,12 @@ use embedded_graphics::{
     Pixel,
 };
 use embedded_graphics_core::{
-    draw_target::DrawTarget, geometry::Point, pixelcolor::raw::RawU24, prelude::RawData,
+    draw_target::DrawTarget,
+    geometry::Point,
+    pixelcolor::{raw::RawU24, Rgb555, Rgb565},
+    prelude::RawData,
 };
+use minipng::ImageData;
 use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};
@@ -41,6 +45,26 @@ pub enum PixelColorKind {
 }
 
 impl PixelColorKind {
+    pub fn from_png_metadata(
+        red: u8,
+        green: u8,
+        blue: u8,
+        kind: minipng::ColorType,
+        data: &ImageData,
+    ) -> Self {
+        let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
+        match kind {
+            minipng::ColorType::Gray => Self::U8(Gray8::new(luma)),
+            minipng::ColorType::GrayAlpha => Self::U8(Gray8::new(luma)),
+            minipng::ColorType::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
+            minipng::ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)),
+            minipng::ColorType::Indexed => Self::Rgb(Rgb888::new(
+                data.palette(luma)[0],
+                data.palette(luma)[1],
+                data.palette(luma)[2],
+            )),
+        }
+    }
     pub fn new(info: FrameBufferInfo, red: u8, green: u8, blue: u8) -> Self {
         let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match info.pixel_format {
@@ -61,6 +85,24 @@ impl Clone for PixelColorKind {
 impl From<RawU24> for PixelColorKind {
     fn from(value: RawU24) -> Self {
         Self::Rgb(Rgb888::from(value))
+    }
+}
+
+impl From<Rgb555> for PixelColorKind {
+    fn from(value: Rgb555) -> Self {
+        Self::Rgb(Rgb888::from(value))
+    }
+}
+
+impl From<Rgb565> for PixelColorKind {
+    fn from(value: Rgb565) -> Self {
+        Self::Rgb(Rgb888::from(value))
+    }
+}
+
+impl From<Rgb888> for PixelColorKind {
+    fn from(value: Rgb888) -> Self {
+        Self::Rgb(value)
     }
 }
 

@@ -23,7 +23,8 @@
     box_into_inner,
     unsized_locals,
     associated_type_bounds,
-    ptr_metadata
+    ptr_metadata,
+    array_chunks
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]

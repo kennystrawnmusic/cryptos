@@ -1,9 +1,11 @@
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use byteorder::LittleEndian;
 use embedded_graphics::{
-    image::ImageRaw,
+    draw_target::DrawTarget,
+    image::{Image, ImageRaw},
     primitives::{Circle, Line, Rectangle, RoundedRectangle},
 };
+use embedded_graphics_core::{prelude::Point, Pixel};
 use embedded_layout::{
     layout::linear::{
         spacing::{DistributeFill, Tight},
@@ -20,8 +22,8 @@ use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
 
 pub enum ImageKind<'a> {
-    Bmp(&'a Bmp<'a, PixelColorKind>),
-    Png(&'a ImageData<'a>),
+    Bmp(Bmp<'a, PixelColorKind>),
+    Png(ImageData<'a>),
 }
 
 use super::{CanvasBuf, PixelColorKind};
@@ -178,4 +180,60 @@ pub struct Widget<'a> {
 }
 
 #[allow(unused)] // not finished
-pub struct DesktopBackground(ImageKind<'static>);
+pub struct DesktopBackground<'a>(ImageKind<'a>);
+
+pub fn png_points<'a>(inner: &'a ImageData) -> impl Iterator<Item = Point> + 'a {
+    (0..inner.width())
+        .flat_map(move |x| (0..inner.height()).map(move |y| Point::new(x as i32, y as i32)))
+}
+
+pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColorKind> + 'a> {
+    Box::new(png_points(inner).map(move |point| {
+        let pixel_chunk = inner
+            .pixels()
+            .chunks_exact(4)
+            .nth(point.y as usize)
+            .unwrap();
+        let red = pixel_chunk[0];
+        let green = pixel_chunk[1];
+        let blue = pixel_chunk[2];
+
+        match inner.color_type() {
+            // this function already does all the matching, so OK to use catch-all here
+            _ => PixelColorKind::from_png_metadata(red, green, blue, inner.color_type(), &inner),
+        }
+    }))
+}
+
+pub fn png_pixels<'a>(img: &'a ImageData) -> impl Iterator<Item = Pixel<PixelColorKind>> + 'a {
+    png_points(img)
+        .zip(png_color(img))
+        .map(|(point, color)| Pixel(point, color))
+}
+
+impl<'a> DesktopBackground<'a> {
+    pub fn new(image: ImageKind<'a>) -> Self {
+        Self(image)
+    }
+
+    pub fn image(&self) -> &ImageKind<'a> {
+        &self.0
+    }
+
+    pub fn image_mut(&mut self) -> &mut ImageKind<'a> {
+        &mut self.0
+    }
+
+    pub fn draw(&self, c: &mut CanvasBuf) {
+        match self.image() {
+            ImageKind::Bmp(bmp) => {
+                let bmp_pixels = bmp.pixels();
+                c.draw_iter(bmp_pixels).unwrap(); // error is type-aliased to `!` anyway
+            }
+            ImageKind::Png(png) => {
+                let png_pixels = png_pixels(png);
+                c.draw_iter(png_pixels).unwrap(); // error is type-aliased to `!` anyway
+            }
+        }
+    }
+}
