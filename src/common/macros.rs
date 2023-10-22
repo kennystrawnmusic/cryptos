@@ -87,7 +87,7 @@ macro_rules! unmap_page {
     };
 }
 
-/// One-to-one replacement for Redox's `int_like!` macro: https://gitlab.redox-os.org/redox-os/kernel/-/blob/master/src/context/context.rs?ref_type=heads
+/// One-to-one replacement for Redox's `int_like!` macro: https://gitlab.redox-os.org/redox-os/kernel/-/blob/master/src/common/int_like.rs?ref_type=heads
 #[macro_export]
 macro_rules! int_like {
     ($new:ident, $backing:ident) => {
