@@ -115,7 +115,7 @@ pub struct Ribbon<'a> {
 
 #[allow(unused)] // not finished
 pub struct Overview<'a> {
-    layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, CanvasBuf>, // TODO: 2D grid
+    layout: Vec<LinearLayout<Horizontal<TopToBottom, FixedMargin>, CanvasBuf>>,
     grid: Vec<IconButton<'a>>,
 }
 
