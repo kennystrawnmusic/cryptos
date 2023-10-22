@@ -77,6 +77,7 @@ pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 pub enum MainLoop {
     WithoutResult(fn() -> ()),
     WithResult(fn() -> syscall::Result<()>),
+    // TODO: FFI
 }
 
 // Necessary for function signature parsing
