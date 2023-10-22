@@ -107,8 +107,16 @@ impl PixelColorKind {
 
         match self {
             Self::Rgb(_) => Self::Rgb(Rgb888::new(out_simd[0], out_simd[1], out_simd[2])),
-            Self::Bgr(_) => Self::Bgr(Bgr888::new(out_simd[2], out_simd[1], out_simd[0])),
-            Self::U8(_) => Self::U8(Gray8::new(out_simd[0])),
+            Self::Bgr(_) => Self::Bgr(Bgr888::new(out_simd[0], out_simd[1], out_simd[2])),
+            Self::U8(_) => {
+                let luma = {
+                    let red_blend = out_simd[0] as u32;
+                    let green_blend = out_simd[1] as u32;
+                    let blue_blend = out_simd[2] as u32;
+                    ((red_blend * green_blend * blue_blend) / 3) as u8
+                };
+                Self::U8(Gray8::new(luma))
+            },
         }
     }
 
@@ -291,7 +299,18 @@ impl CanvasBuf {
                         out_simd[0],
                     ),
                 ),
-                PixelColorKind::U8(_) => panic!("Grayscale alpha blending not supported"),
+                PixelColorKind::U8(_) => {
+                    let luma = {
+                        let red_blend = out_simd[0] as u32;
+                        let green_blend = out_simd[1] as u32;
+                        let blue_blend = out_simd[2] as u32;
+                        ((red_blend * green_blend * blue_blend) / 3) as u8
+                    };
+                    Pixel(
+                        p,
+                        PixelColorKind::from_framebuffer(self.info, luma, luma, luma),
+                    )
+                },
             }
         }
     }
