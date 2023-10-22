@@ -20,7 +20,10 @@ use spin::RwLock;
 use syscall::{Error, EBADF, ESRCH};
 use xmas_elf::ElfFile;
 
-use crate::{fs::hmfs::{Entry, FileData}, int_like};
+use crate::{
+    fs::hmfs::{Entry, FileData},
+    int_like,
+};
 
 pub use self::signal::Signal;
 

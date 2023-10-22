@@ -10,8 +10,8 @@ use x86_64::instructions::{hlt, interrupts::without_interrupts};
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
 use x86_64::VirtAddr;
 
-pub mod macros;
 pub mod atomic_cell;
+pub mod macros;
 
 use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR};
 

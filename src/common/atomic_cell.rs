@@ -1,6 +1,6 @@
-use core::cell::UnsafeCell;
-use core::sync::atomic::{Ordering, AtomicPtr};
 use alloc::boxed::Box;
+use core::cell::UnsafeCell;
+use core::sync::atomic::{AtomicPtr, Ordering};
 
 /// Thread-safe mutable cell based on atomics
 pub struct AtomicCell<T>(AtomicPtr<T>);
@@ -33,7 +33,10 @@ impl<T> AtomicCell<T> {
     pub fn compare_exchange(&self, current: T, new: T) -> Result<*mut T, *mut T> {
         let current = Box::into_raw(Box::new(current));
         let new = Box::into_raw(Box::new(new));
-        match self.0.compare_exchange(current, new, Ordering::SeqCst, Ordering::SeqCst) {
+        match self
+            .0
+            .compare_exchange(current, new, Ordering::SeqCst, Ordering::SeqCst)
+        {
             Ok(_) => Ok(current),
             Err(_) => Err(new),
         }
@@ -42,7 +45,10 @@ impl<T> AtomicCell<T> {
     pub fn compare_exchange_weak(&self, current: T, new: T) -> Result<*mut T, *mut T> {
         let current = Box::into_raw(Box::new(current));
         let new = Box::into_raw(Box::new(new));
-        match self.0.compare_exchange_weak(current, new, Ordering::SeqCst, Ordering::SeqCst) {
+        match self
+            .0
+            .compare_exchange_weak(current, new, Ordering::SeqCst, Ordering::SeqCst)
+        {
             Ok(_) => Ok(current),
             Err(_) => Err(new),
         }
