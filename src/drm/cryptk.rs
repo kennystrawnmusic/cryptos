@@ -17,7 +17,7 @@ use embedded_layout::{
         Chain,
     },
 };
-use minipng::ImageData;
+use minipng::{ColorType, ImageData};
 use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
 
@@ -198,7 +198,20 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
         let green = pixel_chunk[1];
         let blue = pixel_chunk[2];
 
-        PixelColorKind::from_png_metadata(red, green, blue, inner.color_type(), &inner)
+        PixelColorKind::from_png_metadata(
+            red,
+            green,
+            blue,
+            inner.color_type(),
+            &inner,
+            match inner.color_type() {
+                ColorType::Gray => None,
+                ColorType::GrayAlpha => Some(pixel_chunk[3]),
+                ColorType::Rgb => None,
+                ColorType::Rgba => Some(pixel_chunk[3]),
+                ColorType::Indexed => None,
+            },
+        )
     }))
 }
 

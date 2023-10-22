@@ -20,7 +20,7 @@ use embedded_graphics_core::{
     pixelcolor::{raw::RawU24, Rgb555, Rgb565},
     prelude::RawData,
 };
-use minipng::{ImageData, ColorType};
+use minipng::{ColorType, ImageData};
 use spin::RwLock;
 
 use self::avx_accel::{enable_avx, with_avx};
@@ -51,13 +51,18 @@ impl PixelColorKind {
         blue: u8,
         kind: ColorType,
         data: &ImageData,
+        alpha: Option<u8>,
     ) -> Self {
         let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match kind {
             ColorType::Gray => Self::U8(Gray8::new(luma)),
-            ColorType::GrayAlpha => Self::U8(Gray8::new(luma)),
+            ColorType::GrayAlpha => Self::U8(Gray8::new(luma))
+                .alpha_blend(alpha.unwrap() as f32, Self::U8(Gray8::new(luma))),
             ColorType::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
-            ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)),
+            ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)).alpha_blend(
+                alpha.unwrap() as f32,
+                Self::Rgb(Rgb888::new(red, green, blue)),
+            ),
             ColorType::Indexed => Self::Rgb(Rgb888::new(
                 data.palette(luma)[0],
                 data.palette(luma)[1],
@@ -84,17 +89,23 @@ impl PixelColorKind {
         let this_simd = match self {
             Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
             Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
-            Self::U8(grayscale) => {
-                Simd::<u8, 4>::from_slice(&[grayscale.luma(), grayscale.luma(), grayscale.luma(), 0])
-            }
+            Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
+                grayscale.luma(),
+                grayscale.luma(),
+                grayscale.luma(),
+                0,
+            ]),
         };
 
         let other_simd = match other {
             Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
             Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
-            Self::U8(grayscale) => {
-                Simd::<u8, 4>::from_slice(&[grayscale.luma(), grayscale.luma(), grayscale.luma(), 0])
-            }
+            Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
+                grayscale.luma(),
+                grayscale.luma(),
+                grayscale.luma(),
+                0,
+            ]),
         };
 
         let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
@@ -116,7 +127,7 @@ impl PixelColorKind {
                     ((red_blend * green_blend * blue_blend) / 3) as u8
                 };
                 Self::U8(Gray8::new(luma))
-            },
+            }
         }
     }
 
@@ -310,7 +321,7 @@ impl CanvasBuf {
                         p,
                         PixelColorKind::from_framebuffer(self.info, luma, luma, luma),
                     )
-                },
+                }
             }
         }
     }
