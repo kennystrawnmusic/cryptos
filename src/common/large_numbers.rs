@@ -51,7 +51,11 @@ impl u256 {
                 let (sum, overflow) = self.0[i].overflowing_mul(rhs.0[j]);
                 let (sum, overflow2) = sum.overflowing_add(out[i + j]);
                 let (sum, overflow3) = sum.overflowing_add(carry);
-                carry = if overflow || overflow2 || overflow3 { 1 } else { 0 };
+                carry = if overflow || overflow2 || overflow3 {
+                    1
+                } else {
+                    0
+                };
                 out[i + j] = sum;
             }
         }
@@ -66,10 +70,15 @@ impl u256 {
         for i in (0..2).rev() {
             let mut carry = 0;
             for j in (0..2).rev() {
-                let (sum, overflow) = remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
                 let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
                 let (sum, overflow3) = sum.overflowing_add(out[i + j]);
-                carry = if overflow || overflow2 || overflow3 { 1 } else { 0 };
+                carry = if overflow || overflow2 || overflow3 {
+                    1
+                } else {
+                    0
+                };
                 out[i + j] = sum;
             }
             remainder.0[i] = carry;
@@ -356,7 +365,11 @@ impl core::ops::Mul<u256> for u256 {
                 let (sum, overflow) = self.0[i].overflowing_mul(rhs.0[j]);
                 let (sum, overflow2) = sum.overflowing_add(out[i + j]);
                 let (sum, overflow3) = sum.overflowing_add(carry);
-                carry = if overflow || overflow2 || overflow3 { 1 } else { 0 };
+                carry = if overflow || overflow2 || overflow3 {
+                    1
+                } else {
+                    0
+                };
                 out[i + j] = sum;
             }
         }
@@ -381,10 +394,15 @@ impl core::ops::Div<u256> for u256 {
         for i in (0..2).rev() {
             let mut carry = 0;
             for j in (0..2).rev() {
-                let (sum, overflow) = remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
                 let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
                 let (sum, overflow3) = sum.overflowing_add(out[i + j]);
-                carry = if overflow || overflow2 || overflow3 { 1 } else { 0 };
+                carry = if overflow || overflow2 || overflow3 {
+                    1
+                } else {
+                    0
+                };
                 out[i + j] = sum;
             }
             remainder.0[i] = carry;
@@ -410,10 +428,15 @@ impl core::ops::Rem<u256> for u256 {
         for i in (0..2).rev() {
             let mut carry = 0;
             for j in (0..2).rev() {
-                let (sum, overflow) = remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u128::from(Self::from(carry) << 128));
                 let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
                 let (sum, overflow3) = sum.overflowing_add(out[i + j]);
-                carry = if overflow || overflow2 || overflow3 { 1 } else { 0 };
+                carry = if overflow || overflow2 || overflow3 {
+                    1
+                } else {
+                    0
+                };
                 out[i + j] = sum;
             }
             remainder.0[i] = carry;
@@ -982,7 +1005,11 @@ impl core::ops::Mul<u512> for u512 {
                 let (sum, overflow) = self.0[i].overflowing_mul(rhs.0[j]);
                 let (sum, overflow2) = sum.overflowing_add(out[i + j]);
                 let (sum, overflow3) = sum.overflowing_add(carry);
-                carry = if overflow || overflow2 || overflow3 { u256::from(1) } else { u256::from(0) };
+                carry = if overflow || overflow2 || overflow3 {
+                    u256::from(1)
+                } else {
+                    u256::from(0)
+                };
                 out[i + j] = sum;
             }
         }
@@ -1007,10 +1034,15 @@ impl core::ops::Div<u512> for u512 {
         for i in (0..2).rev() {
             let mut carry = u256::from(0);
             for j in (0..2).rev() {
-                let (sum, overflow) = remainder.0[j].overflowing_add(u256::from(Self::from(carry) << 256));
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u256::from(Self::from(carry) << 256));
                 let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
                 let (sum, overflow3) = sum.overflowing_add(out[i + j]);
-                carry = if overflow || overflow2 || overflow3 { u256::from(1) } else { u256::from(0) };
+                carry = if overflow || overflow2 || overflow3 {
+                    u256::from(1)
+                } else {
+                    u256::from(0)
+                };
                 out[i + j] = sum;
             }
             remainder.0[i] = carry;
@@ -1036,10 +1068,15 @@ impl core::ops::Rem<u512> for u512 {
         for i in (0..2).rev() {
             let mut carry = u256::from(0);
             for j in (0..2).rev() {
-                let (sum, overflow) = remainder.0[j].overflowing_add(u256::from(Self::from(carry) << 256));
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u256::from(Self::from(carry) << 256));
                 let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
                 let (sum, overflow3) = sum.overflowing_add(out[i + j]);
-                carry = if overflow || overflow2 || overflow3 { u256::from(1) } else { u256::from(0) };
+                carry = if overflow || overflow2 || overflow3 {
+                    u256::from(1)
+                } else {
+                    u256::from(0)
+                };
                 out[i + j] = sum;
             }
             remainder.0[i] = carry;
@@ -1462,4 +1499,3 @@ impl core::ops::ShrAssign<u128> for u512 {
         *self = *self >> rhs;
     }
 }
-
