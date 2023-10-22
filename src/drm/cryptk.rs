@@ -193,6 +193,7 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
             .chunks_exact(4)
             .nth(point.y as usize)
             .unwrap();
+
         let red = pixel_chunk[0];
         let green = pixel_chunk[1];
         let blue = pixel_chunk[2];
