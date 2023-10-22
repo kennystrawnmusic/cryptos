@@ -112,7 +112,7 @@ impl PixelColorKind {
         }
     }
 
-    /// Method for computing alpha values on the fly in the exact same manner as the `alpha_blend` method of CanvasBuf below
+    /// Method for computing alpha values on the fly in the exact same manner as the `alpha_blend` method of CanvasBuf
     pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) })
     }
