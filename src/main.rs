@@ -24,7 +24,8 @@
     unsized_locals,
     associated_type_bounds,
     ptr_metadata,
-    array_chunks
+    array_chunks,
+    slice_index_methods
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
