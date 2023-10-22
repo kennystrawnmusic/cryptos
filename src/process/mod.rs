@@ -298,6 +298,7 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
 
+        // Compiler throws an error if I attempt to cast directly from the address to `dyn Any`
         let main = MainLoop::from(start as *mut TypeId as *mut dyn Any);
 
         let out = Self::new(None, main);
