@@ -7,6 +7,7 @@ use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 use core::{
     iter::zip,
+    marker::PhantomData,
     simd::{f32x4, u8x4, Simd, SimdFloat, SimdUint},
 };
 use embedded_graphics::{
@@ -225,7 +226,7 @@ pub struct CanvasBuf {
 
 impl CanvasBuf {
     /// Creates a new canvas using a provided `FrameBuffer` and color values
-    pub fn new(buffer: &'static FrameBuffer) -> Self {
+    pub fn new<'a>(buffer: &'a mut FrameBuffer) -> Self {
         let info = buffer.info();
         Self {
             pixels: buffer_pixels(buffer).collect::<Vec<_>>(),
@@ -292,7 +293,9 @@ impl OriginDimensions for CanvasBuf {
 
 impl DrawTarget for CanvasBuf {
     type Color = PixelColorKind;
-    type Error = !; //direct framebuffer writes never fail
+
+    // this is why calling `unwrap` is always safe: direct framebuffer writes never fail
+    type Error = !;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where

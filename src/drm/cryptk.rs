@@ -1,4 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
+use bootloader_api::info::{FrameBuffer, FrameBufferInfo};
 use byteorder::LittleEndian;
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -179,8 +180,6 @@ pub struct Widget<'a> {
     kind: WidgetKind<'a>,
 }
 
-pub struct DesktopBackground<'a>(ImageKind<'a>);
-
 pub fn png_points<'a>(inner: &'a ImageData) -> impl Iterator<Item = Point> + 'a {
     (0..inner.width())
         .flat_map(move |x| (0..inner.height()).map(move |y| Point::new(x as i32, y as i32)))
@@ -221,24 +220,31 @@ pub fn png_pixels<'a>(img: &'a ImageData) -> impl Iterator<Item = Pixel<PixelCol
         .map(|(point, color)| Pixel(point, color))
 }
 
+pub struct DesktopBackground<'a> {
+    img: ImageKind<'a>,
+    canvas: CanvasBuf,
+}
+
 impl<'a> DesktopBackground<'a> {
-    pub fn new(image: ImageKind<'a>) -> Self {
-        Self(image)
+    pub fn new(img: ImageKind<'a>, fb: &'a mut FrameBuffer) -> Self {
+        let canvas = CanvasBuf::new(fb);
+
+        Self { img, canvas }
     }
 
     pub fn image(&self) -> &ImageKind<'a> {
-        &self.0
+        &self.img
     }
 
     pub fn image_mut(&mut self) -> &mut ImageKind<'a> {
-        &mut self.0
+        &mut self.img
     }
 
-    pub fn draw(&self, c: &mut CanvasBuf) {
-        match self.image() {
-            // Error is type-aliased to `!` so this is fine
-            ImageKind::Bmp(bmp) => c.draw_iter(bmp.pixels()).unwrap(),
-            ImageKind::Png(png) => c.draw_iter(png_pixels(png)).unwrap(),
+    pub fn draw(&mut self) {
+        match self.img {
+            // Direct framebuffer writes never fail, as stated also in the `impl` of `DrawTarget` for `CanvasBuf`
+            ImageKind::Bmp(ref bmp) => self.canvas.draw_iter(bmp.pixels()).unwrap(),
+            ImageKind::Png(ref png) => self.canvas.draw_iter(png_pixels(png)).unwrap(),
         }
     }
 }
