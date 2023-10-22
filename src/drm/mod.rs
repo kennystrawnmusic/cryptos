@@ -261,7 +261,8 @@ impl CanvasBuf {
         with_avx(|| unsafe { self.merge_down_inner(root_buffer) })
     }
 
-    #[target_feature(enable = "avx")]
+    // Safety: Attempting to call this before AVX is initialized or after it's disabled again
+    // will cause a general protection fault
     unsafe fn merge_down_inner(&self, root_buffer: &mut FrameBuffer) {
         let bpp = root_buffer.info().bytes_per_pixel;
 

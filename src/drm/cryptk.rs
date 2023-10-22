@@ -247,4 +247,8 @@ impl<'a> DesktopBackground<'a> {
             ImageKind::Png(ref png) => self.canvas.draw_iter_shorthand(png_pixels(png)),
         }
     }
+
+    pub fn push_static(self) {
+        self.canvas.register();
+    }
 }
