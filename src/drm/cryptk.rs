@@ -197,10 +197,7 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
         let green = pixel_chunk[1];
         let blue = pixel_chunk[2];
 
-        match inner.color_type() {
-            // this function already does all the matching, so OK to use catch-all here
-            _ => PixelColorKind::from_png_metadata(red, green, blue, inner.color_type(), &inner),
-        }
+        PixelColorKind::from_png_metadata(red, green, blue, inner.color_type(), &inner)
     }))
 }
 
