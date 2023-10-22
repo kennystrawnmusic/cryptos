@@ -18,7 +18,7 @@ use embedded_layout::{
 use tinybmp::Bmp;
 use u8g2_fonts::U8g2TextStyle;
 
-use super::{Canvas, PixelColorKind};
+use super::{CanvasBuf, PixelColorKind};
 
 pub type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKind>>;
 
@@ -52,7 +52,7 @@ pub struct Window<'a> {
 
 #[allow(unused)] // not finished
 pub struct Dock<'a> {
-    layout: LinearLayout<Horizontal<Bottom, FixedMargin>, Canvas>,
+    layout: LinearLayout<Horizontal<Bottom, FixedMargin>, CanvasBuf>,
     left: RoundedRectangle,
     right: RoundedRectangle,
     mid: Vec<IconButton<'a>>,
@@ -100,7 +100,7 @@ pub struct Tab<'a> {
 
 #[allow(unused)] // not finished
 pub struct Ribbon<'a> {
-    layout: LinearLayout<Horizontal<VCenter, DistributeFill>, Canvas>,
+    layout: LinearLayout<Horizontal<VCenter, DistributeFill>, CanvasBuf>,
     system_menu: Menu<'a>,
     global_bar: Vec<TextView<'a>>,
     system_tray: Vec<IconButton<'a>>,
@@ -109,7 +109,7 @@ pub struct Ribbon<'a> {
 
 #[allow(unused)] // not finished
 pub struct Overview<'a> {
-    layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, Canvas>, // TODO: 2D grid
+    layout: LinearLayout<Horizontal<TopToBottom, FixedMargin>, CanvasBuf>, // TODO: 2D grid
     grid: Vec<IconButton<'a>>,
 }
 
@@ -167,6 +167,6 @@ pub enum WidgetKind<'a> {
 
 #[allow(unused)] // not finished
 pub struct Widget<'a> {
-    canvas: Canvas,
+    canvas: CanvasBuf,
     kind: WidgetKind<'a>,
 }

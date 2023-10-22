@@ -22,7 +22,7 @@ use spin::RwLock;
 use self::avx_accel::{enable_avx, with_avx};
 
 /// Vector of compositing layers for the rendering loop to merge down as it iterates
-pub(crate) static COMPOSITING_TABLE: RwLock<Vec<Canvas>> = RwLock::new(Vec::new());
+pub(crate) static COMPOSITING_TABLE: RwLock<Vec<CanvasBuf>> = RwLock::new(Vec::new());
 
 /// Converts a raw framebuffer byte stream into an iterator of `Point` objects
 pub fn buffer_points(buffer: &FrameBuffer) -> impl Iterator<Item = Point> {
@@ -114,12 +114,12 @@ pub fn buffer_pixels(buffer: &FrameBuffer) -> impl Iterator<Item = Pixel<PixelCo
 /// Includes a `.merge_down()` method to allow for easy writes to the main framebuffer after computation
 #[allow(dead_code)]
 #[derive(Clone)]
-pub struct Canvas {
+pub struct CanvasBuf {
     pixels: Vec<Pixel<PixelColorKind>>,
     info: FrameBufferInfo,
 }
 
-impl Canvas {
+impl CanvasBuf {
     /// Creates a new canvas using a provided `FrameBuffer` and color values
     pub fn new(buffer: &'static FrameBuffer) -> Self {
         let info = buffer.info();
@@ -130,7 +130,7 @@ impl Canvas {
     }
 
     #[target_feature(enable = "avx")]
-    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: Canvas) {
+    unsafe fn alpha_blend_inner(&mut self, alpha: f32, other: CanvasBuf) {
         if !(0.0..=1.0).contains(&alpha) {
             panic!("Alpha value must be a value between 0 and 1");
         }
@@ -202,7 +202,7 @@ impl Canvas {
         }
     }
     /// Computes alpha values relative to those associated with another canvas
-    pub fn alpha_blend(&mut self, alpha: f32, other: Canvas) {
+    pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
         with_avx(|| unsafe { self.alpha_blend_inner(alpha, other) });
     }
     /// Writes finished canvas render to an existing root framebuffer after computations
@@ -242,7 +242,7 @@ impl Canvas {
     }
 }
 
-impl OriginDimensions for Canvas {
+impl OriginDimensions for CanvasBuf {
     fn size(&self) -> embedded_graphics::prelude::Size {
         let horiz = self.info.width as u32;
         let vert = self.info.height as u32;
@@ -250,7 +250,7 @@ impl OriginDimensions for Canvas {
     }
 }
 
-impl DrawTarget for Canvas {
+impl DrawTarget for CanvasBuf {
     type Color = PixelColorKind;
     type Error = !; //direct framebuffer writes never fail
 
@@ -289,5 +289,5 @@ impl DrawTarget for Canvas {
     }
 }
 
-unsafe impl Send for Canvas {}
-unsafe impl Sync for Canvas {}
+unsafe impl Send for CanvasBuf {}
+unsafe impl Sync for CanvasBuf {}
