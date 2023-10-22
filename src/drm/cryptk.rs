@@ -35,28 +35,32 @@ pub type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKi
 pub struct IconButton<'a> {
     bg: Rectangle,
     fg: ImageKind<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct WindowControls {
-    background: Rectangle,
+    body: Rectangle,
     buttons: [Circle; 3],
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct WindowDecoration<'a> {
     layout: LinearLayout<Horizontal<Top, DistributeFill>, RoundedRectangle>,
-    background: RoundedRectangle,
+    body: RoundedRectangle,
     text: Text<'a>,
     controls: WindowControls,
     appmenu: Menu<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Window<'a> {
     layout: LinearLayout<Vertical<HCenter, FixedMargin>, RoundedRectangle>,
-    background: RoundedRectangle,
+    body: RoundedRectangle,
     decoration: WindowDecoration<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
@@ -65,30 +69,35 @@ pub struct Dock<'a> {
     left: RoundedRectangle,
     right: RoundedRectangle,
     mid: Vec<IconButton<'a>>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct TextInput<'a> {
     background: Rectangle,
     text: &'a mut Text<'a>, // TODO: replace this with owned type in impls
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct TextView<'a> {
     background: Rectangle,
     text: Text<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Label<'a> {
     background: RoundedRectangle,
     text: Text<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Search<'a> {
     background: RoundedRectangle,
     text: &'a mut Text<'a>, // TODO: replace this with owned type in impls
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
@@ -98,6 +107,7 @@ pub struct Menu<'a> {
     selection: Option<Label<'a>>,
     items: Vec<TextView<'a>>,
     bottom: RoundedRectangle,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
@@ -105,6 +115,7 @@ pub struct Tab<'a> {
     layout: LinearLayout<Vertical<Left, Tight>, Rectangle>,
     header: Label<'a>,
     body: Rectangle,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
@@ -114,18 +125,21 @@ pub struct Ribbon<'a> {
     global_bar: Vec<TextView<'a>>,
     system_tray: Vec<IconButton<'a>>,
     clock: TextView<'a>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Overview<'a> {
     layout: Vec<LinearLayout<Horizontal<TopToBottom, FixedMargin>, CanvasBuf>>,
     grid: Vec<IconButton<'a>>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct ListView<'a> {
     layout: LinearLayout<Vertical<Left, FixedMargin>, Rectangle>,
     items: Vec<TextView<'a>>,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
@@ -133,51 +147,28 @@ pub struct NavView<'a> {
     layout: LinearLayout<Horizontal<Top, FixedMargin>, Rectangle>,
     left: ListView<'a>,
     right: TextView<'a>, // TODO: support more view types
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Slider {
     movable: Circle,
     axis: Line,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct Toggle {
     outline: RoundedRectangle,
     movable: Circle,
+    canvas: CanvasBuf,
 }
 
 #[allow(unused)] // not finished
 pub struct ProgressBar {
     outline: RoundedRectangle,
     indicator: RoundedRectangle,
-}
-
-#[non_exhaustive] // not finished
-pub enum WidgetKind<'a> {
-    Separator(Line),
-    Window(Window<'a>),
-    TextInput(TextInput<'a>),
-    TextView(TextView<'a>),
-    Label(Label<'a>),
-    Search(Search<'a>),
-    Tab(Tab<'a>),
-    Scrollbar(Rectangle),
-    Menu(Menu<'a>),
-    Ribbon(Ribbon<'a>),
-    Dock(Dock<'a>),
-    Overview(Overview<'a>),
-    ListView(ListView<'a>),
-    NavView(NavView<'a>),
-    Slider(Slider),
-    Toggle(Toggle),
-    ProgressBar(ProgressBar),
-}
-
-#[allow(unused)] // not finished
-pub struct Widget<'a> {
     canvas: CanvasBuf,
-    kind: WidgetKind<'a>,
 }
 
 pub fn png_points<'a>(inner: &'a ImageData) -> impl Iterator<Item = Point> + 'a {
