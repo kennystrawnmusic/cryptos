@@ -247,6 +247,7 @@ impl<'a> DesktopBackground<'a> {
         }
     }
 
+    /// Pushes the canvas to the COMPOSITING_TABLE
     pub fn push_static(self) {
         self.canvas.register();
     }
