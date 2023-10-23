@@ -84,7 +84,7 @@ fn main() {
                         "to determine which devices are OK to pass here."
                     );
                     println!(
-                        "Also note: On macOS, you can use either `diskutil list` {} {}", 
+                        "Also note: On macOS, you can use either `diskutil list` {} {}",
                         "or the graphical Disk Utility application",
                         "to determine which devices are OK to pass here."
                     );
@@ -93,10 +93,12 @@ fn main() {
                         "to the device you want to write to: "
                     );
                     let mut dev = String::new();
+
                     stdin().read_line(&mut dev).unwrap_or_else(|_| {
                         println!("Write canceled");
                         exit(0)
                     });
+
                     dev
                 });
 
