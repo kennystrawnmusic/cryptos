@@ -58,7 +58,7 @@ fn main() {
                 }
             }
             "--write" => {
-                if cfg!(not(target_os = "linux")) || cfg!(not(target_os = "darwin")) {
+                if cfg!(not(target_os = "linux")) && cfg!(not(target_os = "darwin")) {
                     eprintln!("This feature is only supported on Linux and macOS");
                     exit(1);
                 }
