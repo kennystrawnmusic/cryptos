@@ -76,7 +76,7 @@ fn main() {
                 let args = args().collect::<Vec<_>>();
                 let dev = args.get(2).cloned().unwrap_or_else(|| {
                     println!(
-                        "WARNING: Responding to this with the wrong device {}",
+                        "WARNING: Responding to this prompt with the wrong device {}",
                         "can cause data loss. Please be careful."
                     );
                     println!(
