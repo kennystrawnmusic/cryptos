@@ -134,7 +134,6 @@ fn panic(info: &PanicInfo) -> ! {
 }
 // needed to allow access outside main.rs
 const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 32) as u64;
-const FB_ADDR: u64 = BOOT_INFO_ADDR * 2;
 
 /// Function that extracts BootInfo from raw pointer to BootInfo address
 pub const fn get_boot_info<'a>() -> &'a mut BootInfo {
@@ -148,7 +147,7 @@ const MAPPINGS: Mappings = {
     let mut mappings = Mappings::new_default();
     mappings.kernel_stack = Mapping::FixedAddress(KERNEL_STACK_ADDR);
     mappings.boot_info = Mapping::FixedAddress(BOOT_INFO_ADDR);
-    mappings.framebuffer = Mapping::FixedAddress(FB_ADDR);
+    mappings.framebuffer = Mapping::Dynamic;
     mappings.physical_memory = Some(Mapping::Dynamic);
     mappings.page_table_recursive = None;
     mappings.aslr = false;
