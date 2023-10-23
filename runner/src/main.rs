@@ -80,11 +80,11 @@ fn main() {
                         "can cause data loss. Please be careful."
                     );
                     println!(
-                        "Note: On Linux, you can use \"fdisk -l\" {}",
+                        "Note: On Linux, you can use `fdisk -l` {}",
                         "to determine which devices are OK to pass here."
                     );
                     println!(
-                        "Also note: On macOS, you can use either \"diskutil list\" {} {}", 
+                        "Also note: On macOS, you can use either `diskutil list` {} {}", 
                         "or the graphical Disk Utility application",
                         "to determine which devices are OK to pass here."
                     );
@@ -112,7 +112,7 @@ fn main() {
                 }
             }
             _ => {
-                eprintln!("Unknown command line argument specified. Acceptable options are \"--boot\" and \"--write\"");
+                eprintln!("Unknown command line argument specified. Acceptable options are `--boot` and `--write`");
                 exit(1)
             }
         }
