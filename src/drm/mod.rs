@@ -349,7 +349,7 @@ impl CanvasBuf {
             let own_array_chunks = own_pixels.array_chunks::<16>();
             let other_array_chunks = other_pixels.array_chunks::<16>();
 
-            let mut step_idx = 15;
+            let mut step_idx = 0;
             for (own, other) in own_array_chunks.zip(other_array_chunks).step_by(16) {
                 let own_simd = Simd::<u8, 64>::from_slice(
                     &[
@@ -553,7 +553,7 @@ impl CanvasBuf {
                     Pixel(own[15].0, out[15]),
                 ];
 
-                self.pixels[..step_idx].copy_from_slice(out_pixels.as_slice());
+                self.pixels[step_idx..(step_idx + 15)].copy_from_slice(out_pixels.as_slice());
                 step_idx += 16;
             }
         });
