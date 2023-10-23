@@ -65,8 +65,8 @@ use aml::{
     AmlContext, AmlName, AmlValue, LevelType,
 };
 use bootloader_api::{
-    config::{FrameBuffer, Mapping, Mappings},
-    info::{FrameBufferInfo, MemoryRegions, Optional, TlsTemplate},
+    config::{FrameBuffer as ConfigFrameBuffer, Mapping, Mappings},
+    info::{FrameBuffer, FrameBufferInfo, MemoryRegions, Optional, TlsTemplate},
     *,
 };
 use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
@@ -138,6 +138,13 @@ const BOOT_INFO_ADDR: u64 = (BEGIN_HEAP / 32) as u64;
 /// Function that extracts BootInfo from raw pointer to BootInfo address
 pub const fn get_boot_info<'a>() -> &'a mut BootInfo {
     unsafe { &mut *(BOOT_INFO_ADDR as *mut BootInfo) }
+}
+
+/// Function that uses the other function that extracts BootInfo
+/// from the raw pointer to the BootInfo address
+/// to in turn retrieve a mutable reference to the framebuffer
+pub fn get_framebuffer<'a>() -> &'a mut FrameBuffer {
+    get_boot_info::<'a>().framebuffer.as_mut().unwrap()
 }
 
 // high half
