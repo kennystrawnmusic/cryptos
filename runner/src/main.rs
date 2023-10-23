@@ -69,6 +69,7 @@ fn main() {
                 // Workaround to satisfy the borrow checker
                 let args = args().collect::<Vec<_>>();
                 let dev = args.get(2).cloned().unwrap_or_else(|| {
+                    println!("WARNING: Passing the wrong device here can cause data loss. Please be careful.");
                     println!("Enter the path (dev/sdX on Linux, /dev/diskX on macOS) to the device you want to write to: ");
                     let mut dev = String::new();
                     stdin().read_line(&mut dev).unwrap();
