@@ -75,7 +75,10 @@ fn main() {
                 // Workaround to satisfy the borrow checker
                 let args = args().collect::<Vec<_>>();
                 let dev = args.get(2).cloned().unwrap_or_else(|| {
-                    println!("WARNING: Passing the wrong device here can cause data loss. Please be careful.");
+                    println!(
+                        "WARNING: Responding to this with the wrong device {}",
+                        "can cause data loss. Please be careful."
+                    );
                     println!(
                         "Note: On Linux, you can use \"fdisk -l\" {}",
                         "to determine which devices are OK to pass here."
