@@ -14,6 +14,16 @@ impl<T> AtomicCell<T> {
         unsafe { &mut *self.0.load(Ordering::SeqCst) }
     }
 
+    /// Compatibility-mode alias for \`get\`
+    pub fn read(&mut self) -> &T {
+        self.get()
+    }
+
+    /// Compatibility-mode alias for \`get_mut\`
+    pub fn write(&mut self) -> &mut T {
+        self.get_mut()
+    }
+
     pub fn get(&self) -> &T {
         unsafe { &*self.0.load(Ordering::SeqCst) }
     }
