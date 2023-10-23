@@ -78,7 +78,7 @@ fn main() {
                     println!("WARNING: Passing the wrong device here can cause data loss. Please be careful.");
                     println!(
                         "Note: On Linux, you can use \"fdisk -l\" {}",
-                    "to determine which devices are OK to pass here."
+                        "to determine which devices are OK to pass here."
                     );
                     println!(
                         "Also note: On macOS, you can use either \"diskutil list\" {} {}", 
