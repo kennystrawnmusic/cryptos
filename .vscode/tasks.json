@@ -40,7 +40,12 @@
         "label": "Create Bootable USB Flash Drive (Linux/MacOS only)",
         "type": "shell",
         "command": [
-          "./write_img_unix_like.sh"
+          "cargo",
+          "run",
+          "--package",
+          "runner",
+          "--",
+          "--write"
         ],
         "group": {
           "kind": "build",
