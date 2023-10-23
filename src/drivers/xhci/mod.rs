@@ -13,7 +13,7 @@ use x86_64::{
 
 use crate::{
     common::addralloc,
-    common::{XhciMapper, detect_deadlock},
+    common::{detect_deadlock, XhciMapper},
     get_phys_offset, map_page,
     pci_impl::{
         register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
@@ -726,7 +726,7 @@ impl XhciImpl {
                         while port.portsc.port_reset() {
                             core::hint::spin_loop();
                         }
-                        
+
                         log::info!("Ports successfully reset");
                     }
                 }

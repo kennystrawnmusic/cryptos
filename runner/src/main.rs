@@ -4,8 +4,9 @@ use bootloader::{BootConfig, UefiBoot};
 use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
     env::{args, set_var},
+    io::stdin,
     path::{Path, PathBuf},
-    process::{exit, Command, Stdio}, io::stdin,
+    process::{exit, Command, Stdio},
 };
 
 fn create_disk_image<'a>(framebuf: FrameBuffer) -> (&'a Path, PathBuf) {

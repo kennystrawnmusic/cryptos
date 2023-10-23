@@ -34,10 +34,11 @@ use crate::{
     ahci::ahci_init,
     apic_impl::get_active_lapic,
     arch::x86_64::interrupts::{self, IDT},
-    common::{XhciMapper, detect_deadlock},
+    common::{detect_deadlock, XhciMapper},
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
-    xhci::{xhci_init, XhciImpl, XhciProtected}, PRINTK,
+    xhci::{xhci_init, XhciImpl, XhciProtected},
+    PRINTK,
 };
 
 use {
