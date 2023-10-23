@@ -82,6 +82,8 @@ impl PixelColorKind {
     }
 
     /// Method for computing alpha values on the fly
+    /// Accelerated by SSE/AVX, which alone is powerful enough
+    /// to replace most GPUs in terms of performance
     pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
         with_avx(|| {
             if !(0.0..=1.0).contains(&alpha) {
