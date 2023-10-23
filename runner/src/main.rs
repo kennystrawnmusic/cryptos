@@ -85,7 +85,10 @@ fn main() {
                         "or the graphical Disk Utility application",
                         "to determine which devices are OK to pass here."
                     );
-                    println!("Enter the path (dev/sdX on Linux, /dev/diskX on macOS) to the device you want to write to: ");
+                    println!(
+                        "Enter the path (dev/sdX on Linux, /dev/diskX on macOS) {}",
+                        "to the device you want to write to: "
+                    );
                     let mut dev = String::new();
                     stdin().read_line(&mut dev).unwrap();
                     dev
