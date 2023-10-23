@@ -830,6 +830,7 @@ pub struct PciDevice {
 }
 
 pub struct PciTable {
+    // TODO: BTreeMap
     pub devices: Vec<PciDevice>,
     pub raw_headers: Vec<[u8; ECS_OFFSET]>,
     pub headers: Vec<Header>,
