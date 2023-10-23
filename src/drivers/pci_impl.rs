@@ -78,7 +78,8 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
         mcfg_brute_force_inner(0x0..0x1000)
     } else {
         mcfg_brute_force_inner(0x0..0xffff)
-    }.flatten();
+    }
+    .flatten();
 
     // Will figure out later how not to hardcode this
     for addr in pci_addr_iter {

@@ -25,7 +25,9 @@
     associated_type_bounds,
     ptr_metadata,
     array_chunks,
-    slice_index_methods
+    slice_index_methods,
+    slice_flatten,
+    iter_array_chunks
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]

@@ -81,6 +81,105 @@ impl PixelColorKind {
         }
     }
 
+    pub fn from_pixel_array(arr: [Pixel<Self>; 16]) -> [Self; 16] {
+        [
+            arr[0].1, arr[1].1, arr[2].1, arr[3].1, arr[4].1, arr[5].1, arr[6].1, arr[7].1,
+            arr[8].1, arr[9].1, arr[10].1, arr[11].1, arr[12].1, arr[13].1, arr[14].1, arr[15].1,
+        ]
+    }
+
+    pub fn from_array(info: FrameBufferInfo, arr: [u8; 64]) -> [Self; 16] {
+        match info.pixel_format {
+            PixelFormat::Rgb => [
+                Self::Rgb(Rgb888::new(arr[0], arr[1], arr[2])),
+                Self::Rgb(Rgb888::new(arr[4], arr[5], arr[6])),
+                Self::Rgb(Rgb888::new(arr[8], arr[9], arr[10])),
+                Self::Rgb(Rgb888::new(arr[12], arr[13], arr[14])),
+                Self::Rgb(Rgb888::new(arr[16], arr[17], arr[18])),
+                Self::Rgb(Rgb888::new(arr[20], arr[21], arr[22])),
+                Self::Rgb(Rgb888::new(arr[24], arr[25], arr[26])),
+                Self::Rgb(Rgb888::new(arr[28], arr[29], arr[30])),
+                Self::Rgb(Rgb888::new(arr[32], arr[33], arr[34])),
+                Self::Rgb(Rgb888::new(arr[36], arr[37], arr[38])),
+                Self::Rgb(Rgb888::new(arr[40], arr[41], arr[42])),
+                Self::Rgb(Rgb888::new(arr[44], arr[45], arr[46])),
+                Self::Rgb(Rgb888::new(arr[48], arr[49], arr[50])),
+                Self::Rgb(Rgb888::new(arr[52], arr[53], arr[54])),
+                Self::Rgb(Rgb888::new(arr[56], arr[57], arr[58])),
+                Self::Rgb(Rgb888::new(arr[60], arr[61], arr[62])),
+            ],
+            PixelFormat::Bgr => [
+                Self::Bgr(Bgr888::new(arr[0], arr[1], arr[2])),
+                Self::Bgr(Bgr888::new(arr[4], arr[5], arr[6])),
+                Self::Bgr(Bgr888::new(arr[8], arr[9], arr[10])),
+                Self::Bgr(Bgr888::new(arr[12], arr[13], arr[14])),
+                Self::Bgr(Bgr888::new(arr[16], arr[17], arr[18])),
+                Self::Bgr(Bgr888::new(arr[20], arr[21], arr[22])),
+                Self::Bgr(Bgr888::new(arr[24], arr[25], arr[26])),
+                Self::Bgr(Bgr888::new(arr[28], arr[29], arr[30])),
+                Self::Bgr(Bgr888::new(arr[32], arr[33], arr[34])),
+                Self::Bgr(Bgr888::new(arr[36], arr[37], arr[38])),
+                Self::Bgr(Bgr888::new(arr[40], arr[41], arr[42])),
+                Self::Bgr(Bgr888::new(arr[44], arr[45], arr[46])),
+                Self::Bgr(Bgr888::new(arr[48], arr[49], arr[50])),
+                Self::Bgr(Bgr888::new(arr[52], arr[53], arr[54])),
+                Self::Bgr(Bgr888::new(arr[56], arr[57], arr[58])),
+                Self::Bgr(Bgr888::new(arr[60], arr[61], arr[62])),
+            ],
+            PixelFormat::U8 => [
+                Self::U8(Gray8::new(
+                    ((arr[0] as u32 * arr[1] as u32 * arr[2] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[4] as u32 * arr[5] as u32 * arr[6] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[8] as u32 * arr[9] as u32 * arr[10] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[12] as u32 * arr[13] as u32 * arr[14] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[16] as u32 * arr[17] as u32 * arr[18] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[20] as u32 * arr[21] as u32 * arr[22] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[24] as u32 * arr[25] as u32 * arr[26] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[28] as u32 * arr[29] as u32 * arr[30] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[32] as u32 * arr[33] as u32 * arr[34] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[36] as u32 * arr[37] as u32 * arr[38] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[40] as u32 * arr[41] as u32 * arr[42] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[44] as u32 * arr[45] as u32 * arr[46] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[48] as u32 * arr[49] as u32 * arr[50] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[52] as u32 * arr[53] as u32 * arr[54] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[56] as u32 * arr[57] as u32 * arr[58] as u32) / 3) as u8,
+                )),
+                Self::U8(Gray8::new(
+                    ((arr[60] as u32 * arr[61] as u32 * arr[62] as u32) / 3) as u8,
+                )),
+            ],
+            _ => panic!("Unknown pixel format"),
+        }
+    }
+
     /// Method for computing alpha values on the fly
     /// Accelerated by SSE/AVX, which alone is powerful enough
     /// to replace most GPUs in terms of performance
@@ -243,14 +342,219 @@ impl CanvasBuf {
 
     /// Computes alpha values on the fly
     pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
-        let own_pixels = self.pixels.clone();
-        let other_pixels = other.pixels.clone();
+        with_avx(|| {
+            let own_pixels = self.pixels.clone();
+            let other_pixels = other.pixels.clone();
 
-        for (i, p) in own_pixels.iter().map(|p| p.0).enumerate() {
-            let pixel_offset = p.y as usize * self.info.stride + p.x as usize;
+            let own_array_chunks = own_pixels.array_chunks::<16>();
+            let other_array_chunks = other_pixels.array_chunks::<16>();
 
-            self.pixels[pixel_offset].1 = own_pixels[i].1.alpha_blend(alpha, other_pixels[i].1);
-        }
+            for (own, other) in own_array_chunks.zip(other_array_chunks).step_by(16) {
+                let own_simd = Simd::<u8, 64>::from_slice(
+                    &[
+                        match own[0].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[1].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[2].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[3].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[4].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[5].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[6].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[7].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[8].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[9].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[10].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[11].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[12].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[13].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[14].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match own[15].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                    ]
+                    .flatten(),
+                );
+
+                let other_simd = Simd::<u8, 64>::from_slice(
+                    &[
+                        match other[0].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[1].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[2].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[3].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[4].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[5].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[6].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[7].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[8].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[9].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[10].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[11].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[12].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[13].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[14].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                        match other[15].1 {
+                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
+                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
+                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
+                        },
+                    ]
+                    .flatten(),
+                );
+
+                let alpha_simd = Simd::<f32, 64>::from_array([alpha; 64]);
+
+                let this_simd = ((alpha_simd * (own_simd.cast::<f32>()))
+                    + ((Simd::<f32, 64>::from_array([1.0; 64]) - alpha_simd)
+                        * (other_simd.cast::<f32>())))
+                .cast::<u8>();
+
+                let out_simd = this_simd.to_array();
+
+                let out = PixelColorKind::from_array(self.info, out_simd);
+
+                let out_pixels = [
+                    Pixel(own[0].0, out[0]),
+                    Pixel(own[1].0, out[1]),
+                    Pixel(own[2].0, out[2]),
+                    Pixel(own[3].0, out[3]),
+                    Pixel(own[4].0, out[4]),
+                    Pixel(own[5].0, out[5]),
+                    Pixel(own[6].0, out[6]),
+                    Pixel(own[7].0, out[7]),
+                    Pixel(own[8].0, out[8]),
+                    Pixel(own[9].0, out[9]),
+                    Pixel(own[10].0, out[10]),
+                    Pixel(own[11].0, out[11]),
+                    Pixel(own[12].0, out[12]),
+                    Pixel(own[13].0, out[13]),
+                    Pixel(own[14].0, out[14]),
+                    Pixel(own[15].0, out[15]),
+                ];
+
+                self.pixels.copy_from_slice(out_pixels.as_slice());
+            }
+        });
     }
 
     /// Writes finished canvas render to an existing root framebuffer after computations
