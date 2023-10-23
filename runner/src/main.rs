@@ -58,6 +58,11 @@ fn main() {
                 }
             }
             "--write" => {
+                if cfg!(not(target_os = "linux")) || cfg!(not(target_os = "darwin")) {
+                    eprintln!("This feature is only supported on Linux and macOS");
+                    exit(1);
+                }
+
                 let framebuf = {
                     let mut fb = FrameBuffer::default();
                     fb.minimum_framebuffer_width = Some(1920);
