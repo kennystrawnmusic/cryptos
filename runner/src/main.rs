@@ -77,7 +77,11 @@ fn main() {
                 let dev = args.get(2).cloned().unwrap_or_else(|| {
                     println!("WARNING: Passing the wrong device here can cause data loss. Please be careful.");
                     println!("Note: On Linux, you can use \"fdisk -l\" to determine which devices are OK to pass here.");
-                    println!("Also note: On macOS, you can use either \"diskutil list\" or the graphical Disk Utility to determine which devices are OK to pass here.");
+                    println!(
+                        "Also note: On macOS, you can use either \"diskutil list\" {} {}", 
+                        "or the graphical Disk Utility",
+                        "to determine which devices are OK to pass here."
+                    );
                     println!("Enter the path (dev/sdX on Linux, /dev/diskX on macOS) to the device you want to write to: ");
                     let mut dev = String::new();
                     stdin().read_line(&mut dev).unwrap();
