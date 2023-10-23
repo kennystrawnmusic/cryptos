@@ -13,13 +13,13 @@ use x86_64::{
 
 use crate::{
     common::addralloc,
-    common::XhciMapper,
+    common::{XhciMapper, detect_deadlock},
     get_phys_offset, map_page,
     pci_impl::{
         register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
     },
     xhci::mass_storage::UsbDeviceKind,
-    FRAME_ALLOCATOR,
+    FRAME_ALLOCATOR, PRINTK,
 };
 use pcics::{
     capabilities::{

@@ -14,7 +14,7 @@ pub mod atomic_cell;
 pub mod large_numbers;
 pub mod macros;
 
-use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR};
+use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 
 /// A SeqLock that is supposed to work on bare metal
 /// TODO: figure out why this is deadlocking when I try to use it to lock the frame allocators
@@ -237,6 +237,14 @@ impl Printk {
     pub unsafe fn force_unlock(&self) {
         self.0.force_write_unlock();
     }
+
+    pub fn is_locked(&self) -> bool {
+        if self.0.try_read().is_some() {
+            false
+        } else {
+            true
+        }
+    }
 }
 
 impl log::Log for Printk {
@@ -327,3 +335,11 @@ impl xhci::accessor::Mapper for XhciMapper {
 // Needed to allow access from statics
 unsafe impl Send for XhciMapper {}
 unsafe impl Sync for XhciMapper {}
+
+pub fn detect_deadlock() -> Option<!> {
+    if PRINTK.get().unwrap().is_locked() {
+        panic!("Deadlock detected");
+    } else {
+        None
+    }
+}

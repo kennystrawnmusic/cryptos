@@ -4,38 +4,14 @@ use bootloader::{BootConfig, UefiBoot};
 use bootloader_boot_config::{FrameBuffer, LevelFilter};
 use std::{
     env::{args, set_var},
-    path::Path,
-    process::{exit, Command, Stdio},
+    path::{Path, PathBuf},
+    process::{exit, Command, Stdio}, io::stdin,
 };
-use raw_cpuid::{CpuId, Hypervisor};
 
-fn main() {
-    if cfg!(target_os = "linux") {
-        match HostDistro::new() {
-            HostDistro::Ubuntu => install_ubuntu_deps(),
-            HostDistro::Archlinux => install_arch_deps(),
-        }
-    }
-
+fn create_disk_image<'a>(framebuf: FrameBuffer) -> (&'a Path, PathBuf) {
     let kernel_path = Path::new(env!("CARGO_BIN_FILE_CRYPTOS_cryptos"));
     let kdir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let out_path = kdir.join("cryptos.img");
-
-    let framebuf = if let Some(hypervisor) = CpuId::new().get_hypervisor_info() {
-        if let Hypervisor::QEMU = hypervisor.identify() {
-            FrameBuffer::default()
-        } else {
-            let mut fb = FrameBuffer::default();
-            fb.minimum_framebuffer_height = Some(1920);
-            fb.minimum_framebuffer_width = Some(1080);
-            fb
-        }
-    } else {
-        let mut fb = FrameBuffer::default();
-        fb.minimum_framebuffer_height = Some(1920);
-        fb.minimum_framebuffer_width = Some(1080);
-        fb
-    };
 
     let mut c = BootConfig::default();
     c.frame_buffer = framebuf;
@@ -56,10 +32,23 @@ fn main() {
     };
 
     println!("Created bootable UEFI disk image at {:#?}", &out_path);
+    (kdir, out_path)
+}
+
+fn main() {
+    if cfg!(target_os = "linux") {
+        match HostDistro::new() {
+            HostDistro::Ubuntu => install_ubuntu_deps(),
+            HostDistro::Archlinux => install_arch_deps(),
+        }
+    }
 
     if let Some(arg) = args().nth(1) {
         match arg.as_str() {
             "--boot" => {
+                let framebuf = FrameBuffer::default();
+                let (kdir, out_path) = create_disk_image(framebuf);
+
                 if Path::exists(Path::new("OVMF-pure-efi.fd")) {
                     run_qemu(kdir, &out_path);
                 } else {
@@ -69,11 +58,21 @@ fn main() {
                 }
             }
             "--write" => {
+                let framebuf = {
+                    let mut fb = FrameBuffer::default();
+                    fb.minimum_framebuffer_width = Some(1920);
+                    fb.minimum_framebuffer_height = Some(1080);
+                    fb
+                };
+                let _ = create_disk_image(framebuf);
+
                 // Workaround to satisfy the borrow checker
                 let args = args().collect::<Vec<_>>();
-                let dev = args.get(2).unwrap_or_else(|| {
-                    eprintln!("Must specify a device to write to");
-                    exit(1);
+                let dev = args.get(2).cloned().unwrap_or_else(|| {
+                    println!("Enter the path (dev/sdX on Linux, /dev/diskX on macOS) to the device you want to write to: ");
+                    let mut dev = String::new();
+                    stdin().read_line(&mut dev).unwrap();
+                    dev
                 });
 
                 let mut write_cmd = Command::new("sudo");
@@ -91,10 +90,14 @@ fn main() {
                 }
             }
             _ => {
-                println!("Unknown command line argument specified. Acceptable options are \"--boot\" and \"--write\"");
+                eprintln!("Unknown command line argument specified. Acceptable options are \"--boot\" and \"--write\"");
                 exit(1)
             }
         }
+    } else {
+        // if no arguments, build but don't run
+        let framebuf = FrameBuffer::default();
+        let _ = create_disk_image(framebuf);
     }
 }
 
