@@ -82,7 +82,7 @@ fn main() {
                     );
                     println!(
                         "Also note: On macOS, you can use either \"diskutil list\" {} {}", 
-                        "or the graphical Disk Utility",
+                        "or the graphical Disk Utility application",
                         "to determine which devices are OK to pass here."
                     );
                     println!("Enter the path (dev/sdX on Linux, /dev/diskX on macOS) to the device you want to write to: ");
