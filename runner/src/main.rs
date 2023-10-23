@@ -70,7 +70,7 @@ fn main() {
                     fb.minimum_framebuffer_height = Some(1080);
                     fb
                 };
-                let _ = create_disk_image(framebuf);
+                let (_, out_path) = create_disk_image(framebuf);
 
                 // Workaround to satisfy the borrow checker
                 let args = args().collect::<Vec<_>>();
@@ -105,7 +105,7 @@ fn main() {
                 let mut write_cmd = Command::new("sudo");
                 write_cmd
                     .arg("dd")
-                    .arg("if=cryptos.img")
+                    .arg(format!("if={}", out_path.as_path().display()))
                     .arg(format!("of={}", dev));
 
                 match write_cmd.status() {
