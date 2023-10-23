@@ -73,8 +73,14 @@ pub fn mcfg_brute_force() -> impl Iterator<Item = u64> {
     let mut deduped_scan = Vec::new();
     let mut deduped_kinds = Vec::new();
 
+    let mcfg_brute_force_iter = if cfg!(opt_level = "0") {
+        mcfg_brute_force_inner(0x0..0x1000).flatten()
+    } else {
+        mcfg_brute_force_inner(0x0..0xffff).flatten()
+    };
+
     // Will figure out later how not to hardcode this
-    for addr in mcfg_brute_force_inner(0x0..0x1000).flatten() {
+    for addr in mcfg_brute_force_iter {
         let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
         let virt = test_page.start_address().as_u64() + get_phys_offset();
 
