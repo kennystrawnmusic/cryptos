@@ -372,8 +372,7 @@ impl PixelColorKind {
         let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
 
         let this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
-            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                * (other_simd.cast::<f32>())))
+            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd) * (other_simd.cast::<f32>())))
         .cast::<u8>();
 
         let out_simd = this_simd.to_array();
