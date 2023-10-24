@@ -178,7 +178,7 @@ impl Pixelx16 {
     }
 
     pub fn as_slice<'a>(&self) -> &'a [Pixel<PixelColorKind>] {
-        unsafe { core::slice::from_mut_ptr_range(self.0..self.15) }
+        unsafe { core::slice::from_mut_ptr_range::<'a>(self.0..self.15) }
     }
 
     pub fn alpha_blend(&mut self, alpha: f32, other: Self) {
