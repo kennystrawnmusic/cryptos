@@ -152,7 +152,28 @@ impl Pixelx16 {
         )
     }
 
-    pub fn from_slice<'a>(slice: &'a mut [Pixel<PixelColorKind>]) -> Self {
+    pub fn from_mut_slice<'a>(slice: &'a mut [Pixel<PixelColorKind>]) -> Self {
+        Self(
+            Box::into_raw(Box::new(slice[0])) as *mut _,
+            Box::into_raw(Box::new(slice[1])) as *mut _,
+            Box::into_raw(Box::new(slice[2])) as *mut _,
+            Box::into_raw(Box::new(slice[3])) as *mut _,
+            Box::into_raw(Box::new(slice[4])) as *mut _,
+            Box::into_raw(Box::new(slice[5])) as *mut _,
+            Box::into_raw(Box::new(slice[6])) as *mut _,
+            Box::into_raw(Box::new(slice[7])) as *mut _,
+            Box::into_raw(Box::new(slice[8])) as *mut _,
+            Box::into_raw(Box::new(slice[9])) as *mut _,
+            Box::into_raw(Box::new(slice[10])) as *mut _,
+            Box::into_raw(Box::new(slice[11])) as *mut _,
+            Box::into_raw(Box::new(slice[12])) as *mut _,
+            Box::into_raw(Box::new(slice[13])) as *mut _,
+            Box::into_raw(Box::new(slice[14])) as *mut _,
+            Box::into_raw(Box::new(slice[15])) as *mut _,
+        )
+    }
+
+    pub fn from_slice<'a>(slice: &'a [Pixel<PixelColorKind>]) -> Self {
         Self(
             Box::into_raw(Box::new(slice[0])) as *mut _,
             Box::into_raw(Box::new(slice[1])) as *mut _,
@@ -403,13 +424,13 @@ impl CanvasBuf {
         with_avx(|| {
             let mut new_pixels = self.pixels.clone(); // borrow checker
 
-            let own_chunks = self.pixels.array_chunks_mut();
-            let other_chunks = other.pixels.array_chunks();
+            let own_chunks = self.pixels.array_chunks_mut::<16>();
+            let other_chunks = other.pixels.array_chunks::<16>();
             let mut step_idx = 0;
 
             for (this, other) in own_chunks.zip(other_chunks) {
-                let mut this = Pixelx16::from_array(*this);
-                let other = Pixelx16::from_array(*other);
+                let mut this = Pixelx16::from_mut_slice(this);
+                let other = Pixelx16::from_slice(other);
 
                 this.alpha_blend(alpha, other);
 
