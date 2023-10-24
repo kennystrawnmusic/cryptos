@@ -343,56 +343,54 @@ impl PixelColorKind {
     /// Accelerated by SSE/AVX, which alone is powerful enough
     /// to replace most GPUs in terms of performance
     pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
-        with_avx(|| {
-            if !(0.0..=1.0).contains(&alpha) {
-                panic!("Alpha value must be a value between 0 and 1");
+        if !(0.0..=1.0).contains(&alpha) {
+            panic!("Alpha value must be a value between 0 and 1");
+        }
+
+        let this_simd = match self {
+            Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
+            Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
+            Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
+                grayscale.luma(),
+                grayscale.luma(),
+                grayscale.luma(),
+                0,
+            ]),
+        };
+
+        let other_simd = match other {
+            Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
+            Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
+            Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
+                grayscale.luma(),
+                grayscale.luma(),
+                grayscale.luma(),
+                0,
+            ]),
+        };
+
+        let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
+
+        let this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
+            + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
+                * (other_simd.cast::<f32>())))
+        .cast::<u8>();
+
+        let out_simd = this_simd.to_array();
+
+        match self {
+            Self::Rgb(_) => Self::Rgb(Rgb888::new(out_simd[0], out_simd[1], out_simd[2])),
+            Self::Bgr(_) => Self::Bgr(Bgr888::new(out_simd[0], out_simd[1], out_simd[2])),
+            Self::U8(_) => {
+                let luma = {
+                    let red_blend = out_simd[0] as u32;
+                    let green_blend = out_simd[1] as u32;
+                    let blue_blend = out_simd[2] as u32;
+                    ((red_blend * green_blend * blue_blend) / 3) as u8
+                };
+                Self::U8(Gray8::new(luma))
             }
-
-            let this_simd = match self {
-                Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
-                Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
-                Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    0,
-                ]),
-            };
-
-            let other_simd = match other {
-                Self::Bgr(bgr) => Simd::<u8, 4>::from_slice(&[bgr.b(), bgr.g(), bgr.r(), 0]),
-                Self::Rgb(rgb) => Simd::<u8, 4>::from_slice(&[rgb.r(), rgb.g(), rgb.b(), 0]),
-                Self::U8(grayscale) => Simd::<u8, 4>::from_slice(&[
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    grayscale.luma(),
-                    0,
-                ]),
-            };
-
-            let alpha_simd = Simd::<f32, 4>::from_array([alpha; 4]);
-
-            let this_simd = ((alpha_simd * (this_simd.cast::<f32>()))
-                + ((Simd::<f32, 4>::from_array([1.0; 4]) - alpha_simd)
-                    * (other_simd.cast::<f32>())))
-            .cast::<u8>();
-
-            let out_simd = this_simd.to_array();
-
-            match self {
-                Self::Rgb(_) => Self::Rgb(Rgb888::new(out_simd[0], out_simd[1], out_simd[2])),
-                Self::Bgr(_) => Self::Bgr(Bgr888::new(out_simd[0], out_simd[1], out_simd[2])),
-                Self::U8(_) => {
-                    let luma = {
-                        let red_blend = out_simd[0] as u32;
-                        let green_blend = out_simd[1] as u32;
-                        let blue_blend = out_simd[2] as u32;
-                        ((red_blend * green_blend * blue_blend) / 3) as u8
-                    };
-                    Self::U8(Gray8::new(luma))
-                }
-            }
-        })
+        }
     }
 }
 
