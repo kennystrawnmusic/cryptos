@@ -87,7 +87,7 @@ fn main() {
                             "select Caption,DeviceID,BytesPerSector,InterfaceType,Size |",
                             "Where-Object {$_.InterfaceType -eq \"USB\"}`",
                             "from your host PowerShell environment",
-                            "if running VS Code from inside WSL"
+                            "if running from inside WSL"
                         );
                     } else if cfg!(target_os = "darwin") {
                         println!(
