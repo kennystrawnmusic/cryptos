@@ -670,7 +670,7 @@ impl XhciImpl {
 
             // Set the scratchpad buffer array address by updating the device context array
             dev_context_array[0] =
-                unsafe { *(addr_of!(scratchpad_buf[0]) as u64 as *mut Device<16>) };
+                unsafe { *(addr_of!(scratchpad_buf[0]) as u64 as *mut Device<_>) };
 
             // Note: because the DCBAAP is a pointer to the above, overwriting it automatically overwrites
             // what the DCBAAP points to, so no need to update the DCBAAP again
