@@ -60,7 +60,7 @@ fn main() {
             "--write" => {
                 if cfg!(target_os = "windows") {
                     eprintln!("This feature is only supported on Unix-like operating systems");
-                    eprintln!("To work around this, run VS Code from within WSL and try again");
+                    eprintln!("To work around this, run this from within WSL and try again");
                     exit(1);
                 }
 
