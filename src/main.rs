@@ -29,7 +29,7 @@
     slice_index_methods,
     slice_flatten,
     iter_array_chunks,
-    slice_from_ptr_range,
+    slice_from_ptr_range
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]

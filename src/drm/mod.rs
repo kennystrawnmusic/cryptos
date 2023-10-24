@@ -63,38 +63,70 @@ pub struct Pixelx16(
 impl Pixelx16 {
     pub fn new() -> Self {
         Self(
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
-            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
-                as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
+            Box::into_raw(Box::new(Pixel(
+                Point::new(0, 0),
+                PixelColorKind::U8(Gray8::new(0)),
+            ))) as *mut _,
         )
     }
 
@@ -469,24 +501,26 @@ impl CanvasBuf {
 
     /// Computes alpha values on the fly
     pub fn alpha_blend(&mut self, alpha: f32, other: &mut CanvasBuf) {
-        let mut new_pixels = self.pixels.clone(); // borrow checker
+        with_avx(|| {
+            let mut new_pixels = self.pixels.clone(); // borrow checker
 
-        let own_chunks = self.pixels.array_chunks_mut();
-        let other_chunks = other.pixels.array_chunks_mut();
-        let mut step_idx = 16;
+            let own_chunks = self.pixels.array_chunks_mut();
+            let other_chunks = other.pixels.array_chunks_mut();
+            let mut step_idx = 16;
 
-        for (this, other) in own_chunks.zip(other_chunks) {
-            let mut this = Pixelx16::from_array(*this);
-            let other = Pixelx16::from_array(*other);
+            for (this, other) in own_chunks.zip(other_chunks) {
+                let mut this = Pixelx16::from_array(*this);
+                let other = Pixelx16::from_array(*other);
 
-            this.alpha_blend(alpha, other);
+                this.alpha_blend(alpha, other);
 
-            new_pixels[step_idx - 16..step_idx].copy_from_slice(this.as_slice());
+                new_pixels[step_idx - 16..step_idx].copy_from_slice(this.as_slice());
 
-            step_idx += 16;
-        }
+                step_idx += 16;
+            }
 
-        self.pixels = new_pixels;
+            self.pixels = new_pixels;
+        });
     }
 
     /// Writes finished canvas render to an existing root framebuffer after computations
