@@ -1,10 +1,10 @@
 use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
 use x86_64::structures::paging::{frame::PhysFrameRangeInclusive, FrameDeallocator};
-#[allow(unused_imports)] //future-proof
+
 use x86_64::{
-    registers::control::{Cr3, Cr3Flags},
+    registers::control::Cr3,
     structures::paging::{
-        FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame,
+        FrameAllocator, OffsetPageTable, PageTable, PhysFrame,
         Size4KiB,
     },
     PhysAddr, VirtAddr,

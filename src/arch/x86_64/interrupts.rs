@@ -25,12 +25,10 @@ use crate::{
     process::{signal::Signal, State, PTABLE, PTABLE_IDX},
 };
 
-#[allow(unused_imports)]
 use {
     core::sync::atomic::{AtomicU64, Ordering},
     lazy_static::lazy_static,
     log::{debug, error, info},
-    spin::Mutex,
     x86_64::{
         registers::control::Cr2,
         structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},

@@ -19,12 +19,11 @@ use self::frames::{map_memory, KernelFrameAlloc};
 
 pub mod frames;
 
-#[allow(unused_imports)] //future-proof
 use {
     slab_allocator_rs::*,
     x86_64::{
         structures::paging::{
-            mapper::MapToError, FrameAllocator, Mapper, Page, PageTable, PageTableFlags, Size4KiB,
+            mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
         },
         VirtAddr,
     },

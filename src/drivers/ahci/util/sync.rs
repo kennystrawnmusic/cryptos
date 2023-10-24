@@ -2,7 +2,6 @@
 // Partial copy of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/utils/sync.rs
 // Refactored to work standalone without dependency on a foreign kernel
 
-#[allow(unused_imports)]
 use {
     crate::arch::x86_64::interrupts,
     alloc::{sync::Arc, vec::Vec},
