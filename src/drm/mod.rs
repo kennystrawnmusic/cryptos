@@ -152,9 +152,23 @@ impl Pixelx16 {
         let me = self.as_mut_slice();
         let other = other.as_slice();
 
-        for (me, other) in me.iter_mut().zip(other.iter()) {
-            me.1 = me.1.alpha_blend(alpha, other.1);
-        }
+        // Need to hardcode all these individually due to SIMD performance requirements
+        me[0].1 = me[0].1.alpha_blend(alpha, other[0].1);
+        me[1].1 = me[1].1.alpha_blend(alpha, other[1].1);
+        me[2].1 = me[2].1.alpha_blend(alpha, other[2].1);
+        me[3].1 = me[3].1.alpha_blend(alpha, other[3].1);
+        me[4].1 = me[4].1.alpha_blend(alpha, other[4].1);
+        me[5].1 = me[5].1.alpha_blend(alpha, other[5].1);
+        me[6].1 = me[6].1.alpha_blend(alpha, other[6].1);
+        me[7].1 = me[7].1.alpha_blend(alpha, other[7].1);
+        me[8].1 = me[8].1.alpha_blend(alpha, other[8].1);
+        me[9].1 = me[9].1.alpha_blend(alpha, other[9].1);
+        me[10].1 = me[10].1.alpha_blend(alpha, other[10].1);
+        me[11].1 = me[11].1.alpha_blend(alpha, other[11].1);
+        me[12].1 = me[12].1.alpha_blend(alpha, other[12].1);
+        me[13].1 = me[13].1.alpha_blend(alpha, other[13].1);
+        me[14].1 = me[14].1.alpha_blend(alpha, other[14].1);
+        me[15].1 = me[15].1.alpha_blend(alpha, other[15].1);
     }
 }
 
@@ -471,7 +485,7 @@ impl CanvasBuf {
 
             step_idx += 16;
         }
-        
+
         self.pixels = new_pixels;
     }
 
