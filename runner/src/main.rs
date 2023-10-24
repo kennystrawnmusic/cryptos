@@ -104,6 +104,7 @@ fn main() {
                     let mut dev = String::new();
 
                     stdin().read_line(&mut dev).unwrap_or_else(|_| {
+                        // Treat as a cancellation if no device path provided
                         println!("Write canceled");
                         exit(0)
                     });
