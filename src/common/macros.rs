@@ -1,7 +1,3 @@
-use x86_64::{
-    structures::paging::{Page, PageTableFlags, Size4KiB},
-    VirtAddr,
-};
 
 /// Macro for ensuring pages are properly mapped
 ///
@@ -58,6 +54,7 @@ macro_rules! map_page {
 #[macro_export]
 macro_rules! unmap_page {
     ($page:expr) => {
+        #[allow(unused_imports)] // macro is sometimes called from files that don't import this
         use log::debug;
         use x86_64::structures::paging::{mapper::UnmapError, Mapper};
 

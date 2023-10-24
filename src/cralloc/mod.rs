@@ -1,6 +1,6 @@
 use core::{
     alloc::{Allocator, Layout},
-    ptr::{addr_of, addr_of_mut, NonNull},
+    ptr::{addr_of, NonNull},
     sync::atomic::{AtomicU64, Ordering},
 };
 
@@ -11,12 +11,11 @@ use x86_64::{
 };
 
 use crate::{
-    common::{IrqLock, SeqLock},
-    get_boot_info, get_phys_offset, map_memory, FRAME_ALLOCATOR, MAPPER,
+    common::IrqLock,
+    get_boot_info, get_phys_offset, FRAME_ALLOCATOR, MAPPER,
 };
-use spin::{Mutex, RwLock};
 
-use self::frames::KernelFrameAlloc;
+use self::frames::{map_memory, KernelFrameAlloc};
 
 pub mod frames;
 

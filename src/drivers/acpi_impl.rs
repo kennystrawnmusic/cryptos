@@ -1,5 +1,3 @@
-use core::todo;
-
 use acpi::{
     bgrt::Bgrt,
     fadt::Fadt,
@@ -7,9 +5,8 @@ use acpi::{
     madt::Madt,
     mcfg::{Mcfg, McfgEntry},
     sdt::SdtHeader,
-    AmlTable, Sdt,
+    AmlTable,
 };
-use alloc::{alloc::Global, collections::BTreeMap};
 use aml::{
     pci_routing::{PciRoutingTable, Pin},
     value::Args,
@@ -17,23 +14,18 @@ use aml::{
 };
 use log::{debug, info};
 use pcics::{header::InterruptPin, Header};
-use x86_64::{
-    instructions::port::Port,
-    structures::paging::{mapper::UnmapError, FrameAllocator},
-};
+use x86_64::instructions::port::Port;
 
 use crate::{
     apic_impl::{get_active_lapic, APIC_IS_INITIALIZED},
     arch::x86_64::interrupts::{INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::PCI_DRIVER_COUNT,
-    unmap_page, MAPPER,
+    unmap_page,
 };
 
 use {
     crate::{get_phys_offset, map_page},
     acpi::{
-        sdt::Signature, AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel,
-        PciConfigRegions, PhysicalMapping, PlatformInfo,
+        AcpiHandler, AcpiTables, PhysicalMapping,
     },
     alloc::boxed::Box,
     alloc::sync::Arc,
@@ -48,9 +40,9 @@ use {
     spin::RwLock,
     x86_64::{
         structures::paging::{
-            mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size4KiB,
+            Page, PageTableFlags, Size4KiB,
         },
-        PhysAddr, VirtAddr,
+        VirtAddr,
     },
 };
 

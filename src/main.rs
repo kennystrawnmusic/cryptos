@@ -31,7 +31,6 @@
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
-#![allow(unused_imports)]
 
 extern crate alloc;
 
@@ -46,73 +45,40 @@ pub mod scheme;
 
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
-    ahci::{ahci_init, get_ahci, ABAR},
-    apic_impl::APIC_IS_INITIALIZED,
     cralloc::heap_init,
-    drm::{avx_accel::enable_avx, COMPOSITING_TABLE},
-    interrupts::{IDT, INTA_IRQ, INTB_IRQ, INTC_IRQ, INTD_IRQ},
-    pci_impl::{FOSSPciDeviceHandle, PCI_TABLE},
-    scheme::acpi::DATA,
+    drm::COMPOSITING_TABLE,
 };
 use acpi::{
-    fadt::Fadt,
-    sdt::{SdtHeader, Signature},
-    AcpiError, AcpiHandler, AcpiTables, HpetInfo, InterruptModel, PciConfigRegions,
-    PhysicalMapping, PlatformInfo,
+    AcpiTables, InterruptModel, PciConfigRegions,
+    PlatformInfo,
 };
-use alloc::{alloc::Global, boxed::Box, format, string::String, sync::Arc, vec::Vec};
-use aml::{
-    pci_routing::{PciRoutingTable, Pin},
-    value::Args,
-    AmlContext, AmlName, AmlValue, LevelType,
-};
+use alloc::{alloc::Global, boxed::Box};
 use bootloader_api::{
-    config::{FrameBuffer as ConfigFrameBuffer, Mapping, Mappings},
-    info::{FrameBuffer, FrameBufferInfo, MemoryRegions, Optional, TlsTemplate},
+    config::{Mapping, Mappings},
+    info::{FrameBuffer, FrameBufferInfo, Optional, TlsTemplate},
     *,
 };
-use bootloader_x86_64_common::framebuffer::FrameBufferWriter;
 use common::{IrqLock, Printk};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
-    any::TypeId,
-    fmt::Write,
-    iter::Copied,
-    marker::PhantomData,
-    mem::MaybeUninit,
-    ops::{
-        Add, AddAssign, BitAnd, BitOr, DerefMut, Div, DivAssign, Mul, MulAssign, Not, Range, Sub,
-        SubAssign,
-    },
     panic::PanicInfo,
-    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile, NonNull},
     sync::atomic::{AtomicU64, Ordering},
 };
 use cralloc::{
-    frames::{map_memory, KernelFrameAlloc},
-    heap_init_inner, BEGIN_HEAP,
+    frames::KernelFrameAlloc,
+    BEGIN_HEAP,
 };
-use drivers::{acpi_impl::UserAcpi, pci_impl::DeviceKind};
+use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
-use pcics::{
-    capabilities::pci_express::Device,
-    header::{Header, HeaderType, InterruptPin},
-    ECS_OFFSET,
-};
 use raw_cpuid::CpuId;
-use spin::{Mutex, Once, RwLock};
-use x2apic::lapic::LocalApic;
+use spin::Once;
 use x86_64::{
     structures::paging::{
-        FrameAllocator, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size1GiB,
-        Size2MiB, Size4KiB,
+        OffsetPageTable, Page, PhysFrame, Size4KiB,
     },
-    PhysAddr, VirtAddr,
+    VirtAddr,
 };
-
-// needed for running user-level software in the future
-use xmas_elf::ElfFile;
 
 //compatibility
 #[cfg(target_arch = "x86_64")]

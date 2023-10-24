@@ -1,42 +1,31 @@
-use alloc::{boxed::Box, collections::VecDeque, sync::Arc, vec::Vec};
+use alloc::sync::Arc;
 use bit_field::BitField;
-use bitflags::bitflags;
 use conquer_once::spin::OnceCell;
-use core::{
-    ptr::{addr_of, addr_of_mut},
-    sync::atomic::AtomicU64,
-};
+use core::ptr::addr_of;
 use x86_64::{
-    structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB},
+    structures::paging::{Page, Size4KiB},
     VirtAddr,
 };
 
 use crate::{
     common::addralloc,
-    common::{detect_deadlock, XhciMapper},
-    get_phys_offset, map_page,
+    common::XhciMapper,
     pci_impl::{
-        register_device_driver, DeviceKind, FOSSPciDeviceHandle, PciDevice, Vendor, PCI_TABLE,
+        register_device_driver, DeviceKind, FOSSPciDeviceHandle, PCI_TABLE,
     },
     xhci::mass_storage::UsbDeviceKind,
-    FRAME_ALLOCATOR, PRINTK,
 };
 use pcics::{
-    capabilities::{
-        msi_x::Table,
-        msi_x::{Bir, MessageControl},
-        CapabilityKind, MsiX,
-    },
     header::HeaderType,
-    Capabilities, Header, ECS_OFFSET,
+    Header,
 };
 use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
-    context::{Device, Slot},
+    context::Device,
     extended_capabilities::List,
     registers::{
-        doorbell::Register, operational::PortStatusAndControlRegister, Capability,
+        doorbell::Register, Capability,
         InterrupterRegisterSet, Operational, PortRegisterSet, Runtime,
     },
     ring::trb::{

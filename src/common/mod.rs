@@ -5,9 +5,9 @@ use core::fmt::Write;
 use core::num::NonZeroUsize;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
-use spin::{RelaxStrategy, RwLock, RwLockWriteGuard};
+use spin::RelaxStrategy;
 use x86_64::instructions::{hlt, interrupts::without_interrupts};
-use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
+use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, Size4KiB};
 use x86_64::VirtAddr;
 
 pub mod atomic_cell;

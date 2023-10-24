@@ -1,8 +1,7 @@
-use bitflags::bitflags;
 use core::arch::asm;
 
 use syscall::{
-    Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE, ESRCH,
+    Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE,
 };
 // reuse all the signal numbers defined in the redox_syscall crate
 pub use syscall::{

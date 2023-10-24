@@ -5,13 +5,9 @@ pub mod cryptk;
 
 use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use core::{
-    iter::zip,
-    marker::PhantomData,
-    simd::{f32x4, u8x4, Simd, SimdFloat, SimdUint},
-};
+use core::simd::{Simd, SimdFloat, SimdUint};
 use embedded_graphics::{
-    pixelcolor::{raw::RawU32, Bgr888, Gray8, Rgb888},
+    pixelcolor::{Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
     Pixel,
 };
@@ -19,12 +15,11 @@ use embedded_graphics_core::{
     draw_target::DrawTarget,
     geometry::Point,
     pixelcolor::{raw::RawU24, Rgb555, Rgb565},
-    prelude::RawData,
 };
 use minipng::{ColorType, ImageData};
 use spin::RwLock;
 
-use self::avx_accel::{enable_avx, with_avx};
+use self::avx_accel::with_avx;
 
 /// Vector of compositing layers for the rendering loop to merge down as it iterates
 pub(crate) static COMPOSITING_TABLE: RwLock<Vec<CanvasBuf>> = RwLock::new(Vec::new());

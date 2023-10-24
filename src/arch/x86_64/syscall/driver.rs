@@ -3,7 +3,7 @@ use x86_64::{
     structures::{
         idt::InterruptStackFrame,
         paging::{
-            frame::PhysFrameRangeInclusive, page::PageRangeInclusive, Mapper, Page, PageTableFlags,
+            page::PageRangeInclusive, Page, PageTableFlags,
             PhysFrame, Size4KiB,
         },
     },

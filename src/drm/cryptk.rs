@@ -1,11 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
-use bootloader_api::info::{FrameBuffer, FrameBufferInfo};
-use byteorder::LittleEndian;
-use embedded_graphics::{
-    draw_target::DrawTarget,
-    image::{Image, ImageRaw},
-    primitives::{Circle, Line, Rectangle, RoundedRectangle},
-};
+use bootloader_api::info::FrameBuffer;
+use embedded_graphics::primitives::{Circle, Line, Rectangle, RoundedRectangle};
 use embedded_graphics_core::{prelude::Point, Pixel};
 use embedded_layout::{
     layout::linear::{
@@ -13,9 +8,8 @@ use embedded_layout::{
         FixedMargin, Horizontal, LinearLayout, Vertical,
     },
     prelude::{
-        horizontal::{Center as HCenter, Left, LeftToRight},
+        horizontal::{Center as HCenter, Left},
         vertical::{Bottom, Center as VCenter, Top, TopToBottom},
-        Chain,
     },
 };
 use minipng::{ColorType, ImageData};

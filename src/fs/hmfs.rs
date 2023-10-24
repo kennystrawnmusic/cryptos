@@ -1,7 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-use alloc::alloc::Global;
 use alloc::borrow::ToOwned;
-use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;

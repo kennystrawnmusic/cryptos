@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::{
-    acpi_impl::{KernelAcpi, UserAcpi},
+    acpi_impl::UserAcpi,
     USER_ACPI,
 };
 
@@ -12,16 +12,14 @@ use core::{
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
-use acpi::{AcpiTables, AmlTable};
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::collections::BTreeMap;
 use log::error;
-use spin::{Mutex, Once, RwLock};
+use spin::{Once, RwLock};
 use syscall::{
     Error, EventFlags, EACCES, EBADF, EBADFD, EINVAL, EISDIR, ENOENT, EROFS, MODE_CHR, MODE_DIR,
     MODE_FILE, O_ACCMODE, O_CREAT, O_DIRECTORY, O_EXCL, O_RDONLY, O_STAT, O_SYMLINK, SEEK_CUR,
     SEEK_END, SEEK_SET,
 };
-use x86_64::VirtAddr;
 
 pub struct AcpiScheme;
 pub(crate) enum HandleKind {

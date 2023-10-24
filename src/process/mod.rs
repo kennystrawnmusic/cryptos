@@ -4,8 +4,7 @@ use core::{
     any::{Any, TypeId},
     ops::{Generator, GeneratorState},
     pin::Pin,
-    ptr::DynMetadata,
-    sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize},
+    sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };
 
 use alloc::{
@@ -14,9 +13,9 @@ use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use conquer_once::spin::{Once, OnceCell};
+use conquer_once::spin::OnceCell;
 use spin::RwLock;
-use syscall::{Error, EBADF, ESRCH};
+use syscall::{Error, EBADF};
 use xmas_elf::ElfFile;
 
 use crate::{

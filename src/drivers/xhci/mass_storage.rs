@@ -1,8 +1,7 @@
-use core::marker::PhantomData;
 
 use super::*;
 
-use alloc::{boxed::Box, sync::Arc};
+use alloc::sync::Arc;
 use spin::RwLock;
 use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
 

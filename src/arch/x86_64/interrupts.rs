@@ -1,11 +1,8 @@
-use core::{convert::identity, ops::SubAssign, sync::atomic::AtomicU32};
+use core::sync::atomic::AtomicU32;
 
-use alloc::sync::Arc;
 use log::warn;
-use raw_cpuid::{CpuId, Hypervisor, HypervisorInfo};
+use raw_cpuid::{CpuId, Hypervisor};
 use spin::RwLock;
-use syscall::ESKMSG;
-use x2apic::lapic::{xapic_base, LocalApic};
 use x86_64::{
     instructions::interrupts,
     registers::{
@@ -15,19 +12,17 @@ use x86_64::{
     },
     structures::{
         gdt::SegmentSelector,
-        idt::{DescriptorTable, Entry, InterruptStackFrameValue, SelectorErrorCode},
-        paging::{Mapper, Page, PageTableFlags, PhysFrame, Size4KiB},
+        idt::{Entry, InterruptStackFrameValue, SelectorErrorCode},
+        paging::{PageTableFlags, Size4KiB},
     },
-    PrivilegeLevel, VirtAddr,
+    PrivilegeLevel,
 };
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    get_phys_offset, map_page,
-    pci_impl::{DeviceKind, Vendor, PCI_TABLE},
+    map_page,
     process::{signal::Signal, State, PTABLE, PTABLE_IDX},
-    PRINTK,
 };
 
 #[allow(unused_imports)]

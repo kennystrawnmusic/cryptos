@@ -1,44 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Partial port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/pci.rs
 
-use alloc::{rc::Rc, vec};
 use spin::RwLock;
 use x2apic::{ioapic::IrqMode, lapic::xapic_base};
-use xhci::accessor::single::ReadWrite;
 
 use core::{
-    iter::Map,
-    mem::ManuallyDrop,
     ops::Range,
-    ptr::{addr_of, addr_of_mut},
-    sync::atomic::{AtomicUsize, Ordering},
+    sync::atomic::AtomicUsize,
 };
 
 use acpi::AcpiTables;
-use conquer_once::spin::OnceCell;
 use pcics::{
     capabilities::{msi_x::Bir, CapabilityKind},
-    header::{self, ClassCode, HeaderType, InterruptPin},
+    header::HeaderType,
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
     structures::{
         idt::InterruptStackFrame,
-        paging::{FrameAllocator, Mapper, Page, Size4KiB},
+        paging::{Page, Size4KiB},
     },
     VirtAddr,
 };
 
 use crate::{
-    acpi_impl::{aml_init, aml_route, system_shutdown, KernelAcpi},
+    acpi_impl::{aml_init, aml_route, KernelAcpi},
     ahci::ahci_init,
     apic_impl::get_active_lapic,
-    arch::x86_64::interrupts::{self, IDT},
-    common::{detect_deadlock, XhciMapper},
     get_mcfg, get_phys_offset,
     interrupts::{irqalloc, register_handler},
-    xhci::{xhci_init, XhciImpl, XhciProtected},
-    PRINTK,
+    xhci::xhci_init,
 };
 
 use {
@@ -47,7 +38,7 @@ use {
     bit_field::BitField,
     bitflags::bitflags,
     core::{alloc::Allocator, arch::asm},
-    x86_64::structures::paging::{OffsetPageTable, PageTableFlags},
+    x86_64::structures::paging::PageTableFlags,
 };
 
 use log::*;

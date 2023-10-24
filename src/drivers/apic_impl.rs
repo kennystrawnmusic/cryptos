@@ -1,7 +1,7 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use x2apic::lapic::xapic_base;
-use x86_64::structures::paging::{FrameAllocator, PageTableFlags};
+use x86_64::structures::paging::PageTableFlags;
 
 use crate::get_phys_offset;
 
@@ -9,15 +9,13 @@ use {
     crate::{arch::x86_64::interrupts::IrqIndex, map_page, INTERRUPT_MODEL},
     acpi::InterruptModel,
     alloc::vec::Vec,
-    conquer_once::spin::OnceCell,
-    spin::Mutex,
     x2apic::{
-        ioapic::{IoApic, IrqFlags, IrqMode, RedirectionTableEntry},
+        ioapic::IoApic,
         lapic::{LocalApic, LocalApicBuilder},
     },
     x86_64::{
         instructions::port::Port,
-        structures::paging::{Mapper, Size4KiB},
+        structures::paging::Size4KiB,
     },
 };
 
@@ -123,6 +121,7 @@ pub(crate) fn build_all_available_apics() -> Option<(LocalApic, Vec<IoApic>)> {
 
 macro_rules! ioapic_irq {
     ($pic:expr, $irq:expr, $dest:expr) => {
+        use x2apic::ioapic::{IrqFlags, IrqMode, RedirectionTableEntry};
         let mut e = RedirectionTableEntry::default();
         e.set_mode(IrqMode::Fixed);
         e.set_flags(IrqFlags::LEVEL_TRIGGERED | IrqFlags::LOW_ACTIVE);

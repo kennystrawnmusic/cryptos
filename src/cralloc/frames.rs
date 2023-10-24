@@ -1,7 +1,4 @@
-use alloc::vec::Vec;
-use bootloader_api::info::{MemoryRegion, MemoryRegionKind, MemoryRegions};
-use core::{num::NonZeroUsize, ops::DerefMut};
-use spin::RwLock;
+use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
 use x86_64::structures::paging::{frame::PhysFrameRangeInclusive, FrameDeallocator};
 #[allow(unused_imports)] //future-proof
 use x86_64::{
@@ -13,8 +10,7 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
-use super::{get_falloc, get_mapper};
-use crate::{ahci::util::sync::Mutex, get_boot_info, get_phys_offset, map_page, unmap_page};
+use crate::ahci::util::sync::Mutex;
 
 unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
     let (pml4_frame, _) = Cr3::read();

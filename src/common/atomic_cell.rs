@@ -1,5 +1,4 @@
 use alloc::boxed::Box;
-use core::cell::UnsafeCell;
 use core::sync::atomic::{AtomicPtr, Ordering};
 
 /// Thread-safe mutable cell based on atomics
