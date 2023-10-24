@@ -41,7 +41,7 @@ pub enum PixelColorKind {
 }
 
 /// SIMD-accelerated pixel buffer
-#[repr(simd, packed)]
+#[repr(simd)]
 pub struct Pixelx16(
     *mut Pixel<PixelColorKind>,
     *mut Pixel<PixelColorKind>,
