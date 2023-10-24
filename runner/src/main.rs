@@ -47,8 +47,7 @@ fn main() {
     if let Some(arg) = args().nth(1) {
         match arg.as_str() {
             "--boot" => {
-                let framebuf = FrameBuffer::default();
-                let (kdir, out_path) = create_disk_image(framebuf);
+                let (kdir, out_path) = create_disk_image(FrameBuffer::default());
 
                 if Path::exists(Path::new("OVMF-pure-efi.fd")) {
                     run_qemu(kdir, &out_path);
@@ -123,8 +122,7 @@ fn main() {
         }
     } else {
         // if no arguments, build but don't run
-        let framebuf = FrameBuffer::default();
-        let _ = create_disk_image(framebuf);
+        let _ = create_disk_image(FrameBuffer::default());
     }
 }
 
