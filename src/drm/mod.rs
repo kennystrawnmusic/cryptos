@@ -41,7 +41,7 @@ pub enum PixelColorKind {
 }
 
 /// SIMD-accelerated pixel buffer
-#[repr(simd)]
+#[repr(simd, packed)]
 pub struct Pixelx16(
     *mut Pixel<PixelColorKind>,
     *mut Pixel<PixelColorKind>,
@@ -252,6 +252,10 @@ impl PixelColorKind {
             )),
         }
     }
+
+    /// Constructs color for an individual pixel using framebuffer information
+    /// # Panics
+    /// Panics if the host pixel format is unknown
     pub fn from_framebuffer(info: FrameBufferInfo, red: u8, green: u8, blue: u8) -> Self {
         let luma = ((red as u32 * green as u32 * blue as u32) / 3) as u8;
         match info.pixel_format {
@@ -265,6 +269,8 @@ impl PixelColorKind {
     /// Method for computing alpha values on the fly
     /// Accelerated by SSE/AVX, which alone is powerful enough
     /// to replace most GPUs in terms of performance
+    /// # Panics
+    /// Panics if the alpha value is out of range (i.e. less than 0 or greater than 1)
     pub fn alpha_blend(&self, alpha: f32, other: PixelColorKind) -> Self {
         if !(0.0..=1.0).contains(&alpha) {
             panic!("Alpha value must be a value between 0 and 1");
@@ -353,6 +359,8 @@ impl PixelColor for PixelColorKind {
 }
 
 /// Extracts color information from the framebuffer
+/// # Panics
+/// Panics if the host pixel format is unknown
 pub fn buffer_color(buffer: &FrameBuffer) -> Box<dyn Iterator<Item = PixelColorKind> + '_> {
     let info = buffer.info();
     match info.pixel_format {
@@ -420,6 +428,10 @@ impl CanvasBuf {
     }
 
     /// Computes alpha values on the fly
+    /// Accelerated by SSE/AVX, which alone is powerful enough
+    /// to replace most GPUs in terms of performance
+    /// # Panics
+    /// Panics if the alpha value is out of range (i.e. less than 0 or greater than 1)
     pub fn alpha_blend(&mut self, alpha: f32, other: &mut CanvasBuf) {
         with_avx(|| {
             let mut new_pixels = self.pixels.clone(); // borrow checker
