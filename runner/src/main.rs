@@ -98,7 +98,7 @@ fn main() {
                     }
                     println!(
                         "Enter the path (dev/sdX on Linux, /dev/diskX on macOS, {} {}",
-                        "\\\\.\\PhysicalDriveX on Windows through WSL)",
+                        "\\\\.\\PHYSICALDRIVEx on Windows through WSL)",
                         "to the device you want to write to: "
                     );
                     let mut dev = String::new();
