@@ -8,6 +8,7 @@
     never_type,
     target_feature_11,
     portable_simd,
+    repr_simd,
     const_mut_refs,
     const_option,
     const_trait_impl,
@@ -27,7 +28,8 @@
     array_chunks,
     slice_index_methods,
     slice_flatten,
-    iter_array_chunks
+    iter_array_chunks,
+    slice_from_ptr_range,
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]

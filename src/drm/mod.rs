@@ -40,6 +40,124 @@ pub enum PixelColorKind {
     U8(Gray8),
 }
 
+#[repr(simd)]
+pub struct Pixelx16(
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+    *mut Pixel<PixelColorKind>,
+);
+
+impl Pixelx16 {
+    pub fn new() -> Self {
+        Self(
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+            Box::into_raw(Box::new(Pixel(Point::new(0, 0), PixelColorKind::U8(Gray8::new(0)))))
+                as *mut _,
+        )
+    }
+
+    pub fn from_array(arr: [Pixel<PixelColorKind>; 16]) -> Self {
+        Self(
+            Box::into_raw(Box::new(arr[0])) as *mut _,
+            Box::into_raw(Box::new(arr[1])) as *mut _,
+            Box::into_raw(Box::new(arr[2])) as *mut _,
+            Box::into_raw(Box::new(arr[3])) as *mut _,
+            Box::into_raw(Box::new(arr[4])) as *mut _,
+            Box::into_raw(Box::new(arr[5])) as *mut _,
+            Box::into_raw(Box::new(arr[6])) as *mut _,
+            Box::into_raw(Box::new(arr[7])) as *mut _,
+            Box::into_raw(Box::new(arr[8])) as *mut _,
+            Box::into_raw(Box::new(arr[9])) as *mut _,
+            Box::into_raw(Box::new(arr[10])) as *mut _,
+            Box::into_raw(Box::new(arr[11])) as *mut _,
+            Box::into_raw(Box::new(arr[12])) as *mut _,
+            Box::into_raw(Box::new(arr[13])) as *mut _,
+            Box::into_raw(Box::new(arr[14])) as *mut _,
+            Box::into_raw(Box::new(arr[15])) as *mut _,
+        )
+    }
+
+    pub fn from_slice<'a>(slice: &'a mut [Pixel<PixelColorKind>]) -> Self {
+        Self(
+            Box::into_raw(Box::new(slice[0])) as *mut _,
+            Box::into_raw(Box::new(slice[1])) as *mut _,
+            Box::into_raw(Box::new(slice[2])) as *mut _,
+            Box::into_raw(Box::new(slice[3])) as *mut _,
+            Box::into_raw(Box::new(slice[4])) as *mut _,
+            Box::into_raw(Box::new(slice[5])) as *mut _,
+            Box::into_raw(Box::new(slice[6])) as *mut _,
+            Box::into_raw(Box::new(slice[7])) as *mut _,
+            Box::into_raw(Box::new(slice[8])) as *mut _,
+            Box::into_raw(Box::new(slice[9])) as *mut _,
+            Box::into_raw(Box::new(slice[10])) as *mut _,
+            Box::into_raw(Box::new(slice[11])) as *mut _,
+            Box::into_raw(Box::new(slice[12])) as *mut _,
+            Box::into_raw(Box::new(slice[13])) as *mut _,
+            Box::into_raw(Box::new(slice[14])) as *mut _,
+            Box::into_raw(Box::new(slice[15])) as *mut _,
+        )
+    }
+
+    pub fn as_mut_slice<'a>(&mut self) -> &'a mut [Pixel<PixelColorKind>] {
+        unsafe { core::slice::from_mut_ptr_range::<'a>(self.0..self.15) }
+    }
+
+    pub fn as_slice<'a>(&self) -> &'a [Pixel<PixelColorKind>] {
+        unsafe { core::slice::from_mut_ptr_range(self.0..self.15) }
+    }
+
+    pub fn alpha_blend(&mut self, alpha: f32, other: Self) {
+        let me = self.as_mut_slice();
+        let other = other.as_slice();
+
+        for (me, other) in me.iter_mut().zip(other.iter()) {
+            me.1 = me.1.alpha_blend(alpha, other.1);
+        }
+    }
+}
+
 impl PixelColorKind {
     pub fn from_png_metadata(
         red: u8,
@@ -336,222 +454,25 @@ impl CanvasBuf {
     }
 
     /// Computes alpha values on the fly
-    pub fn alpha_blend(&mut self, alpha: f32, other: CanvasBuf) {
-        with_avx(|| {
-            let own_pixels = self.pixels.clone();
-            let other_pixels = other.pixels.clone();
+    pub fn alpha_blend(&mut self, alpha: f32, other: &mut CanvasBuf) {
+        let mut new_pixels = self.pixels.clone(); // borrow checker
 
-            let own_array_chunks = own_pixels.array_chunks::<16>();
-            let other_array_chunks = other_pixels.array_chunks::<16>();
+        let own_chunks = self.pixels.array_chunks_mut();
+        let other_chunks = other.pixels.array_chunks_mut();
+        let mut step_idx = 16;
 
-            let mut step_idx = 0;
-            for (own, other) in own_array_chunks.zip(other_array_chunks).step_by(16) {
-                let own_simd = Simd::<u8, 64>::from_slice(
-                    &[
-                        match own[0].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[1].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[2].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[3].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[4].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[5].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[6].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[7].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[8].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[9].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[10].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[11].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[12].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[13].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[14].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match own[15].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                    ]
-                    .flatten(),
-                );
+        for (this, other) in own_chunks.zip(other_chunks) {
+            let mut this = Pixelx16::from_array(*this);
+            let other = Pixelx16::from_array(*other);
 
-                let other_simd = Simd::<u8, 64>::from_slice(
-                    &[
-                        match other[0].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[1].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[2].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[3].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[4].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[5].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[6].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[7].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[8].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[9].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[10].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[11].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[12].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[13].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[14].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                        match other[15].1 {
-                            PixelColorKind::Bgr(bgr) => [bgr.b(), bgr.g(), bgr.r(), 0],
-                            PixelColorKind::Rgb(rgb) => [rgb.r(), rgb.g(), rgb.b(), 0],
-                            PixelColorKind::U8(gray) => [gray.luma(), 0, 0, 0],
-                        },
-                    ]
-                    .flatten(),
-                );
+            this.alpha_blend(alpha, other);
 
-                let alpha_simd = Simd::<f32, 64>::from_array([alpha; 64]);
+            new_pixels[step_idx - 16..step_idx].copy_from_slice(this.as_slice());
 
-                let this_simd = ((alpha_simd * (own_simd.cast::<f32>()))
-                    + ((Simd::<f32, 64>::from_array([1.0; 64]) - alpha_simd)
-                        * (other_simd.cast::<f32>())))
-                .cast::<u8>();
-
-                let out_simd = this_simd.to_array();
-
-                let out = PixelColorKind::from_array(self.info, out_simd);
-
-                let out_pixels = [
-                    Pixel(own[0].0, out[0]),
-                    Pixel(own[1].0, out[1]),
-                    Pixel(own[2].0, out[2]),
-                    Pixel(own[3].0, out[3]),
-                    Pixel(own[4].0, out[4]),
-                    Pixel(own[5].0, out[5]),
-                    Pixel(own[6].0, out[6]),
-                    Pixel(own[7].0, out[7]),
-                    Pixel(own[8].0, out[8]),
-                    Pixel(own[9].0, out[9]),
-                    Pixel(own[10].0, out[10]),
-                    Pixel(own[11].0, out[11]),
-                    Pixel(own[12].0, out[12]),
-                    Pixel(own[13].0, out[13]),
-                    Pixel(own[14].0, out[14]),
-                    Pixel(own[15].0, out[15]),
-                ];
-
-                self.pixels[step_idx..(step_idx + 15)].copy_from_slice(out_pixels.as_slice());
-                step_idx += 16;
-            }
-        });
+            step_idx += 16;
+        }
+        
+        self.pixels = new_pixels;
     }
 
     /// Writes finished canvas render to an existing root framebuffer after computations
