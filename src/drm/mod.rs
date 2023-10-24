@@ -207,6 +207,7 @@ impl Pixelx16 {
         let other = other.as_slice();
 
         // Need to hardcode all these individually due to SIMD performance requirements
+        // Looping will iterate over these serially, while SIMD can do them all in parallel
         me[0].1 = me[0].1.alpha_blend(alpha, other[0].1);
         me[1].1 = me[1].1.alpha_blend(alpha, other[1].1);
         me[2].1 = me[2].1.alpha_blend(alpha, other[2].1);
