@@ -16,6 +16,8 @@ use super::{Process, State};
 pub const SIGINFO: usize = 32;
 
 /// Exits current process immediately without cleaning up
+/// 
+/// Current implementation of this is to invoke the "iretq" instruction with no padding
 pub fn abort() -> ! {
     unsafe { asm!("iretq", options(noreturn)) }
 }
