@@ -2,10 +2,7 @@ use syscall::{Error, MapFlags, PhysallocFlags, PhysmapFlags, Result, EINVAL, ENO
 use x86_64::{
     structures::{
         idt::InterruptStackFrame,
-        paging::{
-            page::PageRangeInclusive, Page, PageTableFlags,
-            PhysFrame, Size4KiB,
-        },
+        paging::{page::PageRangeInclusive, Page, PageTableFlags, PhysFrame, Size4KiB},
     },
     PhysAddr, VirtAddr,
 };

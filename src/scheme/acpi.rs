@@ -1,8 +1,5 @@
 #![allow(dead_code)]
-use crate::{
-    acpi_impl::UserAcpi,
-    USER_ACPI,
-};
+use crate::{acpi_impl::UserAcpi, USER_ACPI};
 
 // work in progress!
 use super::Scheme;

@@ -24,9 +24,7 @@ use crate::{
 
 use {
     crate::{get_phys_offset, map_page},
-    acpi::{
-        AcpiHandler, AcpiTables, PhysicalMapping,
-    },
+    acpi::{AcpiHandler, AcpiTables, PhysicalMapping},
     alloc::boxed::Box,
     alloc::sync::Arc,
     alloc::vec::Vec,
@@ -39,9 +37,7 @@ use {
     },
     spin::RwLock,
     x86_64::{
-        structures::paging::{
-            Page, PageTableFlags, Size4KiB,
-        },
+        structures::paging::{Page, PageTableFlags, Size4KiB},
         VirtAddr,
     },
 };

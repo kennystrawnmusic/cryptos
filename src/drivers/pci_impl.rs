@@ -4,10 +4,7 @@
 use spin::RwLock;
 use x2apic::{ioapic::IrqMode, lapic::xapic_base};
 
-use core::{
-    ops::Range,
-    sync::atomic::AtomicUsize,
-};
+use core::{ops::Range, sync::atomic::AtomicUsize};
 
 use acpi::AcpiTables;
 use pcics::{

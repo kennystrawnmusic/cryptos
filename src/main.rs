@@ -48,10 +48,7 @@ use crate::{
     cralloc::heap_init,
     drm::COMPOSITING_TABLE,
 };
-use acpi::{
-    AcpiTables, InterruptModel, PciConfigRegions,
-    PlatformInfo,
-};
+use acpi::{AcpiTables, InterruptModel, PciConfigRegions, PlatformInfo};
 use alloc::{alloc::Global, boxed::Box};
 use bootloader_api::{
     config::{Mapping, Mappings},
@@ -65,18 +62,13 @@ use core::{
     panic::PanicInfo,
     sync::atomic::{AtomicU64, Ordering},
 };
-use cralloc::{
-    frames::KernelFrameAlloc,
-    BEGIN_HEAP,
-};
+use cralloc::{frames::KernelFrameAlloc, BEGIN_HEAP};
 use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
 use spin::Once;
 use x86_64::{
-    structures::paging::{
-        OffsetPageTable, Page, PhysFrame, Size4KiB,
-    },
+    structures::paging::{OffsetPageTable, Page, PhysFrame, Size4KiB},
     VirtAddr,
 };
 

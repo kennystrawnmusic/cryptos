@@ -1,4 +1,3 @@
-
 /// Macro for ensuring pages are properly mapped
 ///
 /// Converts the Result thrown by map_to() to an Option in order to handle the MapToError cases properly

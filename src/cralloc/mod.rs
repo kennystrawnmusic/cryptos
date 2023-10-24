@@ -10,10 +10,7 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{
-    common::IrqLock,
-    get_boot_info, get_phys_offset, FRAME_ALLOCATOR, MAPPER,
-};
+use crate::{common::IrqLock, get_boot_info, get_phys_offset, FRAME_ALLOCATOR, MAPPER};
 
 use self::frames::{map_memory, KernelFrameAlloc};
 

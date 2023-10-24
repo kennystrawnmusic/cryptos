@@ -1,8 +1,6 @@
 use core::arch::asm;
 
-use syscall::{
-    Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE,
-};
+use syscall::{Error, ECANCELED, EDOM, EDQUOT, EFAULT, EILSEQ, EINTR, EIO, EPERM, EPIPE, ESPIPE};
 // reuse all the signal numbers defined in the redox_syscall crate
 pub use syscall::{
     SIGABRT, SIGALRM, SIGBUS, SIGCHLD, SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGIO, SIGKILL,
@@ -16,7 +14,7 @@ use super::{Process, State};
 pub const SIGINFO: usize = 32;
 
 /// Exits current process immediately without cleaning up
-/// 
+///
 /// Current implementation of this is to invoke the "iretq" instruction with no padding
 pub fn abort() -> ! {
     unsafe { asm!("iretq", options(noreturn)) }

@@ -13,10 +13,7 @@ use {
         ioapic::IoApic,
         lapic::{LocalApic, LocalApicBuilder},
     },
-    x86_64::{
-        instructions::port::Port,
-        structures::paging::Size4KiB,
-    },
+    x86_64::{instructions::port::Port, structures::paging::Size4KiB},
 };
 
 pub(crate) static APIC_IS_INITIALIZED: AtomicBool = AtomicBool::new(false);

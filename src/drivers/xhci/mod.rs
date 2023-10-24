@@ -10,23 +10,18 @@ use x86_64::{
 use crate::{
     common::addralloc,
     common::XhciMapper,
-    pci_impl::{
-        register_device_driver, DeviceKind, FOSSPciDeviceHandle, PCI_TABLE,
-    },
+    pci_impl::{register_device_driver, DeviceKind, FOSSPciDeviceHandle, PCI_TABLE},
     xhci::mass_storage::UsbDeviceKind,
 };
-use pcics::{
-    header::HeaderType,
-    Header,
-};
+use pcics::{header::HeaderType, Header};
 use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
     context::Device,
     extended_capabilities::List,
     registers::{
-        doorbell::Register, Capability,
-        InterrupterRegisterSet, Operational, PortRegisterSet, Runtime,
+        doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
+        Runtime,
     },
     ring::trb::{
         command::{
