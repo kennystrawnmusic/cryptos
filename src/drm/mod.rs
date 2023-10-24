@@ -240,13 +240,6 @@ impl PixelColorKind {
         }
     }
 
-    pub fn from_pixel_array(arr: [Pixel<Self>; 16]) -> [Self; 16] {
-        [
-            arr[0].1, arr[1].1, arr[2].1, arr[3].1, arr[4].1, arr[5].1, arr[6].1, arr[7].1,
-            arr[8].1, arr[9].1, arr[10].1, arr[11].1, arr[12].1, arr[13].1, arr[14].1, arr[15].1,
-        ]
-    }
-
     /// Method for computing alpha values on the fly
     /// Accelerated by SSE/AVX, which alone is powerful enough
     /// to replace most GPUs in terms of performance
