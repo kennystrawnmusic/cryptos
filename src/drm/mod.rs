@@ -404,7 +404,7 @@ impl CanvasBuf {
             let mut new_pixels = self.pixels.clone(); // borrow checker
 
             let own_chunks = self.pixels.array_chunks_mut();
-            let other_chunks = other.pixels.array_chunks_mut();
+            let other_chunks = other.pixels.array_chunks();
             let mut step_idx = 16;
 
             for (this, other) in own_chunks.zip(other_chunks) {
