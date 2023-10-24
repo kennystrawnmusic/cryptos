@@ -96,6 +96,7 @@ fn main() {
                             "or the graphical Disk Utility application"
                         );
                     }
+                    println!("To cancel, you can just leave this blank.");
                     println!(
                         "Enter the path (dev/sdX on Linux, /dev/diskX on macOS, {} {}",
                         "\\\\.\\PhysicalDriveX on Windows through WSL)",
