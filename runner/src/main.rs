@@ -60,6 +60,7 @@ fn main() {
             "--write" => {
                 if cfg!(target_os = "windows") {
                     eprintln!("This feature is only supported on Unix-like operating systems");
+                    eprintln!("To work around this, run VS Code from within WSL and try again");
                     exit(1);
                 }
 
@@ -78,17 +79,26 @@ fn main() {
                         "WARNING: Passing the wrong device here {}",
                         "can cause data loss. Please be careful."
                     );
+                    if cfg!(target_os = "linux") {
+                        println!(
+                            "To find the correct device, use `sudo fdisk -l` {} {} {} {} {} {}",
+                            "if running Linux on your physical hardware or a VM",
+                            "or `Get-WmiObject Win32_diskdrive |",
+                            "select Caption,DeviceID,BytesPerSector,InterfaceType,Size |",
+                            "Where-Object {$_.InterfaceType -eq \"USB\"}`",
+                            "from your host PowerShell environment",
+                            "if running VS Code from inside WSL"
+                        );
+                    } else if cfg!(target_os = "darwin") {
+                        println!(
+                            "To find the correct device {} {}",
+                            "use either `diskutil list`",
+                            "or the graphical Disk Utility application"
+                        );
+                    }
                     println!(
-                        "Note: On Linux, you can use `fdisk -l` {}",
-                        "to determine which devices are OK to pass here."
-                    );
-                    println!(
-                        "Also note: On macOS, you can use either `diskutil list` {} {}",
-                        "or the graphical Disk Utility application",
-                        "to determine which devices are OK to pass here."
-                    );
-                    println!(
-                        "Enter the path (dev/sdX on Linux, /dev/diskX on macOS) {}",
+                        "Enter the path (dev/sdX on Linux, /dev/diskX on macOS, {} {}",
+                        "\\\\.\\PHYSICALDRIVEX on Windows through WSL)",
                         "to the device you want to write to: "
                     );
                     let mut dev = String::new();
