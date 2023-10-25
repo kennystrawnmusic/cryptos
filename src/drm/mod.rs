@@ -245,10 +245,10 @@ impl PixelColorKind {
         match kind {
             ColorType::Gray => Self::U8(Gray8::new(luma)),
             ColorType::GrayAlpha => Self::U8(Gray8::new(luma))
-                .alpha_blend(alpha.unwrap() as f32, Self::U8(Gray8::new(luma))),
+                .alpha_blend((alpha.unwrap() as f32) / 256f32, Self::U8(Gray8::new(luma))),
             ColorType::Rgb => Self::Rgb(Rgb888::new(red, green, blue)),
             ColorType::Rgba => Self::Rgb(Rgb888::new(red, green, blue)).alpha_blend(
-                alpha.unwrap() as f32,
+                (alpha.unwrap() as f32) / 256f32,
                 Self::Rgb(Rgb888::new(red, green, blue)),
             ),
             ColorType::Indexed => Self::Rgb(Rgb888::new(
