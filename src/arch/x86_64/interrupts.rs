@@ -13,7 +13,7 @@ use x86_64::{
     structures::{
         gdt::SegmentSelector,
         idt::{Entry, InterruptStackFrameValue, SelectorErrorCode},
-        paging::{PageTableFlags, Size4KiB},
+        paging::{PageTableFlags, Size4KiB, Page},
     },
     PrivilegeLevel,
 };
@@ -271,7 +271,7 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
-        let virt = Cr2::read().as_u64();
+        let virt = Page::<Size4KiB>::containing_address(Cr2::read()).start_address().as_u64();
         let phys = Cr2::read().as_u64();
 
         map_page!(
