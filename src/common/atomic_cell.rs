@@ -5,8 +5,8 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 pub struct AtomicCell<T>(AtomicPtr<T>);
 
 impl<T> AtomicCell<T> {
-    pub fn new(data: T) -> Self {
-        Self(AtomicPtr::new(Box::into_raw(Box::new(data))))
+    pub fn new(mut data: T) -> Self {
+        Self(AtomicPtr::new(&mut data as *mut T))
     }
 
     pub fn get_mut(&mut self) -> &mut T {
