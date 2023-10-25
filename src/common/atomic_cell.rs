@@ -1,12 +1,36 @@
 use alloc::boxed::Box;
-use core::sync::atomic::{AtomicPtr, Ordering};
+use core::{
+    ptr::addr_of_mut,
+    sync::atomic::{AtomicPtr, Ordering},
+};
+use x86_64::{
+    structures::paging::{Page, PageTableFlags, Size4KiB},
+    VirtAddr,
+};
 
-/// Thread-safe mutable cell based on atomics
+use crate::{map_page, unmap_page};
+
+/// RAII guard of an atomic pointer
 pub struct AtomicCell<T>(AtomicPtr<T>);
 
 impl<T> AtomicCell<T> {
     pub fn new(mut data: T) -> Self {
-        Self(AtomicPtr::new(&mut data as *mut T))
+        let addr_of_data = addr_of_mut!(data) as u64;
+        let mut virt = Page::<Size4KiB>::containing_address(VirtAddr::new(addr_of_data))
+            .start_address()
+            .as_u64();
+
+        map_page!(
+            addr_of_data,
+            virt,
+            Size4KiB,
+            PageTableFlags::PRESENT
+                | PageTableFlags::WRITABLE
+                | PageTableFlags::NO_CACHE
+                | PageTableFlags::WRITE_THROUGH
+        );
+
+        Self(AtomicPtr::new(&mut virt as *mut _ as *mut T))
     }
 
     pub fn get_mut(&mut self) -> &mut T {
@@ -35,10 +59,6 @@ impl<T> AtomicCell<T> {
         self.0.swap(Box::into_raw(Box::new(data)), Ordering::SeqCst)
     }
 
-    pub fn into_inner(self) -> *mut T {
-        self.0.into_inner()
-    }
-
     pub fn compare_exchange(&self, current: T, new: T) -> Result<*mut T, *mut T> {
         let current = Box::into_raw(Box::new(current));
         let new = Box::into_raw(Box::new(new));
@@ -61,5 +81,13 @@ impl<T> AtomicCell<T> {
             Ok(_) => Ok(current),
             Err(_) => Err(new),
         }
+    }
+}
+
+impl<T> Drop for AtomicCell<T> {
+    fn drop(&mut self) {
+        unmap_page!(Page::<Size4KiB>::containing_address(VirtAddr::new(
+            &mut self.0 as *mut _ as u64
+        )));
     }
 }
