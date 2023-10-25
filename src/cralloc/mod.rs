@@ -10,9 +10,9 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{common::IrqLock, get_boot_info, FRAME_ALLOCATOR, MAPPER};
+use crate::{MAPPER, FRAME_ALLOCATOR};
 
-use self::frames::{map_memory, KernelFrameAlloc};
+use self::frames::KernelFrameAlloc;
 
 pub mod frames;
 
@@ -76,17 +76,9 @@ pub fn heap_init_inner(
 }
 
 pub fn heap_init() {
-    let boot_info = get_boot_info();
-
-    let map = unsafe { map_memory() };
-    let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
-
-    MAPPER.get_or_init(move || IrqLock::new(map));
-    FRAME_ALLOCATOR.get_or_init(move || IrqLock::new(falloc));
-
     heap_init_inner(
-        &mut *MAPPER.get().unwrap().write(),
-        &mut *FRAME_ALLOCATOR.get().unwrap().write(),
+        &mut *MAPPER.write(),
+        &mut *FRAME_ALLOCATOR.write(),
     )
     .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
 }

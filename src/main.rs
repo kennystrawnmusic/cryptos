@@ -64,11 +64,11 @@ use core::{
     panic::PanicInfo,
     sync::atomic::{AtomicU64, Ordering},
 };
-use cralloc::{frames::KernelFrameAlloc, BEGIN_HEAP};
+use cralloc::{frames::{KernelFrameAlloc, map_memory}, BEGIN_HEAP};
 use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
-use spin::Once;
+use spin::{Once, Lazy};
 use x86_64::{
     structures::paging::{OffsetPageTable, Page, PhysFrame, Size4KiB},
     VirtAddr,
@@ -144,15 +144,21 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
-pub static MAPPER: OnceCell<IrqLock<OffsetPageTable>> = OnceCell::uninit();
-pub static FRAME_ALLOCATOR: OnceCell<IrqLock<KernelFrameAlloc>> = OnceCell::uninit();
+pub static MAPPER: Lazy<IrqLock<OffsetPageTable>> = Lazy::new(|| {
+    let map = unsafe { map_memory() };
+    IrqLock::new(map)
+});
+
+pub static FRAME_ALLOCATOR: Lazy<IrqLock<KernelFrameAlloc>> = Lazy::new(|| {
+    let boot_info = get_boot_info();
+
+    let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
+    IrqLock::new(falloc)
+});
 
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {
     FRAME_ALLOCATOR
-        .get()
-        .as_ref()
-        .unwrap()
         .write()
         .usable()
         .next()

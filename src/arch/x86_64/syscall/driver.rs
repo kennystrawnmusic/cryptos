@@ -74,8 +74,6 @@ fn physalloc_inner(
         || flags.contains(PhysallocFlags::SPACE_64)
     {
         if let Some((frame_range, size)) = FRAME_ALLOCATOR
-            .get()
-            .unwrap()
             .write()
             .allocate_multiple(size)
         {
@@ -123,8 +121,6 @@ fn physfree_inner(addr: usize, count: usize) -> Result<usize> {
     );
 
     FRAME_ALLOCATOR
-        .get()
-        .unwrap()
         .write()
         .deallocate_multiple(range);
     Ok(0)

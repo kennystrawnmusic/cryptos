@@ -15,11 +15,11 @@ macro_rules! map_page {
                 // in case this macro is called from a file that doesn't import this
                 use x86_64::structures::paging::Mapper as MacroMapper;
 
-                $crate::MAPPER.get().unwrap().write().map_to(
+                $crate::MAPPER.write().map_to(
                     page,
                     frame,
                     $flags,
-                    &mut *$crate::FRAME_ALLOCATOR.get().unwrap().write(),
+                    &mut *$crate::FRAME_ALLOCATOR.write(),
                 )
             };
 
@@ -56,7 +56,7 @@ macro_rules! unmap_page {
         use log::debug;
         use x86_64::structures::paging::{mapper::UnmapError, Mapper};
 
-        let flush = match $crate::MAPPER.get().unwrap().write().unmap($page) {
+        let flush = match $crate::MAPPER.write().unmap($page) {
             Ok((_, flush)) => Some(flush),
             Err(e) => match e {
                 UnmapError::ParentEntryHugePage => {

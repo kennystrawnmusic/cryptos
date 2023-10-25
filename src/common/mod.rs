@@ -154,8 +154,6 @@ impl<T: Copy> SeqLock<T> {
 /// Helper function for creating raw pointers safely
 pub fn addralloc<T>() -> *mut T {
     let frame = FRAME_ALLOCATOR
-        .get()
-        .expect("Frame allocator not initialized")
         .write()
         .allocate_frame()
         .expect("Out of memory");
@@ -180,8 +178,6 @@ pub fn addralloc<T>() -> *mut T {
 
         while i < total_size {
             let frame = FRAME_ALLOCATOR
-                .get()
-                .expect("Frame allocator not initialized")
                 .write()
                 .allocate_frame()
                 .expect("Out of memory");
