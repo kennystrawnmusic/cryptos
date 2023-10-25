@@ -202,6 +202,11 @@ impl Pixelx16 {
         unsafe { core::slice::from_ptr_range::<'a>(self.0..self.15) }
     }
 
+    /// Method for computing alpha values on the fly
+    /// Accelerated by SSE/AVX, which alone is powerful enough
+    /// to replace most GPUs in terms of performance
+    /// # Panics
+    /// Panics if the alpha value is out of range (i.e. less than 0 or greater than 1)
     pub fn alpha_blend(&mut self, alpha: f32, other: Self) {
         let me = self.as_mut_slice();
         let other = other.as_slice();
