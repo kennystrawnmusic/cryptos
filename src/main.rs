@@ -47,7 +47,6 @@ pub mod scheme;
 
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
-    cralloc::heap_init,
     drm::COMPOSITING_TABLE,
 };
 use acpi::{AcpiTables, InterruptModel, PciConfigRegions, PlatformInfo};
@@ -199,7 +198,6 @@ entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // set up heap allocation ASAP
-    heap_init();
 
     // load the GDT early because repeated GDT loads cause a #GP
     crate::arch::x86_64::exceptions::init();

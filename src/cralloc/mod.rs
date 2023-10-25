@@ -1,18 +1,17 @@
 use core::{
-    alloc::{Allocator, Layout},
+    alloc::{Allocator, Layout, GlobalAlloc},
     ptr::{addr_of, NonNull},
-    sync::atomic::{AtomicU64, Ordering},
 };
 
 use alloc::alloc::Global;
+use spin::Lazy;
 use x86_64::{
-    structures::paging::{OffsetPageTable, PageSize, PhysFrame},
+    structures::paging::{PageSize, PhysFrame},
     PhysAddr,
 };
 
 use crate::{MAPPER, FRAME_ALLOCATOR};
 
-use self::frames::KernelFrameAlloc;
 
 pub mod frames;
 
@@ -27,61 +26,43 @@ use {
 };
 
 #[global_allocator]
-pub static ALLOC: LockedHeap = LockedHeap::empty();
+pub static ALLOC: LazyHeap = LazyHeap::new(|| {
+    let heap = LockedHeap::empty();
 
-pub const BEGIN_HEAP: usize = 0x2000_0000_0000;
-pub const HEAP_LEN: usize = 32 * 1024 * 1024;
-
-pub static MAP_ADDR: AtomicU64 = AtomicU64::new(0);
-pub static FRAME_ALLOC_ADDR: AtomicU64 = AtomicU64::new(0);
-
-pub fn get_mapper<'a>() -> &'a mut OffsetPageTable<'static> {
-    unsafe { &mut *(MAP_ADDR.load(Ordering::SeqCst) as *mut OffsetPageTable) }
-}
-
-pub fn get_falloc<'a>() -> &'a mut KernelFrameAlloc {
-    unsafe { &mut *(FRAME_ALLOC_ADDR.load(Ordering::SeqCst) as *mut KernelFrameAlloc) }
-}
-
-pub fn heap_init_inner(
-    mapper: &mut impl Mapper<Size4KiB>,
-    falloc: &mut impl FrameAllocator<Size4KiB>,
-) -> Result<(), MapToError<Size4KiB>> {
     let range = {
         let begin = VirtAddr::new(BEGIN_HEAP as u64);
         let end = begin + HEAP_LEN - 1u64;
         let first_page = Page::containing_address(begin);
         let last_page = Page::containing_address(end);
-        Page::range_inclusive(first_page, last_page)
+        Page::<Size4KiB>::range_inclusive(first_page, last_page)
     };
 
     for p in range {
-        let f = falloc
+        let f = FRAME_ALLOCATOR
+            .write()
             .allocate_frame()
-            .ok_or(MapToError::FrameAllocationFailed)?;
+            .ok_or(MapToError::<Size4KiB>::FrameAllocationFailed).expect("Out of memory");
 
         let flags = PageTableFlags::PRESENT
             | PageTableFlags::WRITABLE
             | PageTableFlags::NO_CACHE
             | PageTableFlags::WRITE_THROUGH;
 
-        unsafe { mapper.map_to(p, f, flags, falloc)?.flush() };
+        unsafe {
+            if let Some(flush) =  MAPPER.write().map_to(p, f, flags, &mut *(FRAME_ALLOCATOR.write())).ok() {
+                flush.flush();
+            }
+        };
     }
 
     unsafe {
-        ALLOC.init(BEGIN_HEAP, HEAP_LEN);
+        heap.init(BEGIN_HEAP, HEAP_LEN);
     }
+    heap
+});
 
-    Ok(())
-}
-
-pub fn heap_init() {
-    heap_init_inner(
-        &mut *MAPPER.write(),
-        &mut *FRAME_ALLOCATOR.write(),
-    )
-    .unwrap_or_else(|e| panic!("Failed to initialize heap: {:#?}", e));
-}
+pub const BEGIN_HEAP: usize = 0x2000_0000_0000;
+pub const HEAP_LEN: usize = 32 * 1024 * 1024;
 
 /// Structure that provides page/frame-aligned physical memory access
 ///
@@ -127,5 +108,30 @@ impl<T> PhysBox<T> {
     /// and compatibility with redox_syscall which uses a similar structure defined by the Redox kernel
     pub fn new(inner: T) -> Self {
         Self::new_inner::<Size4KiB>(inner)
+    }
+}
+
+pub struct LazyHeap(Lazy<LockedHeap>);
+
+impl LazyHeap {
+    pub const fn new(caller: fn() -> LockedHeap) -> Self
+    {
+        Self(Lazy::new(caller))
+    }
+
+    pub fn init(&self, begin: usize, len: usize) {
+        unsafe {
+            self.0.init(begin, len);
+        }
+    }
+}
+
+unsafe impl GlobalAlloc for LazyHeap {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        self.0.alloc(layout)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        self.0.dealloc(ptr, layout)
     }
 }
