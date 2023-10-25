@@ -10,7 +10,7 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{common::IrqLock, get_boot_info, get_phys_offset, FRAME_ALLOCATOR, MAPPER};
+use crate::{common::IrqLock, get_boot_info, FRAME_ALLOCATOR, MAPPER};
 
 use self::frames::{map_memory, KernelFrameAlloc};
 
@@ -78,9 +78,7 @@ pub fn heap_init_inner(
 pub fn heap_init() {
     let boot_info = get_boot_info();
 
-    let offset = VirtAddr::new(get_phys_offset());
-
-    let map = unsafe { map_memory(offset) };
+    let map = unsafe { map_memory() };
     let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
 
     MAPPER.get_or_init(move || IrqLock::new(map));
