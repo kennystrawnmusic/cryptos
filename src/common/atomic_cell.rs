@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use core::{
-    ptr::addr_of_mut,
+    ptr::addr_of,
     sync::atomic::{AtomicPtr, Ordering},
 };
 use x86_64::{
@@ -14,8 +14,8 @@ use crate::{map_page, unmap_page};
 pub struct AtomicCell<T>(AtomicPtr<T>);
 
 impl<T> AtomicCell<T> {
-    pub fn new(mut data: T) -> Self {
-        let addr_of_data = addr_of_mut!(data) as u64;
+    pub fn new(data: T) -> Self {
+        let addr_of_data = addr_of!(data) as u64;
         let mut virt = Page::<Size4KiB>::containing_address(VirtAddr::new(addr_of_data))
             .start_address()
             .as_u64();
