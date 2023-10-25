@@ -19,7 +19,7 @@ use {
     slab_allocator_rs::*,
     x86_64::{
         structures::paging::{
-            mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
+            FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
         },
         VirtAddr,
     },
@@ -41,7 +41,7 @@ pub static ALLOC: LazyHeap = LazyHeap::new(|| {
         let f = FRAME_ALLOCATOR
             .write()
             .allocate_frame()
-            .ok_or(MapToError::<Size4KiB>::FrameAllocationFailed).expect("Out of memory");
+            .expect("Out of memory");
 
         let flags = PageTableFlags::PRESENT
             | PageTableFlags::WRITABLE
