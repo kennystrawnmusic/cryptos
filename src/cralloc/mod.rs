@@ -111,6 +111,7 @@ impl<T> PhysBox<T> {
     }
 }
 
+/// Wrapper around `slab_allocator_rs::LockedHeap` that can be initialized lazily
 pub struct LazyHeap(Lazy<LockedHeap>);
 
 impl LazyHeap {
