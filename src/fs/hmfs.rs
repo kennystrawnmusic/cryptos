@@ -7,7 +7,7 @@ use mr_mime::Mime;
 use syscall::{Error, EACCES, ENOTDIR};
 use unix_path::{Path, PathBuf};
 
-use crate::common::hash_map::*;
+use crate::common::hash_map::HashMap;
 
 // going one-further than most other implementations to ensure this never overflows
 #[allow(non_camel_case_types)]
