@@ -35,7 +35,14 @@
     slice_index_methods,
     slice_flatten,
     iter_array_chunks,
-    slice_from_ptr_range
+    slice_from_ptr_range,
+    cfg_match,
+    concat_bytes,
+    concat_idents,
+    const_format_args,
+    format_args_nl,
+    log_syntax,
+    trace_macros,
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]

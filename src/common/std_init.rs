@@ -140,5 +140,14 @@ pub use core::panicking;
 pub use core::simd;
 pub use core::unicode;
 
+// Experimental, feature-gated macro re-exports
+pub use core::cfg_match;
+pub use core::concat_bytes;
+pub use core::concat_idents;
+pub use core::const_format_args;
+pub use core::format_args_nl;
+pub use core::log_syntax;
+pub use core::trace_macros;
+
 // Re-export macros: only way to do this is with a glob
 pub use core::*;
