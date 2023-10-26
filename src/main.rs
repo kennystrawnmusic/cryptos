@@ -77,6 +77,8 @@ use x86_64::{
     VirtAddr,
 };
 
+pub use common::std_init as std;
+
 //compatibility
 #[cfg(target_arch = "x86_64")]
 pub use arch::x86_64::exceptions;
