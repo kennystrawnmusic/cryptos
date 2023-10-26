@@ -118,9 +118,15 @@ pub mod vec {
 
 #[macro_export]
 macro_rules! vec {
-    [ $($item:expr),* ] => {
-        ::alloc::vec![$($item),*]
-    }
+    () => {
+        ::alloc::vec![]
+    };
+    ($elem:expr; $n:expr) => {
+        ::alloc::vec::from_elem($elem, $n)
+    };
+    ($($x:expr),+ $(,)?) => {
+        <[_]>::into_vec(::alloc::boxed::Box::new([$($x),+]))
+    };
 }
 
 pub use core::u128;
