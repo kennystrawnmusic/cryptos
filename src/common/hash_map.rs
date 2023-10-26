@@ -1,5 +1,6 @@
 use core::hash::{Hasher, BuildHasherDefault};
 use sha3::{Digest, Sha3_512};
+use hashbrown::HashMap as RawHashMap;
 
 // return the first 64 bits of a 512-bit hash
 pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
@@ -22,5 +23,5 @@ impl Hasher for KernelHasher {
 }
 
 pub type KernelHashBuilder = BuildHasherDefault<KernelHasher>;
-pub type HashMap<K, V> = hashbrown::HashMap<K, V, KernelHashBuilder>;
+pub type HashMap<K, V> = RawHashMap<K, V, KernelHashBuilder>;
 pub type Result<T> = syscall::Result<T, syscall::Error>;
