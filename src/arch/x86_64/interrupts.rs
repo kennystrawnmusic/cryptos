@@ -154,8 +154,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
 
             (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
-                .run()
-                .unwrap(); // TODO: handle error cases using file descriptors
+                .queue();
         } else {
             // need to preempt previous process in the table
             (PTABLE.read())[&(PTABLE_IDX.load(Ordering::SeqCst) - 1)]
@@ -168,8 +167,7 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
 
             (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
-                .run()
-                .unwrap(); // TODO: handle error cases using file descriptors
+                .queue();
         }
 
         if PTABLE_IDX.load(Ordering::SeqCst) < (PTABLE.read().len() - 1) {

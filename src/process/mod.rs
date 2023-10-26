@@ -145,8 +145,21 @@ pub struct Process<'a> {
 
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
-
+    
+    res: Weak<syscall::Result<usize>>,
     main: MainLoop,
+}
+
+impl Process<'static> {
+    /// Inserts this process into the PTABLE
+    pub fn register(self) {
+        PTABLE.write().insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
+    }
+
+    /// Queues this process
+    pub fn queue(&mut self) {
+        unsafe { *((self.res.as_ptr()) as *mut syscall::Result<usize>) = self.queue_inner() };
+    }
 }
 
 impl<'a> Process<'a> {
@@ -172,6 +185,7 @@ impl<'a> Process<'a> {
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
+            res: Weak::new(),
             main,
         }
     }
@@ -184,8 +198,8 @@ impl<'a> Process<'a> {
         );
     }
 
-    /// Runs this process
-    pub fn run(&mut self) -> syscall::Result<usize> {
+    /// Uses a generator to queue this process
+    pub fn queue_inner(&mut self) -> syscall::Result<usize> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
