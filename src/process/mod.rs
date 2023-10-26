@@ -99,6 +99,9 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 
 // Needed for extracting raw main from ELF files
 impl From<*mut dyn Any> for MainLoop {
+    // false positive here and there's no way to mark the function unsafe
+    // without causing a trait method signature mismatch error
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(value: *mut dyn Any) -> Self {
         let type_id = unsafe { (*value).type_id() };
 
@@ -297,11 +300,8 @@ impl<'a> Process<'a> {
     pub fn fopen(&mut self, file: FileData) {
         if self.open_files.read().is_none() {
             self.open_files = Arc::new(RwLock::new(Some(alloc::vec![file])));
-        } else {
-            self.open_files
-                .write()
-                .as_mut()
-                .map(|files| files.push(file));
+        } else if let Some(files) = self.open_files.write().as_mut() {
+            files.push(file)
         }
     }
 }

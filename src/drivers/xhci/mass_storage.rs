@@ -5,34 +5,35 @@ use spin::RwLock;
 use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
 
 /// Wrapper for handling both 32 and 64-byte device cases
+#[allow(clippy::large_enum_variant)]
 pub enum UsbDeviceKind {
     Device8(Device<8>),
     Device16(Device<16>),
 }
 
 impl UsbDeviceKind {
-    pub fn slot<'a>(&'a self) -> &'a dyn SlotHandler {
+    pub fn slot(&self) -> &dyn SlotHandler {
         match self {
             Self::Device8(device) => device.slot(),
             Self::Device16(device) => device.slot(),
         }
     }
 
-    pub fn slot_mut<'a>(&'a mut self) -> &'a mut dyn SlotHandler {
+    pub fn slot_mut(&mut self) -> &mut dyn SlotHandler {
         match self {
             Self::Device8(device) => device.slot_mut(),
             Self::Device16(device) => device.slot_mut(),
         }
     }
 
-    pub fn endpoint<'a>(&'a self, index: usize) -> &'a dyn EndpointHandler {
+    pub fn endpoint(&self, index: usize) -> &dyn EndpointHandler {
         match self {
             Self::Device8(device) => device.endpoint(index),
             Self::Device16(device) => device.endpoint(index),
         }
     }
 
-    pub fn endpoint_mut<'a>(&'a mut self, index: usize) -> &'a mut dyn EndpointHandler {
+    pub fn endpoint_mut(&mut self, index: usize) -> &mut dyn EndpointHandler {
         match self {
             Self::Device8(device) => device.endpoint_mut(index),
             Self::Device16(device) => device.endpoint_mut(index),

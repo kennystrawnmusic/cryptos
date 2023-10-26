@@ -33,6 +33,7 @@
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
+#![allow(clippy::option_map_unit_fn)]
 
 extern crate alloc;
 

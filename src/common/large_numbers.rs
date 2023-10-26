@@ -18,11 +18,11 @@ impl u256 {
         let mut out = [0; 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_add(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_add(carry);
+            let (mut sum, overflow2) = sum.overflowing_add(carry);
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         (Self(out), carry != 0)
@@ -32,11 +32,11 @@ impl u256 {
         let mut out = [0; 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_sub(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_sub(carry);
+            let (mut sum, overflow2) = sum.overflowing_sub(carry);
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         (Self(out), carry != 0)
@@ -221,17 +221,7 @@ impl core::cmp::Eq for u256 {}
 
 impl core::cmp::PartialOrd<u256> for u256 {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        if self.0[1] > other.0[1] {
-            Some(core::cmp::Ordering::Greater)
-        } else if self.0[1] < other.0[1] {
-            Some(core::cmp::Ordering::Less)
-        } else if self.0[0] > other.0[0] {
-            Some(core::cmp::Ordering::Greater)
-        } else if self.0[0] < other.0[0] {
-            Some(core::cmp::Ordering::Less)
-        } else {
-            Some(core::cmp::Ordering::Equal)
-        }
+        Some(self.cmp(other))
     }
 }
 
@@ -349,7 +339,7 @@ impl core::cmp::Ord for u256 {
 
 impl Clone for u256 {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
 
@@ -563,11 +553,11 @@ impl core::ops::Add<u256> for u256 {
         let mut out = [0; 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_add(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_add(carry);
+            let (mut sum, overflow2) = sum.overflowing_add(carry);
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         Self(out)
@@ -587,11 +577,11 @@ impl core::ops::Sub<u256> for u256 {
         let mut out = [0; 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_sub(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_sub(carry);
+            let (mut sum, overflow2) = sum.overflowing_sub(carry);
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         Self(out)
@@ -709,8 +699,8 @@ impl core::ops::BitAnd<u256> for u256 {
     fn bitand(self, rhs: Self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] & rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] & rhs.0[i]);
         }
 
         Self(out)
@@ -729,8 +719,8 @@ impl core::ops::BitOr<u256> for u256 {
     fn bitor(self, rhs: Self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] | rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] | rhs.0[i]);
         }
 
         Self(out)
@@ -749,8 +739,8 @@ impl core::ops::BitXor<u256> for u256 {
     fn bitxor(self, rhs: Self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] ^ rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] ^ rhs.0[i]);
         }
 
         Self(out)
@@ -769,8 +759,8 @@ impl core::ops::Shl<u256> for u256 {
     fn shl(self, rhs: Self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] << rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] << rhs.0[i]);
         }
 
         Self(out)
@@ -789,8 +779,8 @@ impl core::ops::Shr<u256> for u256 {
     fn shr(self, rhs: Self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] >> rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] >> rhs.0[i]);
         }
 
         Self(out)
@@ -809,25 +799,11 @@ impl core::ops::Not for u256 {
     fn not(self) -> Self::Output {
         let mut out = [0; 2];
 
-        for i in 0..2 {
-            out[i] = !self.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (!self.0[i]);
         }
 
         Self(out)
-    }
-}
-
-impl core::ops::Neg for u256 {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        let mut out = [0; 2];
-
-        for i in 0..2 {
-            out[i] = !self.0[i];
-        }
-
-        Self(out) + Self::from(1)
     }
 }
 
@@ -983,7 +959,7 @@ impl u512 {
 
 impl Clone for u512 {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
 
@@ -1203,11 +1179,11 @@ impl core::ops::Add<u512> for u512 {
         let mut out = [u256::from(0); 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_add(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_add(u256::from(carry));
+            let (mut sum, overflow2) = sum.overflowing_add(u256::from(carry));
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         Self(out)
@@ -1227,11 +1203,11 @@ impl core::ops::Sub<u512> for u512 {
         let mut out = [u256::from(0); 2];
         let mut carry = 0;
 
-        for i in 0..2 {
+        for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_sub(rhs.0[i]);
-            let (sum, overflow2) = sum.overflowing_sub(u256::from(carry));
+            let (mut sum, overflow2) = sum.overflowing_sub(u256::from(carry));
             carry = if overflow || overflow2 { 1 } else { 0 };
-            out[i] = sum;
+            _item = &mut sum;
         }
 
         Self(out)
@@ -1349,8 +1325,8 @@ impl core::ops::BitAnd<u512> for u512 {
     fn bitand(self, rhs: Self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] & rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] & rhs.0[i]);
         }
 
         Self(out)
@@ -1369,8 +1345,8 @@ impl core::ops::BitOr<u512> for u512 {
     fn bitor(self, rhs: Self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] | rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] | rhs.0[i]);
         }
 
         Self(out)
@@ -1389,8 +1365,8 @@ impl core::ops::BitXor<u512> for u512 {
     fn bitxor(self, rhs: Self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] ^ rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] ^ rhs.0[i]);
         }
 
         Self(out)
@@ -1409,8 +1385,8 @@ impl core::ops::Shl<u512> for u512 {
     fn shl(self, rhs: Self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] << rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] << rhs.0[i]);
         }
 
         Self(out)
@@ -1429,8 +1405,8 @@ impl core::ops::Shr<u512> for u512 {
     fn shr(self, rhs: Self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = self.0[i] >> rhs.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (self.0[i] >> rhs.0[i]);
         }
 
         Self(out)
@@ -1449,25 +1425,11 @@ impl core::ops::Not for u512 {
     fn not(self) -> Self::Output {
         let mut out = [u256::from(0); 2];
 
-        for i in 0..2 {
-            out[i] = !self.0[i];
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            _item = &mut (!self.0[i]);
         }
 
         Self(out)
-    }
-}
-
-impl core::ops::Neg for u512 {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        let mut out = [u256::from(0); 2];
-
-        for i in 0..2 {
-            out[i] = !self.0[i];
-        }
-
-        Self(out) + Self::from(1)
     }
 }
 
@@ -1837,6 +1799,7 @@ impl core::cmp::PartialEq<isize> for u512 {
 
 impl core::cmp::Eq for u512 {}
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl core::cmp::PartialOrd<u512> for u512 {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         if self.0[1] > other.0[1] {

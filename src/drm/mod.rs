@@ -61,6 +61,12 @@ pub struct Pixelx16(
     *mut Pixel<PixelColorKind>,
 );
 
+impl Default for Pixelx16 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Pixelx16 {
     pub fn new() -> Self {
         Self(
@@ -152,7 +158,7 @@ impl Pixelx16 {
         )
     }
 
-    pub fn from_mut_slice<'a>(slice: &'a mut [Pixel<PixelColorKind>]) -> Self {
+    pub fn from_mut_slice(slice: &mut [Pixel<PixelColorKind>]) -> Self {
         Self(
             &mut slice[0] as *mut _,
             &mut slice[1] as *mut _,
@@ -173,7 +179,7 @@ impl Pixelx16 {
         )
     }
 
-    pub fn from_slice<'a>(slice: &'a [Pixel<PixelColorKind>]) -> Self {
+    pub fn from_slice(slice: &[Pixel<PixelColorKind>]) -> Self {
         Self(
             &slice[0] as *const _ as *mut _,
             &slice[1] as *const _ as *mut _,
@@ -417,7 +423,7 @@ pub struct CanvasBuf {
 
 impl CanvasBuf {
     /// Creates a new canvas using a provided `FrameBuffer` and color values
-    pub fn new<'a>(buffer: &'a mut FrameBuffer) -> Self {
+    pub fn new(buffer: &FrameBuffer) -> Self {
         let info = buffer.info();
         Self {
             pixels: buffer_pixels(buffer).collect::<Vec<_>>(),
@@ -438,7 +444,7 @@ impl CanvasBuf {
     /// to replace most GPUs in terms of performance
     /// # Panics
     /// Panics if the alpha value is out of range (i.e. less than 0 or greater than 1)
-    pub fn alpha_blend(&mut self, alpha: f32, other: &mut CanvasBuf) {
+    pub fn alpha_blend(&mut self, alpha: f32, other: &CanvasBuf) {
         with_avx(|| {
             let mut new_pixels = self.pixels.clone(); // borrow checker
 

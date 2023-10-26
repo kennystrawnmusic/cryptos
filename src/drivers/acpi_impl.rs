@@ -887,8 +887,7 @@ pub unsafe fn system_shutdown() -> ! {
     let pm1b_block = fadt
         .pm1b_control_block()
         .ok()
-        .map(|block_opt| block_opt.map(|block| block.address))
-        .flatten();
+        .and_then(|block_opt| block_opt.map(|block| block.address));
 
     let no_value = [None, None, None, None, None, None, None];
 

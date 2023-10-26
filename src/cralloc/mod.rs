@@ -46,10 +46,9 @@ pub static ALLOC: LazyHeap = LazyHeap::new(|| {
             | PageTableFlags::WRITE_THROUGH;
 
         unsafe {
-            if let Some(flush) = MAPPER
+            if let Ok(flush) = MAPPER
                 .write()
                 .map_to(p, f, flags, &mut *(FRAME_ALLOCATOR.write()))
-                .ok()
             {
                 flush.flush();
             }

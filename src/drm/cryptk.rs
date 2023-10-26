@@ -18,7 +18,7 @@ use u8g2_fonts::U8g2TextStyle;
 
 pub enum ImageKind<'a> {
     Bmp(Bmp<'a, PixelColorKind>),
-    Png(ImageData<'a>),
+    Png(Box<ImageData<'a>>),
 }
 
 use super::{CanvasBuf, PixelColorKind};
@@ -187,7 +187,7 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
             green,
             blue,
             inner.color_type(),
-            &inner,
+            inner,
             match inner.color_type() {
                 ColorType::Gray => None,
                 ColorType::GrayAlpha => Some(pixel_chunk[3]),
@@ -211,7 +211,7 @@ pub struct DesktopBackground<'a> {
 }
 
 impl<'a> DesktopBackground<'a> {
-    pub fn new(img: ImageKind<'a>, fb: &'a mut FrameBuffer) -> Self {
+    pub fn new(img: ImageKind<'a>, fb: &'a FrameBuffer) -> Self {
         let canvas = CanvasBuf::new(fb);
         Self { img, canvas }
     }

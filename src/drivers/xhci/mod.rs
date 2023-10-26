@@ -301,6 +301,9 @@ impl<'a> TrbKind<'a> {
 }
 
 impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
+    // false positive here and there's no way to mark the function unsafe
+    // without causing a trait method signature mismatch error
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(value: *mut dyn TrbAnalyzer) -> Self {
         match unsafe { &*(value) }.get_type() {
             TrbType::Normal => TrbKind::from(unsafe { &mut *(value as *mut Normal) }),
@@ -386,8 +389,7 @@ impl XhciImpl {
                     let full_bar = bar0 as u64 | ((bar1 as u64) << 32);
 
                     let offset_full_bar = {
-                        let test =
-                            Page::<Size4KiB>::containing_address(VirtAddr::new(full_bar as u64));
+                        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(full_bar));
                         test.start_address().as_u64()
                     } as usize;
                     offset_full_bar_outer.get_or_init(move || offset_full_bar);
@@ -407,19 +409,16 @@ impl XhciImpl {
             }
         };
 
-        let extcaps = regs
-            .as_ref()
-            .map(|regs| {
-                let extended_caps = unsafe {
-                    List::new(
-                        offset_full_bar_outer.get().cloned().unwrap(),
-                        regs.capability.hccparams1.read_volatile(),
-                        MAPPER.read().clone(),
-                    )
-                };
-                extended_caps.map(|caps| caps)
-            })
-            .flatten();
+        let extcaps = regs.as_ref().and_then(|regs| {
+            let extended_caps = unsafe {
+                List::new(
+                    offset_full_bar_outer.get().cloned().unwrap(),
+                    regs.capability.hccparams1.read_volatile(),
+                    MAPPER.read().clone(),
+                )
+            };
+            extended_caps
+        });
 
         Self { regs, extcaps }
     }
@@ -466,10 +465,10 @@ impl XhciImpl {
             .map(|regs| &regs.interrupter_register_set)
     }
     pub fn extcaps(&self) -> Option<&List<XhciMapper>> {
-        self.extcaps.as_ref().map(|caps| caps)
+        self.extcaps.as_ref()
     }
     pub fn extcaps_mut(&mut self) -> Option<&mut List<XhciMapper>> {
-        self.extcaps.as_mut().map(|caps| caps)
+        self.extcaps.as_mut()
     }
     pub fn init(&mut self) {
         if let Some(op) = self.operational_mut() {
@@ -512,11 +511,11 @@ impl XhciImpl {
 
             // Read the max number of slots from the capabilities and write that value into the operational register
             if let Some(slots) = max_slots {
-                self.operational_mut().map(|op| {
+                if let Some(op) = self.operational_mut() {
                     op.config.update_volatile(|config| {
                         config.set_max_device_slots_enabled(slots);
                     })
-                });
+                }
             }
 
             // Same with ports
@@ -566,30 +565,28 @@ impl XhciImpl {
             };
 
             // Set the DCBAAP
-            self.operational_mut().map(|op| {
+            if let Some(op) = self.operational_mut() {
                 op.dcbaap.update_volatile(|dcbaap| {
                     dcbaap.set(
                         dev_context_array
-                            .iter()
-                            .nth(0)
+                            .get(0)
                             .map(|dev| dev as *const _ as u64)
                             .expect("No devices present in device context array"),
                     )
                 })
-            });
+            }
 
             // Set the command ring control register
-            self.operational_mut().map(|op| {
+            if let Some(op) = self.operational_mut() {
                 op.crcr.update_volatile(|crcr| {
                     crcr.set_command_ring_pointer(
                         cmd_ring
-                            .iter()
-                            .nth(0)
+                            .get(0)
                             .map(|cmd| cmd as *const _ as u64)
                             .expect("No commands present in command ring"),
                     )
                 })
-            });
+            }
 
             // Set event ring segment table registers
             self.interrupter_register_set_mut().map(|int| {
@@ -610,8 +607,7 @@ impl XhciImpl {
 
                         erdp.set_event_ring_dequeue_pointer(
                             event_ring_dequeue
-                                .iter()
-                                .nth(0)
+                                .get(0)
                                 .map(|event| event as *const _ as u64)
                                 .expect("No commands present in command ring"),
                         )
@@ -637,11 +633,11 @@ impl XhciImpl {
             });
 
             // Enable interrupts
-            self.operational_mut().map(|op| {
+            if let Some(op) = self.operational_mut() {
                 op.usbcmd.update_volatile(|cmd| {
                     cmd.set_interrupter_enable();
                 })
-            });
+            }
 
             // Set up the scratchpad buffers
             let scratchpad_buf = self
@@ -693,11 +689,11 @@ impl XhciImpl {
             // Enable config info if config info capability is present
             if let Some(config_info) = config_info {
                 if config_info {
-                    self.operational_mut().map(|op| {
+                    if let Some(op) = self.operational_mut() {
                         op.config.update_volatile(|config| {
                             config.set_configuration_information_enable();
                         })
-                    });
+                    }
                 }
             }
 

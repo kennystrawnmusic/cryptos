@@ -209,7 +209,7 @@ pub struct IrqRelaxStrategy;
 
 impl RelaxStrategy for IrqRelaxStrategy {
     fn relax() {
-        without_interrupts(|| hlt());
+        without_interrupts(hlt);
     }
 }
 
@@ -231,16 +231,15 @@ impl Printk {
         Self(IrqLock::new(FrameBufferWriter::new(buffer, info)))
     }
 
+    /// Force-unlocks the logger
+    /// # Safety
+    /// This function is unsafe for the same reason why force-unlocking any other lock is unsafe
     pub unsafe fn force_unlock(&self) {
         self.0.force_write_unlock();
     }
 
     pub fn is_locked(&self) -> bool {
-        if self.0.try_read().is_some() {
-            false
-        } else {
-            true
-        }
+        self.0.try_read().is_none()
     }
 }
 
@@ -306,7 +305,7 @@ impl xhci::accessor::Mapper for XhciMapper {
             }
         }
 
-        NonZeroUsize::new(phys_start as usize).unwrap()
+        NonZeroUsize::new(phys_start).unwrap()
     }
 
     fn unmap(&mut self, virt_start: usize, bytes: usize) {
