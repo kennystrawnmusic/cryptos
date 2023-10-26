@@ -154,6 +154,7 @@ impl Process<'static> {
     /// Inserts this process into the PTABLE
     pub fn register(mut self) {
         self.block(); // make sure this is the case before proceeding
+
         PTABLE
             .write()
             .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
