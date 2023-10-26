@@ -2,7 +2,7 @@
 
 use core::{
     any::{Any, TypeId},
-    ops::{Generator, GeneratorState},
+    ops::Generator,
     pin::Pin,
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };
@@ -154,7 +154,7 @@ impl Process<'static> {
     /// Inserts this process into the PTABLE
     pub fn register(mut self) {
         self.block(); // make sure this is the case before proceeding
-        self.res = self.queue();
+        self.queue();
 
         PTABLE
             .write()
@@ -195,8 +195,15 @@ impl<'a> Process<'a> {
         Process::<'static>::from(exec).register();
     }
 
+    fn set_result(&mut self, res: syscall::Result<usize>) {
+        self.res = res;
+    }
+
     /// Uses a generator to queue this process
-    fn queue(&mut self) -> syscall::Result<usize> {
+    fn queue(&mut self) {
+        // borrow checker
+        let self_ptr = self as *mut _;
+
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
@@ -209,13 +216,16 @@ impl<'a> Process<'a> {
                         // use infinite loops within their own main() bodies anyway,
                         // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
+                        self.set_result(Ok(0));
                     }
                     MainLoop::WithResult(main) => match main() {
                         Ok(()) => {
                             self.state = State::Exited(0);
+                            self.set_result(Ok(0));
                         }
                         Err(e) => {
                             self.state = State::Exited(e.errno as u64);
+                            self.set_result(Err(e));
                         }
                     },
                 },
@@ -236,38 +246,33 @@ impl<'a> Process<'a> {
 
                             // Note: if we return here then we don't need to from the `Runnable` arm
                             // as that's the arm that the exit status is set from
-                            return Ok(());
+                            self.set_result(Ok(0));
                         } else {
                             PTABLE.write().remove(self.pid.0.get_mut());
-                            return Err(Error::new(status as i32));
+                            self.set_result(Err(Error::new(status as i32)));
                         }
                     } else {
                         PTABLE.write().remove(self.pid.0.get_mut());
 
                         // borrow checker
                         let signal = self.signal_received;
-                        signal.handle(self)?;
+                        self.set_result(match signal.handle(unsafe { &mut *self_ptr }) {
+                            Ok(()) => Ok(0),
+                            Err(e) => Err(e),
+                        });
                     }
                 }
 
                 // All invalid states are erroneous
-                State::Invalid(_) => return Err(Error::new(EBADF)),
+                State::Invalid(_) => self.set_result(Err(Error::new(EBADF))),
 
                 // Zombie process slair
                 State::Zombie => self.kill(Signal::SIGKILL),
             }
-            Ok(())
         };
 
-        match Pin::new(&mut main).resume(()) {
-            // Give other processes that are runnable a chance to run
-            GeneratorState::Yielded(_) => Ok(0),
-            // Propagate successes and errors for proper handling
-            GeneratorState::Complete(status) => match status {
-                Ok(()) => Ok(0),
-                Err(code) => Err(code),
-            },
-        }
+        // Errors already handled inside the generator
+        Pin::new(&mut main).resume(());
     }
 
     /// Sets this process's state
