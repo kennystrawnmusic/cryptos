@@ -1,5 +1,5 @@
 use core::{
-    alloc::{Allocator, Layout, GlobalAlloc},
+    alloc::{Allocator, GlobalAlloc, Layout},
     ptr::{addr_of, NonNull},
 };
 
@@ -10,17 +10,14 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{MAPPER, FRAME_ALLOCATOR};
-
+use crate::{FRAME_ALLOCATOR, MAPPER};
 
 pub mod frames;
 
 use {
     slab_allocator_rs::*,
     x86_64::{
-        structures::paging::{
-            FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
-        },
+        structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB},
         VirtAddr,
     },
 };
@@ -49,7 +46,11 @@ pub static ALLOC: LazyHeap = LazyHeap::new(|| {
             | PageTableFlags::WRITE_THROUGH;
 
         unsafe {
-            if let Some(flush) =  MAPPER.write().map_to(p, f, flags, &mut *(FRAME_ALLOCATOR.write())).ok() {
+            if let Some(flush) = MAPPER
+                .write()
+                .map_to(p, f, flags, &mut *(FRAME_ALLOCATOR.write()))
+                .ok()
+            {
                 flush.flush();
             }
         };
@@ -115,8 +116,7 @@ impl<T> PhysBox<T> {
 pub struct LazyHeap(Lazy<LockedHeap>);
 
 impl LazyHeap {
-    pub const fn new(caller: fn() -> LockedHeap) -> Self
-    {
+    pub const fn new(caller: fn() -> LockedHeap) -> Self {
         Self(Lazy::new(caller))
     }
 

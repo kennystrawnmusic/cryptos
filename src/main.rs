@@ -63,11 +63,14 @@ use core::{
     panic::PanicInfo,
     sync::atomic::{AtomicU64, Ordering},
 };
-use cralloc::{frames::{KernelFrameAlloc, map_memory}, BEGIN_HEAP};
+use cralloc::{
+    frames::{map_memory, KernelFrameAlloc},
+    BEGIN_HEAP,
+};
 use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
-use spin::{Once, Lazy};
+use spin::{Lazy, Once};
 use x86_64::{
     structures::paging::{OffsetPageTable, Page, PhysFrame, Size4KiB},
     VirtAddr,

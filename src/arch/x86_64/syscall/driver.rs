@@ -73,10 +73,7 @@ fn physalloc_inner(
         || flags.contains(PhysallocFlags::SPACE_32)
         || flags.contains(PhysallocFlags::SPACE_64)
     {
-        if let Some((frame_range, size)) = FRAME_ALLOCATOR
-            .write()
-            .allocate_multiple(size)
-        {
+        if let Some((frame_range, size)) = FRAME_ALLOCATOR.write().allocate_multiple(size) {
             let offset = frame_range.start.start_address().as_u64() + get_phys_offset();
 
             let page_range = Page::range_inclusive(
@@ -120,9 +117,7 @@ fn physfree_inner(addr: usize, count: usize) -> Result<usize> {
         PhysFrame::containing_address(PhysAddr::new(count as u64)),
     );
 
-    FRAME_ALLOCATOR
-        .write()
-        .deallocate_multiple(range);
+    FRAME_ALLOCATOR.write().deallocate_multiple(range);
     Ok(0)
 }
 
