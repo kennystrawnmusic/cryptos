@@ -320,9 +320,11 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
 
-        let main = MainLoop::from(core::ptr::from_raw_parts_mut(start as *mut (), unsafe {
-            *(start as *mut _)
-        }));
+        let addr = start as *mut ();
+        let meta = unsafe { *(start as *mut _) };
+        let constructed = core::ptr::from_raw_parts_mut(addr, meta);
+
+        let main = MainLoop::from(constructed);
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
