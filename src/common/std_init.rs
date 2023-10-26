@@ -33,7 +33,7 @@ pub mod collections {
 
     // Compatibility: most standard library users stick with the default HashMap implementation
     // as opposed to customizing the default hash builder as is done in my kernel.
-    // This is a convenience for them.
+    // This is a convenience for them, since AHash is generally faster than 512-bit SHA-3 anyway.
     pub use hashbrown::hash_map;
     pub use hashbrown::hash_set;
     pub use hashbrown::HashMap;
