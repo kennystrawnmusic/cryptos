@@ -152,8 +152,8 @@ pub struct Process<'a> {
 
 impl Process<'static> {
     /// Inserts this process into the PTABLE
-    pub fn register(self) {
-        // TODO: ensure blocked before registering
+    pub fn register(mut self) {
+        self.block();
         PTABLE.write().insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
     }
 
@@ -194,10 +194,7 @@ impl<'a> Process<'a> {
 
     /// Creates a new process using and automatically adds it to `PTABLE`
     pub fn create(exec: ElfFile<'static>) {
-        PTABLE.write().insert(
-            PTABLE.read().len() - 1,
-            Arc::new(RwLock::new(Process::<'static>::from(exec))),
-        );
+        Process::<'static>::from(exec).queue();
     }
 
     /// Uses a generator to queue this process
