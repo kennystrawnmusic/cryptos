@@ -247,22 +247,18 @@ impl<'a> Process<'a> {
             }
             Ok(())
         };
-
-        // Listen indefinitely for the process to exit
-        loop {
-            match Pin::new(&mut main).resume(()) {
-                GeneratorState::Yielded(_) => continue,
-                GeneratorState::Complete(status) => {
-                    match status {
-                        Ok(()) => Ok(()),
-                        Err(code) => Err(code),
-                    }?;
-                    break;
+        
+        match Pin::new(&mut main).resume(()) {
+            // Give other processes that are runnable a chance to run
+            GeneratorState::Yielded(_) => Ok(0),
+            // Propagate successes and errors for proper handling
+            GeneratorState::Complete(status) => {
+                match status {
+                    Ok(()) => Ok(0),
+                    Err(code) => Err(code),
                 }
-            };
+            }
         }
-
-        Ok(0)
     }
 
     /// Sets this process's state
