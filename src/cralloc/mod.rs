@@ -58,6 +58,7 @@ pub static ALLOC: LazyHeap = LazyHeap::new(|| {
     unsafe {
         heap.init(BEGIN_HEAP, HEAP_LEN);
     }
+
     heap
 });
 
