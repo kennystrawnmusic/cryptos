@@ -145,7 +145,7 @@ pub struct Process<'a> {
 
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
-    
+
     res: Weak<syscall::Result<usize>>,
     main: MainLoop,
 }
@@ -153,8 +153,10 @@ pub struct Process<'a> {
 impl Process<'static> {
     /// Inserts this process into the PTABLE
     pub fn register(mut self) {
-        self.block();
-        PTABLE.write().insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
+        self.block(); // make sure this is the case before proceeding
+        PTABLE
+            .write()
+            .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
     }
 
     /// Queues this process
@@ -260,17 +262,15 @@ impl<'a> Process<'a> {
             }
             Ok(())
         };
-        
+
         match Pin::new(&mut main).resume(()) {
             // Give other processes that are runnable a chance to run
             GeneratorState::Yielded(_) => Ok(0),
             // Propagate successes and errors for proper handling
-            GeneratorState::Complete(status) => {
-                match status {
-                    Ok(()) => Ok(0),
-                    Err(code) => Err(code),
-                }
-            }
+            GeneratorState::Complete(status) => match status {
+                Ok(()) => Ok(0),
+                Err(code) => Err(code),
+            },
         }
     }
 
