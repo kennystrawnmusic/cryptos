@@ -146,7 +146,7 @@ pub struct Process<'a> {
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
 
-    res: Weak<syscall::Result<usize>>,
+    res: syscall::Result<usize>,
     main: MainLoop,
 }
 
@@ -162,8 +162,8 @@ impl Process<'static> {
 
     /// Queues this process
     pub fn queue(mut self) {
-        unsafe { *((self.res.as_ptr()) as *mut syscall::Result<usize>) = self.queue_inner() };
-        self.register()
+        self.res = self.queue_inner();
+        self.register();
     }
 }
 
@@ -190,7 +190,7 @@ impl<'a> Process<'a> {
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
-            res: Weak::new(),
+            res: Ok(0), // this will change when the process runs
             main,
         }
     }
