@@ -7,7 +7,8 @@ pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
     u64::from_be_bytes(slice.split_at_mut(8).0.try_into().unwrap())
 }
 
-/// Default HashMap hasher that uses SHA3-512 instead of AHash for improved security and better integrity checking
+/// Default HashMap hasher that uses 512-bit SHA-3 instead of AHash
+/// for improved security and better integrity checking
 #[derive(Default)]
 pub struct KernelHasher(Sha3_512);
 
