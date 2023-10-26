@@ -201,7 +201,7 @@ impl<'a> Process<'a> {
     }
 
     /// Uses a generator to queue this process
-    pub fn queue_inner(&mut self) -> syscall::Result<usize> {
+    fn queue_inner(&mut self) -> syscall::Result<usize> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
