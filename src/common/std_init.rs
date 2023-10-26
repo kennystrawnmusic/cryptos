@@ -98,8 +98,8 @@ pub mod sync {
     extern crate alloc as inner_alloc;
     pub use core::sync::*;
     pub use inner_alloc::sync::*;
-    pub use super::super::IrqLock as RwLock;
-    pub use super::super::IrqMutex as Mutex;
+    pub use super::super::RwLock as RwLock;
+    pub use super::super::Mutex as Mutex;
 }
 
 pub mod task {

@@ -23,7 +23,7 @@ use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 pub struct SeqLock<T> {
     lock: AtomicUsize,
     data: UnsafeCell<T>,
-    semaphore: IrqLock<()>,
+    semaphore: RwLock<()>,
 }
 
 pub struct SeqLockReadGuard<'a, T> {
@@ -76,7 +76,7 @@ impl<T: Copy> SeqLock<T> {
         Self {
             lock: AtomicUsize::new(0),
             data: UnsafeCell::new(inner),
-            semaphore: IrqLock::new(()),
+            semaphore: RwLock::new(()),
         }
     }
 
@@ -215,21 +215,21 @@ impl RelaxStrategy for IrqRelaxStrategy {
 }
 
 /// RwLock that works by disabling interrupts and halting the CPU while held
-pub type IrqLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
+pub type RwLock<T> = spin::rwlock::RwLock<T, IrqRelaxStrategy>;
 
 /// RwLockWriteGuard that works by disabling interrupts and halting the CPU while held
 pub type IrqLockWriteGuard<'a, T> = spin::rwlock::RwLockWriteGuard<'a, T, IrqRelaxStrategy>;
 
 /// Mutex that works by disabling interrupts and halting the CPU while held
-pub type IrqMutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
+pub type Mutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
 
 /// Re-implementation of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock`
 /// instead of `spinning_top::Spinlock` for improved performance
-pub struct Printk(IrqLock<FrameBufferWriter>);
+pub struct Printk(RwLock<FrameBufferWriter>);
 
 impl Printk {
     pub fn new(buffer: &'static mut [u8], info: FrameBufferInfo) -> Self {
-        Self(IrqLock::new(FrameBufferWriter::new(buffer, info)))
+        Self(RwLock::new(FrameBufferWriter::new(buffer, info)))
     }
 
     /// Force-unlocks the logger

@@ -57,7 +57,7 @@ use bootloader_api::{
     info::{FrameBuffer, FrameBufferInfo, Optional, TlsTemplate},
     *,
 };
-use common::{IrqLock, Printk};
+use common::{RwLock, Printk};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
@@ -149,16 +149,16 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
 
 // Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
-pub static MAPPER: Lazy<IrqLock<OffsetPageTable>> = Lazy::new(|| {
+pub static MAPPER: Lazy<RwLock<OffsetPageTable>> = Lazy::new(|| {
     let map = unsafe { map_memory() };
-    IrqLock::new(map)
+    RwLock::new(map)
 });
 
-pub static FRAME_ALLOCATOR: Lazy<IrqLock<KernelFrameAlloc>> = Lazy::new(|| {
+pub static FRAME_ALLOCATOR: Lazy<RwLock<KernelFrameAlloc>> = Lazy::new(|| {
     let boot_info = get_boot_info();
 
     let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
-    IrqLock::new(falloc)
+    RwLock::new(falloc)
 });
 
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
