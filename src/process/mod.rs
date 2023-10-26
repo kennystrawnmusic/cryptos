@@ -153,6 +153,7 @@ pub struct Process<'a> {
 impl Process<'static> {
     /// Inserts this process into the PTABLE
     pub fn register(self) {
+        // TODO: ensure blocked before registering
         PTABLE.write().insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
     }
 
