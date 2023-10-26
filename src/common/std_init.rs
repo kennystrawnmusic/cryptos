@@ -32,7 +32,8 @@ pub mod collections {
     pub use inner_alloc::collections::*;
 
     // Compatibility: most standard library users stick with the default HashMap implementation
-    // as opposed to customizing the default hash builder as is done in my kernel. This is a convenience for them.
+    // as opposed to customizing the default hash builder as is done in my kernel.
+    // This is a convenience for them.
     pub use hashbrown::hash_map;
     pub use hashbrown::hash_set;
     pub use hashbrown::HashMap;
