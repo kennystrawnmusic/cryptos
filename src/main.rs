@@ -3,6 +3,12 @@
 #![feature(
     allocator_api,
     alloc_error_handler,
+    assert_matches,
+    async_iterator,
+    error_in_core,
+    ip_in_core,
+    core_panic,
+    unicode_internals,
     abi_x86_interrupt,
     maybe_uninit_slice,
     never_type,

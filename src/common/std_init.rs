@@ -129,3 +129,17 @@ pub use core::u32;
 pub use core::u64;
 pub use core::u8;
 pub use core::usize;
+
+// Experimental, feature-gated re-exports
+pub use core::assert_matches;
+pub use core::async_iter;
+pub use core::error;
+pub use core::intrinsics;
+pub use core::net;
+pub use core::panicking;
+pub use core::simd;
+pub use core::unicode;
+
+// Re-export macros: only way to do this is with a set of globs
+pub use core::*;
+pub use alloc::*;
