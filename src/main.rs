@@ -201,8 +201,6 @@ pub(crate) static USER_ACPI: Once<UserAcpi> = Once::new();
 entry_point!(maink, config = &CONFIG);
 
 pub fn maink(boot_info: &'static mut BootInfo) -> ! {
-    // set up heap allocation ASAP
-
     // load the GDT early because repeated GDT loads cause a #GP
     crate::arch::x86_64::exceptions::init();
 
