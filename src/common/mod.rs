@@ -13,6 +13,7 @@ use x86_64::VirtAddr;
 pub mod atomic_cell;
 pub mod large_numbers;
 pub mod macros;
+pub mod hash_map;
 
 use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 
