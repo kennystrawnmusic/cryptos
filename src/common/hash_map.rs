@@ -1,6 +1,6 @@
-use core::hash::{Hasher, BuildHasherDefault};
-use sha3::{Digest, Sha3_512};
+use core::hash::{BuildHasherDefault, Hasher};
 use hashbrown::HashMap as RawHashMap;
+use sha3::{Digest, Sha3_512};
 
 // return the first 64 bits of a 512-bit hash
 pub fn u64_from_slice(slice: &mut [u8]) -> u64 {

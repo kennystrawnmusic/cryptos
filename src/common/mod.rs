@@ -11,9 +11,9 @@ use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, Size4KiB}
 use x86_64::VirtAddr;
 
 pub mod atomic_cell;
+pub mod hash_map;
 pub mod large_numbers;
 pub mod macros;
-pub mod hash_map;
 
 use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 
