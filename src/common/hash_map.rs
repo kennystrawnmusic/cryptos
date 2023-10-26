@@ -7,8 +7,7 @@ pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
     u64::from_be_bytes(slice.split_at_mut(8).0.try_into().unwrap())
 }
 
-// need something far more secure than AHash here to pave the way for things like per-directory encryption
-// and ZFS-like real-time checksumming
+/// Default HashMap hasher that uses SHA3-512 instead of AHash for improved security and better integrity checking
 #[derive(Default)]
 pub struct KernelHasher(Sha3_512);
 
