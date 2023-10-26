@@ -154,16 +154,11 @@ impl Process<'static> {
     /// Inserts this process into the PTABLE
     pub fn register(mut self) {
         self.block(); // make sure this is the case before proceeding
+        self.res = self.queue();
 
         PTABLE
             .write()
             .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
-    }
-
-    /// Queues this process
-    pub fn queue(mut self) {
-        self.res = self.queue_inner();
-        self.register();
     }
 }
 
@@ -197,11 +192,11 @@ impl<'a> Process<'a> {
 
     /// Creates a new process using and automatically adds it to `PTABLE`
     pub fn create(exec: ElfFile<'static>) {
-        Process::<'static>::from(exec).queue();
+        Process::<'static>::from(exec).register();
     }
 
     /// Uses a generator to queue this process
-    fn queue_inner(&mut self) -> syscall::Result<usize> {
+    fn queue(&mut self) -> syscall::Result<usize> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
