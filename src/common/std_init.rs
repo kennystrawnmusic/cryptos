@@ -140,6 +140,5 @@ pub use core::panicking;
 pub use core::simd;
 pub use core::unicode;
 
-// Re-export macros: only way to do this is with a set of globs
+// Re-export macros: only way to do this is with a glob
 pub use core::*;
-pub use alloc::*;
