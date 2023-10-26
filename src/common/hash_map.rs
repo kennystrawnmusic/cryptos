@@ -2,7 +2,7 @@ use core::hash::{BuildHasherDefault, Hasher};
 use hashbrown::HashMap as RawHashMap;
 use sha3::{Digest, Sha3_512};
 
-// return the first 64 bits of a 512-bit hash
+/// Returns the first 64 bits of a 512-bit hash
 pub fn u64_from_slice(slice: &mut [u8]) -> u64 {
     u64::from_be_bytes(slice.split_at_mut(8).0.try_into().unwrap())
 }
