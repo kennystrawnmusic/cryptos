@@ -149,5 +149,31 @@ pub use core::format_args_nl;
 pub use core::log_syntax;
 pub use core::trace_macros;
 
-// Re-export macros: only way to do this is with a glob
-pub use core::*;
+// Re-export the rest of the macros one-by-one
+pub use core::{
+    assert,
+    assert_eq,
+    assert_ne,
+    cfg,
+    column,
+    compile_error,
+    concat,
+    debug_assert,
+    debug_assert_eq,
+    debug_assert_ne,
+    env,
+    file,
+    format_args,
+    include,
+    include_bytes,
+    include_str,
+    line,
+    module_path,
+    option_env,
+    stringify,
+    todo,
+    unimplemented,
+    unreachable,
+    write,
+    writeln,
+};
