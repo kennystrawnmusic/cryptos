@@ -78,7 +78,7 @@ pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 ///
 /// Implements `From` for easy signature parsing
 #[derive(Copy, Clone)]
-pub enum MainLoop {
+enum MainLoop {
     WithoutResult(fn() -> ()),
     WithResult(fn() -> syscall::Result<()>),
     // TODO: FFI
@@ -99,9 +99,6 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 
 // Needed for extracting raw main from ELF files
 impl From<*mut dyn Any> for MainLoop {
-    // false positive here and there's no way to mark the function unsafe
-    // without causing a trait method signature mismatch error
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(value: *mut dyn Any) -> Self {
         let type_id = unsafe { (*value).type_id() };
 

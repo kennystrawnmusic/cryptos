@@ -48,7 +48,7 @@ pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
 /// Helper trait for parsing the specific TRBs we're dealing with
-pub trait TrbAnalyzer: AsRef<[u32]> {
+trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
             1 => TrbType::Normal,
@@ -124,14 +124,14 @@ impl TrbAnalyzer for Normal {}
 impl TrbAnalyzer for SetupStage {}
 impl TrbAnalyzer for StatusStage {}
 
-pub trait TrbKindMarker {}
+trait TrbKindMarker {}
 
 impl TrbKindMarker for CommandKind<'_> {}
 impl TrbKindMarker for EventKind<'_> {}
 impl TrbKindMarker for TransferKind<'_> {}
 impl<'a> TrbKindMarker for &'a mut Link {}
 
-pub enum CommandKind<'a> {
+enum CommandKind<'a> {
     AddressDevice(&'a mut AddressDevice),
     ConfigureEndpoint(&'a mut ConfigureEndpoint),
     DisableSlot(&'a mut DisableSlot),
@@ -151,7 +151,7 @@ pub enum CommandKind<'a> {
     StopEndpoint(&'a mut StopEndpoint),
 }
 
-pub enum EventKind<'a> {
+enum EventKind<'a> {
     BandwidthRequest(&'a mut BandwidthRequest),
     CommandCompletion(&'a mut CommandCompletion),
     DeviceNotification(&'a mut DeviceNotification),
@@ -162,7 +162,7 @@ pub enum EventKind<'a> {
     TransferEvent(&'a mut TransferEvent),
 }
 
-pub enum TransferKind<'a> {
+enum TransferKind<'a> {
     DataStage(&'a mut DataStage),
     EventData(&'a mut EventData),
     Isoch(&'a mut Isoch),
@@ -172,7 +172,7 @@ pub enum TransferKind<'a> {
     StatusStage(&'a mut StatusStage),
 }
 
-pub enum TrbKind<'a> {
+enum TrbKind<'a> {
     Command(CommandKind<'a>),
     Event(EventKind<'a>),
     Transfer(TransferKind<'a>),
@@ -290,6 +290,7 @@ impl_from_ref_for_trb_kind!(SetupStage, Transfer);
 impl_from_ref_for_trb_kind!(StatusStage, Transfer);
 
 impl<'a> TrbKind<'a> {
+    #[allow(dead_code)] // not finished
     pub fn as_inner(&'a mut self) -> &'a mut dyn TrbKindMarker {
         match self {
             TrbKind::Command(cmd) => cmd,
@@ -301,9 +302,6 @@ impl<'a> TrbKind<'a> {
 }
 
 impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
-    // false positive here and there's no way to mark the function unsafe
-    // without causing a trait method signature mismatch error
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(value: *mut dyn TrbAnalyzer) -> Self {
         match unsafe { &*(value) }.get_type() {
             TrbType::Normal => TrbKind::from(unsafe { &mut *(value as *mut Normal) }),
