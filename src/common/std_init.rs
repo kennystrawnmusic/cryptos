@@ -116,17 +116,18 @@ pub mod vec {
     pub use inner_alloc::vec::*;
 }
 
+
 #[macro_export]
 macro_rules! vec {
-    () => {
-        ::alloc::vec![]
-    };
+    () => (::alloc::vec![]);
     ($elem:expr; $n:expr) => {
-        ::alloc::vec::from_elem($elem, $n)
+        let mut v = ::alloc::vec::Vec::new();
+        for i in 0..$n {
+            v.push($elem);
+        }
     };
-    ($($x:expr),+ $(,)?) => {
-        <[_]>::into_vec(::alloc::boxed::Box::new([$($x),+]))
-    };
+    ($($x:expr,)*) => (::alloc::vec![$($x),*]);
+    ($($x:expr),+ $(,)?) => (::alloc::vec![$($x),+]);
 }
 
 pub use core::u128;
