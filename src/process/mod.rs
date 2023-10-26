@@ -157,8 +157,9 @@ impl Process<'static> {
     }
 
     /// Queues this process
-    pub fn queue(&mut self) {
+    pub fn queue(mut self) {
         unsafe { *((self.res.as_ptr()) as *mut syscall::Result<usize>) = self.queue_inner() };
+        self.register()
     }
 }
 

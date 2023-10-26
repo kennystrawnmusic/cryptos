@@ -22,7 +22,7 @@ use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
     map_page,
-    process::{signal::Signal, State, PTABLE, PTABLE_IDX},
+    process::{signal::Signal, PTABLE, PTABLE_IDX},
 };
 
 use {
@@ -150,24 +150,16 @@ extern "x86-interrupt" fn task_sched(_: InterruptStackFrame) {
             // always runnable as only one process exists
             (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
-                .set_state(State::Runnable);
-
-            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
-                .write()
-                .queue();
+                .unblock();
         } else {
             // need to preempt previous process in the table
             (PTABLE.read())[&(PTABLE_IDX.load(Ordering::SeqCst) - 1)]
                 .write()
-                .set_state(State::Blocked);
+                .block();
 
             (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
                 .write()
-                .set_state(State::Runnable);
-
-            (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
-                .write()
-                .queue();
+                .unblock();
         }
 
         if PTABLE_IDX.load(Ordering::SeqCst) < (PTABLE.read().len() - 1) {
