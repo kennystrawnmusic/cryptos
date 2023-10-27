@@ -4,7 +4,7 @@ use core::{
 };
 
 use alloc::alloc::Global;
-use spin::Lazy;
+use conquer_once::spin::Lazy;
 use x86_64::{
     structures::paging::{PageSize, PhysFrame},
     PhysAddr,

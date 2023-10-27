@@ -3,8 +3,8 @@
 extern crate alloc as inner_alloc;
 
 pub mod alloc {
-    pub use core::alloc::*;
     pub use alloc::alloc::Global;
+    pub use core::alloc::*;
 }
 
 pub use core::any;
@@ -61,7 +61,6 @@ pub mod fmt {
 }
 
 pub use core::future;
-pub use inner_alloc::format;
 pub use core::hash;
 pub use core::hint;
 pub use core::i128;
@@ -81,8 +80,9 @@ pub use core::pin;
 pub use core::prelude;
 pub use core::primitive;
 pub use core::ptr;
-pub use inner_alloc::rc;
 pub use core::result;
+pub use inner_alloc::format;
+pub use inner_alloc::rc;
 
 pub mod slice {
     extern crate alloc as inner_alloc;
@@ -100,11 +100,11 @@ pub use inner_alloc::string;
 
 pub mod sync {
     extern crate alloc as inner_alloc;
+    pub use super::super::LazyLock;
+    pub use super::super::Mutex;
+    pub use super::super::RwLock;
     pub use core::sync::*;
     pub use inner_alloc::sync::*;
-    pub use super::super::RwLock;
-    pub use super::super::Mutex;
-    pub use super::super::LazyLock;
 }
 
 pub mod task {
@@ -162,29 +162,7 @@ pub use core::trace_macros;
 
 // Re-export the rest of the macros one-by-one
 pub use core::{
-    assert,
-    assert_eq,
-    assert_ne,
-    cfg,
-    column,
-    compile_error,
-    concat,
-    debug_assert,
-    debug_assert_eq,
-    debug_assert_ne,
-    env,
-    file,
-    format_args,
-    include,
-    include_bytes,
-    include_str,
-    line,
-    module_path,
-    option_env,
-    stringify,
-    todo,
-    unimplemented,
-    unreachable,
-    write,
-    writeln,
+    assert, assert_eq, assert_ne, cfg, column, compile_error, concat, debug_assert,
+    debug_assert_eq, debug_assert_ne, env, file, format_args, include, include_bytes, include_str,
+    line, module_path, option_env, stringify, todo, unimplemented, unreachable, write, writeln,
 };

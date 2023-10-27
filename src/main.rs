@@ -42,7 +42,7 @@
     const_format_args,
     format_args_nl,
     log_syntax,
-    trace_macros,
+    trace_macros
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
@@ -70,7 +70,7 @@ use bootloader_api::{
     info::{FrameBuffer, FrameBufferInfo, Optional, TlsTemplate},
     *,
 };
-use common::{RwLock, Printk};
+use common::{Printk, RwLock};
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,

@@ -208,6 +208,9 @@ pub fn addralloc<T>() -> *mut T {
 /// Relax strategy that disables interrupts and halts the CPU
 pub struct IrqRelaxStrategy;
 
+unsafe impl Send for IrqRelaxStrategy {}
+unsafe impl Sync for IrqRelaxStrategy {}
+
 impl RelaxStrategy for IrqRelaxStrategy {
     fn relax() {
         without_interrupts(hlt);
@@ -224,7 +227,7 @@ pub type IrqLockWriteGuard<'a, T> = spin::rwlock::RwLockWriteGuard<'a, T, IrqRel
 pub type Mutex<T> = spin::mutex::Mutex<T, IrqRelaxStrategy>;
 
 /// LazyLock that works by disabling interrupts and halting the CPU while held
-pub type LazyLock<T> = spin::lazy::Lazy<T, IrqRelaxStrategy>;
+pub type LazyLock<T, F = fn() -> T> = spin::lazy::Lazy<T, F, IrqRelaxStrategy>;
 
 /// Re-implementation of `bootloader-x86_64-common::logger::LockedLogger` that uses `IrqLock`
 /// instead of `spinning_top::Spinlock` for improved performance
