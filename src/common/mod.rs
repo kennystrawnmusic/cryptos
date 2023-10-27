@@ -208,6 +208,7 @@ pub fn addralloc<T>() -> *mut T {
 /// Relax strategy that disables interrupts and halts the CPU
 pub struct IrqRelaxStrategy;
 
+// Needed to tell the compiler this is safe to send
 unsafe impl Send for IrqRelaxStrategy {}
 unsafe impl Sync for IrqRelaxStrategy {}
 
