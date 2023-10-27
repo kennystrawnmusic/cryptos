@@ -104,7 +104,7 @@ pub mod sync {
     pub use inner_alloc::sync::*;
     pub use super::super::RwLock;
     pub use super::super::Mutex;
-    pub use spin::Lazy as LazyLock;
+    pub use super::super::LazyLock;
 }
 
 pub mod task {
