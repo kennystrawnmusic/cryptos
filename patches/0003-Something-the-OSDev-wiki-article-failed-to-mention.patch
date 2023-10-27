@@ -1,0 +1,24 @@
+From f05151cc78cf61aad72c0dc80f7c54ebc1ac468e Mon Sep 17 00:00:00 2001
+From: Kenny Strawn <Kenny.Strawn@gmail.com>
+Date: Thu, 26 Oct 2023 20:41:55 -0700
+Subject: [PATCH 3/4] Something the OSDev wiki article failed to mention
+
+---
+ library/std/src/sys_common/mod.rs | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/library/std/src/sys_common/mod.rs b/library/std/src/sys_common/mod.rs
+index f0faa3a5e2c..b336fe216e7 100644
+--- a/library/std/src/sys_common/mod.rs
++++ b/library/std/src/sys_common/mod.rs
+@@ -16,6 +16,7 @@
+ 
+ #![allow(missing_docs)]
+ #![allow(missing_debug_implementations)]
++#![allow(unexpected_cfgs)]
+ 
+ #[cfg(test)]
+ mod tests;
+-- 
+2.39.3 (Apple Git-145)
+

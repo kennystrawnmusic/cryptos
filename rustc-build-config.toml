@@ -1,0 +1,59 @@
+# Use different pre-set defaults than the global defaults.
+#
+# See `src/bootstrap/defaults` for more information.
+# Note that this has no default value (x.py uses the defaults in `config.example.toml`).
+profile = 'user'
+
+# Keeps track of major changes made to this configuration.
+#
+# This value also represents ID of the PR that caused major changes. Meaning,
+# you can visit github.com/rust-lang/rust/pull/{change-id} to check for more details.
+#
+# A 'major change' includes any of the following
+#  - A new option
+#  - A change in the default values
+#
+# If `change-id` does not match the version that is currently running,
+# `x.py` will prompt you to update it and check the related PR for more details.
+change-id = 116998
+
+[llvm]
+download-ci-llvm = true
+
+[build]
+extended = true
+tools = [
+    "cargo",
+    "rust-analyzer",
+    "clippy",
+    "rustfmt",
+    "analysis",
+    "src",
+    "miri",
+    "rustdoc",
+    "llvm-tools",
+]
+host = ["x86_64-apple-darwin"]
+target = [
+    "x86_64-apple-darwin",
+    "x86_64-unknown-cryptos",
+    "x86_64-unknown-none",
+    "x86_64-unknown-uefi"
+]
+
+# Arguments passed to the `./configure` script, used during distcheck. You
+# probably won't fill this in but rather it's filled in by the `./configure`
+# script. Useful for debugging.
+configure-args = []
+
+[install]
+
+[rust]
+lld = true
+llvm-tools = true
+incremental = true
+
+[target.x86_64-apple-darwin]
+
+[dist]
+

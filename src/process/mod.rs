@@ -2,7 +2,7 @@
 
 use core::{
     any::{Any, TypeId},
-    ops::Generator,
+    ops::Coroutine,
     pin::Pin,
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };

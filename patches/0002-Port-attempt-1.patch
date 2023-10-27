@@ -1,0 +1,1921 @@
+From af318413ae544aaa28ec572a5ded83c363476893 Mon Sep 17 00:00:00 2001
+From: Kenny Strawn <Kenny.Strawn@gmail.com>
+Date: Thu, 26 Oct 2023 19:44:53 -0700
+Subject: [PATCH 2/4] Port attempt 1
+
+---
+ library/std/build.rs                          |   1 +
+ library/std/src/sys/cryptos/alloc.rs          |  23 ++
+ library/std/src/sys/cryptos/args.rs           |  36 ++
+ library/std/src/sys/cryptos/common.rs         |  40 ++
+ library/std/src/sys/cryptos/env.rs            |   9 +
+ library/std/src/sys/cryptos/fs.rs             | 324 +++++++++++++++
+ library/std/src/sys/cryptos/io.rs             |  51 +++
+ library/std/src/sys/cryptos/locks/condvar.rs  |  26 ++
+ library/std/src/sys/cryptos/locks/mod.rs      |   6 +
+ library/std/src/sys/cryptos/locks/mutex.rs    |  32 ++
+ library/std/src/sys/cryptos/locks/rwlock.rs   |  65 +++
+ library/std/src/sys/cryptos/mod.rs            |  29 ++
+ library/std/src/sys/cryptos/net.rs            | 370 ++++++++++++++++++
+ library/std/src/sys/cryptos/once.rs           | 100 +++++
+ library/std/src/sys/cryptos/os.rs             | 121 ++++++
+ library/std/src/sys/cryptos/pipe.rs           |  45 +++
+ library/std/src/sys/cryptos/process.rs        | 239 +++++++++++
+ library/std/src/sys/cryptos/stdio.rs          |  59 +++
+ library/std/src/sys/cryptos/thread.rs         |  46 +++
+ .../std/src/sys/cryptos/thread_local_dtor.rs  |  10 +
+ .../std/src/sys/cryptos/thread_local_key.rs   |  21 +
+ library/std/src/sys/cryptos/thread_parking.rs |  11 +
+ library/std/src/sys/cryptos/time.rs           |  45 +++
+ library/std/src/sys_common/mod.rs             |   1 +
+ 24 files changed, 1710 insertions(+)
+ create mode 100644 library/std/src/sys/cryptos/alloc.rs
+ create mode 100644 library/std/src/sys/cryptos/args.rs
+ create mode 100644 library/std/src/sys/cryptos/common.rs
+ create mode 100644 library/std/src/sys/cryptos/env.rs
+ create mode 100644 library/std/src/sys/cryptos/fs.rs
+ create mode 100644 library/std/src/sys/cryptos/io.rs
+ create mode 100644 library/std/src/sys/cryptos/locks/condvar.rs
+ create mode 100644 library/std/src/sys/cryptos/locks/mod.rs
+ create mode 100644 library/std/src/sys/cryptos/locks/mutex.rs
+ create mode 100644 library/std/src/sys/cryptos/locks/rwlock.rs
+ create mode 100644 library/std/src/sys/cryptos/mod.rs
+ create mode 100644 library/std/src/sys/cryptos/net.rs
+ create mode 100644 library/std/src/sys/cryptos/once.rs
+ create mode 100644 library/std/src/sys/cryptos/os.rs
+ create mode 100644 library/std/src/sys/cryptos/pipe.rs
+ create mode 100644 library/std/src/sys/cryptos/process.rs
+ create mode 100644 library/std/src/sys/cryptos/stdio.rs
+ create mode 100644 library/std/src/sys/cryptos/thread.rs
+ create mode 100644 library/std/src/sys/cryptos/thread_local_dtor.rs
+ create mode 100644 library/std/src/sys/cryptos/thread_local_key.rs
+ create mode 100644 library/std/src/sys/cryptos/thread_parking.rs
+ create mode 100644 library/std/src/sys/cryptos/time.rs
+
+diff --git a/library/std/build.rs b/library/std/build.rs
+index ad0a82eab8c..6b83343b618 100644
+--- a/library/std/build.rs
++++ b/library/std/build.rs
+@@ -35,6 +35,7 @@ fn main() {
+         || target.contains("xous")
+         || target.contains("hurd")
+         || target.contains("uefi")
++        || target.contains("cryptos")
+         // See src/bootstrap/synthetic_targets.rs
+         || env::var("RUSTC_BOOTSTRAP_SYNTHETIC_TARGET").is_ok()
+     {
+diff --git a/library/std/src/sys/cryptos/alloc.rs b/library/std/src/sys/cryptos/alloc.rs
+new file mode 100644
+index 00000000000..d715ae45401
+--- /dev/null
++++ b/library/std/src/sys/cryptos/alloc.rs
+@@ -0,0 +1,23 @@
++use crate::alloc::{GlobalAlloc, Layout, System};
++use crate::ptr::null_mut;
++
++#[stable(feature = "alloc_system_type", since = "1.28.0")]
++unsafe impl GlobalAlloc for System {
++    #[inline]
++    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
++        null_mut()
++    }
++
++    #[inline]
++    unsafe fn alloc_zeroed(&self, _layout: Layout) -> *mut u8 {
++        null_mut()
++    }
++
++    #[inline]
++    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {}
++
++    #[inline]
++    unsafe fn realloc(&self, _ptr: *mut u8, _layout: Layout, _new_size: usize) -> *mut u8 {
++        null_mut()
++    }
++}
+diff --git a/library/std/src/sys/cryptos/args.rs b/library/std/src/sys/cryptos/args.rs
+new file mode 100644
+index 00000000000..a2d75a61976
+--- /dev/null
++++ b/library/std/src/sys/cryptos/args.rs
+@@ -0,0 +1,36 @@
++use crate::ffi::OsString;
++use crate::fmt;
++
++pub struct Args {}
++
++pub fn args() -> Args {
++    Args {}
++}
++
++impl fmt::Debug for Args {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.debug_list().finish()
++    }
++}
++
++impl Iterator for Args {
++    type Item = OsString;
++    fn next(&mut self) -> Option<OsString> {
++        None
++    }
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        (0, Some(0))
++    }
++}
++
++impl ExactSizeIterator for Args {
++    fn len(&self) -> usize {
++        0
++    }
++}
++
++impl DoubleEndedIterator for Args {
++    fn next_back(&mut self) -> Option<OsString> {
++        None
++    }
++}
+diff --git a/library/std/src/sys/cryptos/common.rs b/library/std/src/sys/cryptos/common.rs
+new file mode 100644
+index 00000000000..5c379992b20
+--- /dev/null
++++ b/library/std/src/sys/cryptos/common.rs
+@@ -0,0 +1,40 @@
++use crate::io as std_io;
++
++pub mod memchr {
++    pub use core::slice::memchr::{memchr, memrchr};
++}
++
++// SAFETY: must be called only once during runtime initialization.
++// NOTE: this is not guaranteed to run, for example when Rust code is called externally.
++pub unsafe fn init(_argc: isize, _argv: *const *const u8, _sigpipe: u8) {}
++
++// SAFETY: must be called only once during runtime cleanup.
++// NOTE: this is not guaranteed to run, for example when the program aborts.
++pub unsafe fn cleanup() {}
++
++pub fn unsupported<T>() -> std_io::Result<T> {
++    Err(unsupported_err())
++}
++
++pub fn unsupported_err() -> std_io::Error {
++    std_io::const_io_error!(
++        std_io::ErrorKind::Unsupported,
++        "operation not supported on this platform",
++    )
++}
++
++pub fn is_interrupted(_code: i32) -> bool {
++    false
++}
++
++pub fn decode_error_kind(_code: i32) -> crate::io::ErrorKind {
++    crate::io::ErrorKind::Uncategorized
++}
++
++pub fn abort_internal() -> ! {
++    core::intrinsics::abort();
++}
++
++pub fn hashmap_random_keys() -> (u64, u64) {
++    (1, 2)
++}
+diff --git a/library/std/src/sys/cryptos/env.rs b/library/std/src/sys/cryptos/env.rs
+new file mode 100644
+index 00000000000..d2efec506c5
+--- /dev/null
++++ b/library/std/src/sys/cryptos/env.rs
+@@ -0,0 +1,9 @@
++pub mod os {
++    pub const FAMILY: &str = "";
++    pub const OS: &str = "";
++    pub const DLL_PREFIX: &str = "";
++    pub const DLL_SUFFIX: &str = "";
++    pub const DLL_EXTENSION: &str = "";
++    pub const EXE_SUFFIX: &str = "";
++    pub const EXE_EXTENSION: &str = "";
++}
+diff --git a/library/std/src/sys/cryptos/fs.rs b/library/std/src/sys/cryptos/fs.rs
+new file mode 100644
+index 00000000000..6ac1b5d2bcf
+--- /dev/null
++++ b/library/std/src/sys/cryptos/fs.rs
+@@ -0,0 +1,324 @@
++use crate::ffi::OsString;
++use crate::fmt;
++use crate::hash::{Hash, Hasher};
++use crate::io::{self, BorrowedCursor, IoSlice, IoSliceMut, SeekFrom};
++use crate::path::{Path, PathBuf};
++use crate::sys::time::SystemTime;
++use crate::sys::unsupported;
++
++pub struct File(!);
++
++pub struct FileAttr(!);
++
++pub struct ReadDir(!);
++
++pub struct DirEntry(!);
++
++#[derive(Clone, Debug)]
++pub struct OpenOptions {}
++
++#[derive(Copy, Clone, Debug, Default)]
++pub struct FileTimes {}
++
++pub struct FilePermissions(!);
++
++pub struct FileType(!);
++
++#[derive(Debug)]
++pub struct DirBuilder {}
++
++impl FileAttr {
++    pub fn size(&self) -> u64 {
++        self.0
++    }
++
++    pub fn perm(&self) -> FilePermissions {
++        self.0
++    }
++
++    pub fn file_type(&self) -> FileType {
++        self.0
++    }
++
++    pub fn modified(&self) -> io::Result<SystemTime> {
++        self.0
++    }
++
++    pub fn accessed(&self) -> io::Result<SystemTime> {
++        self.0
++    }
++
++    pub fn created(&self) -> io::Result<SystemTime> {
++        self.0
++    }
++}
++
++impl Clone for FileAttr {
++    fn clone(&self) -> FileAttr {
++        self.0
++    }
++}
++
++impl FilePermissions {
++    pub fn readonly(&self) -> bool {
++        self.0
++    }
++
++    pub fn set_readonly(&mut self, _readonly: bool) {
++        self.0
++    }
++}
++
++impl Clone for FilePermissions {
++    fn clone(&self) -> FilePermissions {
++        self.0
++    }
++}
++
++impl PartialEq for FilePermissions {
++    fn eq(&self, _other: &FilePermissions) -> bool {
++        self.0
++    }
++}
++
++impl Eq for FilePermissions {}
++
++impl fmt::Debug for FilePermissions {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++impl FileTimes {
++    pub fn set_accessed(&mut self, _t: SystemTime) {}
++    pub fn set_modified(&mut self, _t: SystemTime) {}
++}
++
++impl FileType {
++    pub fn is_dir(&self) -> bool {
++        self.0
++    }
++
++    pub fn is_file(&self) -> bool {
++        self.0
++    }
++
++    pub fn is_symlink(&self) -> bool {
++        self.0
++    }
++}
++
++impl Clone for FileType {
++    fn clone(&self) -> FileType {
++        self.0
++    }
++}
++
++impl Copy for FileType {}
++
++impl PartialEq for FileType {
++    fn eq(&self, _other: &FileType) -> bool {
++        self.0
++    }
++}
++
++impl Eq for FileType {}
++
++impl Hash for FileType {
++    fn hash<H: Hasher>(&self, _h: &mut H) {
++        self.0
++    }
++}
++
++impl fmt::Debug for FileType {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++impl fmt::Debug for ReadDir {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++impl Iterator for ReadDir {
++    type Item = io::Result<DirEntry>;
++
++    fn next(&mut self) -> Option<io::Result<DirEntry>> {
++        self.0
++    }
++}
++
++impl DirEntry {
++    pub fn path(&self) -> PathBuf {
++        self.0
++    }
++
++    pub fn file_name(&self) -> OsString {
++        self.0
++    }
++
++    pub fn metadata(&self) -> io::Result<FileAttr> {
++        self.0
++    }
++
++    pub fn file_type(&self) -> io::Result<FileType> {
++        self.0
++    }
++}
++
++impl OpenOptions {
++    pub fn new() -> OpenOptions {
++        OpenOptions {}
++    }
++
++    pub fn read(&mut self, _read: bool) {}
++    pub fn write(&mut self, _write: bool) {}
++    pub fn append(&mut self, _append: bool) {}
++    pub fn truncate(&mut self, _truncate: bool) {}
++    pub fn create(&mut self, _create: bool) {}
++    pub fn create_new(&mut self, _create_new: bool) {}
++}
++
++impl File {
++    pub fn open(_path: &Path, _opts: &OpenOptions) -> io::Result<File> {
++        unsupported()
++    }
++
++    pub fn file_attr(&self) -> io::Result<FileAttr> {
++        self.0
++    }
++
++    pub fn fsync(&self) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn datasync(&self) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn truncate(&self, _size: u64) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn read(&self, _buf: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn read_vectored(&self, _bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_read_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn read_buf(&self, _cursor: BorrowedCursor<'_>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn write(&self, _buf: &[u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn write_vectored(&self, _bufs: &[IoSlice<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_write_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn flush(&self) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn seek(&self, _pos: SeekFrom) -> io::Result<u64> {
++        self.0
++    }
++
++    pub fn duplicate(&self) -> io::Result<File> {
++        self.0
++    }
++
++    pub fn set_permissions(&self, _perm: FilePermissions) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn set_times(&self, _times: FileTimes) -> io::Result<()> {
++        self.0
++    }
++}
++
++impl DirBuilder {
++    pub fn new() -> DirBuilder {
++        DirBuilder {}
++    }
++
++    pub fn mkdir(&self, _p: &Path) -> io::Result<()> {
++        unsupported()
++    }
++}
++
++impl fmt::Debug for File {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++pub fn readdir(_p: &Path) -> io::Result<ReadDir> {
++    unsupported()
++}
++
++pub fn unlink(_p: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn rename(_old: &Path, _new: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn set_perm(_p: &Path, perm: FilePermissions) -> io::Result<()> {
++    match perm.0 {}
++}
++
++pub fn rmdir(_p: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn remove_dir_all(_path: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn try_exists(_path: &Path) -> io::Result<bool> {
++    unsupported()
++}
++
++pub fn readlink(_p: &Path) -> io::Result<PathBuf> {
++    unsupported()
++}
++
++pub fn symlink(_original: &Path, _link: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn link(_src: &Path, _dst: &Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub fn stat(_p: &Path) -> io::Result<FileAttr> {
++    unsupported()
++}
++
++pub fn lstat(_p: &Path) -> io::Result<FileAttr> {
++    unsupported()
++}
++
++pub fn canonicalize(_p: &Path) -> io::Result<PathBuf> {
++    unsupported()
++}
++
++pub fn copy(_from: &Path, _to: &Path) -> io::Result<u64> {
++    unsupported()
++}
+diff --git a/library/std/src/sys/cryptos/io.rs b/library/std/src/sys/cryptos/io.rs
+new file mode 100644
+index 00000000000..6372fca74e0
+--- /dev/null
++++ b/library/std/src/sys/cryptos/io.rs
+@@ -0,0 +1,51 @@
++use crate::mem;
++
++#[derive(Copy, Clone)]
++pub struct IoSlice<'a>(&'a [u8]);
++
++impl<'a> IoSlice<'a> {
++    #[inline]
++    pub fn new(buf: &'a [u8]) -> IoSlice<'a> {
++        IoSlice(buf)
++    }
++
++    #[inline]
++    pub fn advance(&mut self, n: usize) {
++        self.0 = &self.0[n..]
++    }
++
++    #[inline]
++    pub fn as_slice(&self) -> &[u8] {
++        self.0
++    }
++}
++
++pub struct IoSliceMut<'a>(&'a mut [u8]);
++
++impl<'a> IoSliceMut<'a> {
++    #[inline]
++    pub fn new(buf: &'a mut [u8]) -> IoSliceMut<'a> {
++        IoSliceMut(buf)
++    }
++
++    #[inline]
++    pub fn advance(&mut self, n: usize) {
++        let slice = mem::take(&mut self.0);
++        let (_, remaining) = slice.split_at_mut(n);
++        self.0 = remaining;
++    }
++
++    #[inline]
++    pub fn as_slice(&self) -> &[u8] {
++        self.0
++    }
++
++    #[inline]
++    pub fn as_mut_slice(&mut self) -> &mut [u8] {
++        self.0
++    }
++}
++
++pub fn is_terminal<T>(_: &T) -> bool {
++    false
++}
+diff --git a/library/std/src/sys/cryptos/locks/condvar.rs b/library/std/src/sys/cryptos/locks/condvar.rs
+new file mode 100644
+index 00000000000..3f0943b50ee
+--- /dev/null
++++ b/library/std/src/sys/cryptos/locks/condvar.rs
+@@ -0,0 +1,26 @@
++use crate::sys::locks::Mutex;
++use crate::time::Duration;
++
++pub struct Condvar {}
++
++impl Condvar {
++    #[inline]
++    #[rustc_const_stable(feature = "const_locks", since = "1.63.0")]
++    pub const fn new() -> Condvar {
++        Condvar {}
++    }
++
++    #[inline]
++    pub fn notify_one(&self) {}
++
++    #[inline]
++    pub fn notify_all(&self) {}
++
++    pub unsafe fn wait(&self, _mutex: &Mutex) {
++        panic!("condvar wait not supported")
++    }
++
++    pub unsafe fn wait_timeout(&self, _mutex: &Mutex, _dur: Duration) -> bool {
++        panic!("condvar wait not supported");
++    }
++}
+diff --git a/library/std/src/sys/cryptos/locks/mod.rs b/library/std/src/sys/cryptos/locks/mod.rs
+new file mode 100644
+index 00000000000..0e0f9eccb21
+--- /dev/null
++++ b/library/std/src/sys/cryptos/locks/mod.rs
+@@ -0,0 +1,6 @@
++mod condvar;
++mod mutex;
++mod rwlock;
++pub use condvar::Condvar;
++pub use mutex::Mutex;
++pub use rwlock::RwLock;
+diff --git a/library/std/src/sys/cryptos/locks/mutex.rs b/library/std/src/sys/cryptos/locks/mutex.rs
+new file mode 100644
+index 00000000000..4a13c55fb8b
+--- /dev/null
++++ b/library/std/src/sys/cryptos/locks/mutex.rs
+@@ -0,0 +1,32 @@
++use crate::cell::Cell;
++
++pub struct Mutex {
++    // This platform has no threads, so we can use a Cell here.
++    locked: Cell<bool>,
++}
++
++unsafe impl Send for Mutex {}
++unsafe impl Sync for Mutex {} // no threads on this platform
++
++impl Mutex {
++    #[inline]
++    #[rustc_const_stable(feature = "const_locks", since = "1.63.0")]
++    pub const fn new() -> Mutex {
++        Mutex { locked: Cell::new(false) }
++    }
++
++    #[inline]
++    pub fn lock(&self) {
++        assert_eq!(self.locked.replace(true), false, "cannot recursively acquire mutex");
++    }
++
++    #[inline]
++    pub unsafe fn unlock(&self) {
++        self.locked.set(false);
++    }
++
++    #[inline]
++    pub fn try_lock(&self) -> bool {
++        self.locked.replace(true) == false
++    }
++}
+diff --git a/library/std/src/sys/cryptos/locks/rwlock.rs b/library/std/src/sys/cryptos/locks/rwlock.rs
+new file mode 100644
+index 00000000000..789ef9b29e5
+--- /dev/null
++++ b/library/std/src/sys/cryptos/locks/rwlock.rs
+@@ -0,0 +1,65 @@
++use crate::cell::Cell;
++
++pub struct RwLock {
++    // This platform has no threads, so we can use a Cell here.
++    mode: Cell<isize>,
++}
++
++unsafe impl Send for RwLock {}
++unsafe impl Sync for RwLock {} // no threads on this platform
++
++impl RwLock {
++    #[inline]
++    #[rustc_const_stable(feature = "const_locks", since = "1.63.0")]
++    pub const fn new() -> RwLock {
++        RwLock { mode: Cell::new(0) }
++    }
++
++    #[inline]
++    pub fn read(&self) {
++        let m = self.mode.get();
++        if m >= 0 {
++            self.mode.set(m + 1);
++        } else {
++            rtabort!("rwlock locked for writing");
++        }
++    }
++
++    #[inline]
++    pub fn try_read(&self) -> bool {
++        let m = self.mode.get();
++        if m >= 0 {
++            self.mode.set(m + 1);
++            true
++        } else {
++            false
++        }
++    }
++
++    #[inline]
++    pub fn write(&self) {
++        if self.mode.replace(-1) != 0 {
++            rtabort!("rwlock locked for reading")
++        }
++    }
++
++    #[inline]
++    pub fn try_write(&self) -> bool {
++        if self.mode.get() == 0 {
++            self.mode.set(-1);
++            true
++        } else {
++            false
++        }
++    }
++
++    #[inline]
++    pub unsafe fn read_unlock(&self) {
++        self.mode.set(self.mode.get() - 1);
++    }
++
++    #[inline]
++    pub unsafe fn write_unlock(&self) {
++        assert_eq!(self.mode.replace(0), -1);
++    }
++}
+diff --git a/library/std/src/sys/cryptos/mod.rs b/library/std/src/sys/cryptos/mod.rs
+new file mode 100644
+index 00000000000..e1a38de6471
+--- /dev/null
++++ b/library/std/src/sys/cryptos/mod.rs
+@@ -0,0 +1,29 @@
++#![deny(unsafe_op_in_unsafe_fn)]
++
++pub mod alloc;
++pub mod args;
++#[path = "../unix/cmath.rs"]
++pub mod cmath;
++pub mod env;
++pub mod fs;
++pub mod io;
++pub mod locks;
++pub mod net;
++pub mod once;
++pub mod os;
++#[path = "../unix/os_str.rs"]
++pub mod os_str;
++#[path = "../unix/path.rs"]
++pub mod path;
++pub mod pipe;
++pub mod process;
++pub mod stdio;
++pub mod thread;
++#[cfg(target_thread_local)]
++pub mod thread_local_dtor;
++pub mod thread_local_key;
++pub mod thread_parking;
++pub mod time;
++
++mod common;
++pub use common::*;
+diff --git a/library/std/src/sys/cryptos/net.rs b/library/std/src/sys/cryptos/net.rs
+new file mode 100644
+index 00000000000..bbc52703f96
+--- /dev/null
++++ b/library/std/src/sys/cryptos/net.rs
+@@ -0,0 +1,370 @@
++use crate::fmt;
++use crate::io::{self, BorrowedCursor, IoSlice, IoSliceMut};
++use crate::net::{Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr};
++use crate::sys::unsupported;
++use crate::time::Duration;
++
++pub struct TcpStream(!);
++
++impl TcpStream {
++    pub fn connect(_: io::Result<&SocketAddr>) -> io::Result<TcpStream> {
++        unsupported()
++    }
++
++    pub fn connect_timeout(_: &SocketAddr, _: Duration) -> io::Result<TcpStream> {
++        unsupported()
++    }
++
++    pub fn set_read_timeout(&self, _: Option<Duration>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn set_write_timeout(&self, _: Option<Duration>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn read_timeout(&self) -> io::Result<Option<Duration>> {
++        self.0
++    }
++
++    pub fn write_timeout(&self) -> io::Result<Option<Duration>> {
++        self.0
++    }
++
++    pub fn peek(&self, _: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn read(&self, _: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn read_buf(&self, _buf: BorrowedCursor<'_>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn read_vectored(&self, _: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_read_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn write(&self, _: &[u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn write_vectored(&self, _: &[IoSlice<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_write_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
++        self.0
++    }
++
++    pub fn socket_addr(&self) -> io::Result<SocketAddr> {
++        self.0
++    }
++
++    pub fn shutdown(&self, _: Shutdown) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn duplicate(&self) -> io::Result<TcpStream> {
++        self.0
++    }
++
++    pub fn set_linger(&self, _: Option<Duration>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn linger(&self) -> io::Result<Option<Duration>> {
++        self.0
++    }
++
++    pub fn set_nodelay(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn nodelay(&self) -> io::Result<bool> {
++        self.0
++    }
++
++    pub fn set_ttl(&self, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn ttl(&self) -> io::Result<u32> {
++        self.0
++    }
++
++    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
++        self.0
++    }
++
++    pub fn set_nonblocking(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++}
++
++impl fmt::Debug for TcpStream {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++pub struct TcpListener(!);
++
++impl TcpListener {
++    pub fn bind(_: io::Result<&SocketAddr>) -> io::Result<TcpListener> {
++        unsupported()
++    }
++
++    pub fn socket_addr(&self) -> io::Result<SocketAddr> {
++        self.0
++    }
++
++    pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
++        self.0
++    }
++
++    pub fn duplicate(&self) -> io::Result<TcpListener> {
++        self.0
++    }
++
++    pub fn set_ttl(&self, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn ttl(&self) -> io::Result<u32> {
++        self.0
++    }
++
++    pub fn set_only_v6(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn only_v6(&self) -> io::Result<bool> {
++        self.0
++    }
++
++    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
++        self.0
++    }
++
++    pub fn set_nonblocking(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++}
++
++impl fmt::Debug for TcpListener {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++pub struct UdpSocket(!);
++
++impl UdpSocket {
++    pub fn bind(_: io::Result<&SocketAddr>) -> io::Result<UdpSocket> {
++        unsupported()
++    }
++
++    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
++        self.0
++    }
++
++    pub fn socket_addr(&self) -> io::Result<SocketAddr> {
++        self.0
++    }
++
++    pub fn recv_from(&self, _: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
++        self.0
++    }
++
++    pub fn peek_from(&self, _: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
++        self.0
++    }
++
++    pub fn send_to(&self, _: &[u8], _: &SocketAddr) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn duplicate(&self) -> io::Result<UdpSocket> {
++        self.0
++    }
++
++    pub fn set_read_timeout(&self, _: Option<Duration>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn set_write_timeout(&self, _: Option<Duration>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn read_timeout(&self) -> io::Result<Option<Duration>> {
++        self.0
++    }
++
++    pub fn write_timeout(&self) -> io::Result<Option<Duration>> {
++        self.0
++    }
++
++    pub fn set_broadcast(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn broadcast(&self) -> io::Result<bool> {
++        self.0
++    }
++
++    pub fn set_multicast_loop_v4(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
++        self.0
++    }
++
++    pub fn set_multicast_ttl_v4(&self, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
++        self.0
++    }
++
++    pub fn set_multicast_loop_v6(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
++        self.0
++    }
++
++    pub fn join_multicast_v4(&self, _: &Ipv4Addr, _: &Ipv4Addr) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn join_multicast_v6(&self, _: &Ipv6Addr, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn leave_multicast_v4(&self, _: &Ipv4Addr, _: &Ipv4Addr) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn leave_multicast_v6(&self, _: &Ipv6Addr, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn set_ttl(&self, _: u32) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn ttl(&self) -> io::Result<u32> {
++        self.0
++    }
++
++    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
++        self.0
++    }
++
++    pub fn set_nonblocking(&self, _: bool) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn recv(&self, _: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn peek(&self, _: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn send(&self, _: &[u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn connect(&self, _: io::Result<&SocketAddr>) -> io::Result<()> {
++        self.0
++    }
++}
++
++impl fmt::Debug for UdpSocket {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++pub struct LookupHost(!);
++
++impl LookupHost {
++    pub fn port(&self) -> u16 {
++        self.0
++    }
++}
++
++impl Iterator for LookupHost {
++    type Item = SocketAddr;
++    fn next(&mut self) -> Option<SocketAddr> {
++        self.0
++    }
++}
++
++impl TryFrom<&str> for LookupHost {
++    type Error = io::Error;
++
++    fn try_from(_v: &str) -> io::Result<LookupHost> {
++        unsupported()
++    }
++}
++
++impl<'a> TryFrom<(&'a str, u16)> for LookupHost {
++    type Error = io::Error;
++
++    fn try_from(_v: (&'a str, u16)) -> io::Result<LookupHost> {
++        unsupported()
++    }
++}
++
++#[allow(nonstandard_style)]
++pub mod netc {
++    pub const AF_INET: u8 = 0;
++    pub const AF_INET6: u8 = 1;
++    pub type sa_family_t = u8;
++
++    #[derive(Copy, Clone)]
++    pub struct in_addr {
++        pub s_addr: u32,
++    }
++
++    #[derive(Copy, Clone)]
++    pub struct sockaddr_in {
++        pub sin_family: sa_family_t,
++        pub sin_port: u16,
++        pub sin_addr: in_addr,
++    }
++
++    #[derive(Copy, Clone)]
++    pub struct in6_addr {
++        pub s6_addr: [u8; 16],
++    }
++
++    #[derive(Copy, Clone)]
++    pub struct sockaddr_in6 {
++        pub sin6_family: sa_family_t,
++        pub sin6_port: u16,
++        pub sin6_addr: in6_addr,
++        pub sin6_flowinfo: u32,
++        pub sin6_scope_id: u32,
++    }
++
++    #[derive(Copy, Clone)]
++    pub struct sockaddr {}
++}
+diff --git a/library/std/src/sys/cryptos/once.rs b/library/std/src/sys/cryptos/once.rs
+new file mode 100644
+index 00000000000..11fde1888ba
+--- /dev/null
++++ b/library/std/src/sys/cryptos/once.rs
+@@ -0,0 +1,100 @@
++use crate::cell::Cell;
++use crate::sync as public;
++use crate::sync::once::ExclusiveState;
++
++pub struct Once {
++    state: Cell<State>,
++}
++
++pub struct OnceState {
++    poisoned: bool,
++    set_state_to: Cell<State>,
++}
++
++#[derive(Clone, Copy, PartialEq, Eq)]
++enum State {
++    Incomplete,
++    Poisoned,
++    Running,
++    Complete,
++}
++
++struct CompletionGuard<'a> {
++    state: &'a Cell<State>,
++    set_state_on_drop_to: State,
++}
++
++impl<'a> Drop for CompletionGuard<'a> {
++    fn drop(&mut self) {
++        self.state.set(self.set_state_on_drop_to);
++    }
++}
++
++// Safety: threads are not supported on this platform.
++unsafe impl Sync for Once {}
++
++impl Once {
++    #[inline]
++    #[rustc_const_stable(feature = "const_once_new", since = "1.32.0")]
++    pub const fn new() -> Once {
++        Once { state: Cell::new(State::Incomplete) }
++    }
++
++    #[inline]
++    pub fn is_completed(&self) -> bool {
++        self.state.get() == State::Complete
++    }
++
++    #[inline]
++    pub(crate) fn state(&mut self) -> ExclusiveState {
++        match self.state.get() {
++            State::Incomplete => ExclusiveState::Incomplete,
++            State::Poisoned => ExclusiveState::Poisoned,
++            State::Complete => ExclusiveState::Complete,
++            _ => unreachable!("invalid Once state"),
++        }
++    }
++
++    #[cold]
++    #[track_caller]
++    pub fn call(&self, ignore_poisoning: bool, f: &mut impl FnMut(&public::OnceState)) {
++        let state = self.state.get();
++        match state {
++            State::Poisoned if !ignore_poisoning => {
++                // Panic to propagate the poison.
++                panic!("Once instance has previously been poisoned");
++            }
++            State::Incomplete | State::Poisoned => {
++                self.state.set(State::Running);
++                // `guard` will set the new state on drop.
++                let mut guard =
++                    CompletionGuard { state: &self.state, set_state_on_drop_to: State::Poisoned };
++                // Run the function, letting it know if we're poisoned or not.
++                let f_state = public::OnceState {
++                    inner: OnceState {
++                        poisoned: state == State::Poisoned,
++                        set_state_to: Cell::new(State::Complete),
++                    },
++                };
++                f(&f_state);
++                guard.set_state_on_drop_to = f_state.inner.set_state_to.get();
++            }
++            State::Running => {
++                panic!("one-time initialization may not be performed recursively");
++            }
++            State::Complete => {}
++        }
++    }
++}
++
++impl OnceState {
++    #[inline]
++    pub fn is_poisoned(&self) -> bool {
++        self.poisoned
++    }
++
++    #[inline]
++    pub fn poison(&self) {
++        self.set_state_to.set(State::Poisoned)
++    }
++}
+diff --git a/library/std/src/sys/cryptos/os.rs b/library/std/src/sys/cryptos/os.rs
+new file mode 100644
+index 00000000000..248b34829f2
+--- /dev/null
++++ b/library/std/src/sys/cryptos/os.rs
+@@ -0,0 +1,121 @@
++use super::unsupported;
++use crate::error::Error as StdError;
++use crate::ffi::{OsStr, OsString};
++use crate::fmt;
++use crate::io;
++use crate::marker::PhantomData;
++use crate::path::{self, PathBuf};
++
++pub fn errno() -> i32 {
++    0
++}
++
++pub fn error_string(_errno: i32) -> String {
++    "operation successful".to_string()
++}
++
++pub fn getcwd() -> io::Result<PathBuf> {
++    unsupported()
++}
++
++pub fn chdir(_: &path::Path) -> io::Result<()> {
++    unsupported()
++}
++
++pub struct SplitPaths<'a>(!, PhantomData<&'a ()>);
++
++pub fn split_paths(_unparsed: &OsStr) -> SplitPaths<'_> {
++    panic!("unsupported")
++}
++
++impl<'a> Iterator for SplitPaths<'a> {
++    type Item = PathBuf;
++    fn next(&mut self) -> Option<PathBuf> {
++        self.0
++    }
++}
++
++#[derive(Debug)]
++pub struct JoinPathsError;
++
++pub fn join_paths<I, T>(_paths: I) -> Result<OsString, JoinPathsError>
++where
++    I: Iterator<Item = T>,
++    T: AsRef<OsStr>,
++{
++    Err(JoinPathsError)
++}
++
++impl fmt::Display for JoinPathsError {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        "not supported on this platform yet".fmt(f)
++    }
++}
++
++impl StdError for JoinPathsError {
++    #[allow(deprecated)]
++    fn description(&self) -> &str {
++        "not supported on this platform yet"
++    }
++}
++
++pub fn current_exe() -> io::Result<PathBuf> {
++    unsupported()
++}
++
++pub struct Env(!);
++
++impl Env {
++    // FIXME(https://github.com/rust-lang/rust/issues/114583): Remove this when <OsStr as Debug>::fmt matches <str as Debug>::fmt.
++    pub fn str_debug(&self) -> impl fmt::Debug + '_ {
++        let Self(inner) = self;
++        match *inner {}
++    }
++}
++
++impl fmt::Debug for Env {
++    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
++        let Self(inner) = self;
++        match *inner {}
++    }
++}
++
++impl Iterator for Env {
++    type Item = (OsString, OsString);
++    fn next(&mut self) -> Option<(OsString, OsString)> {
++        let Self(inner) = self;
++        match *inner {}
++    }
++}
++
++pub fn env() -> Env {
++    panic!("not supported on this platform")
++}
++
++pub fn getenv(_: &OsStr) -> Option<OsString> {
++    None
++}
++
++pub fn setenv(_: &OsStr, _: &OsStr) -> io::Result<()> {
++    Err(io::const_io_error!(io::ErrorKind::Unsupported, "cannot set env vars on this platform"))
++}
++
++pub fn unsetenv(_: &OsStr) -> io::Result<()> {
++    Err(io::const_io_error!(io::ErrorKind::Unsupported, "cannot unset env vars on this platform"))
++}
++
++pub fn temp_dir() -> PathBuf {
++    panic!("no filesystem on this platform")
++}
++
++pub fn home_dir() -> Option<PathBuf> {
++    None
++}
++
++pub fn exit(_code: i32) -> ! {
++    crate::intrinsics::abort()
++}
++
++pub fn getpid() -> u32 {
++    panic!("no pids on this platform")
++}
+diff --git a/library/std/src/sys/cryptos/pipe.rs b/library/std/src/sys/cryptos/pipe.rs
+new file mode 100644
+index 00000000000..d7d8f297ae5
+--- /dev/null
++++ b/library/std/src/sys/cryptos/pipe.rs
+@@ -0,0 +1,45 @@
++use crate::io::{self, BorrowedCursor, IoSlice, IoSliceMut};
++
++pub struct AnonPipe(!);
++
++impl AnonPipe {
++    pub fn read(&self, _buf: &mut [u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn read_buf(&self, _buf: BorrowedCursor<'_>) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn read_vectored(&self, _bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_read_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn read_to_end(&self, _buf: &mut Vec<u8>) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn write(&self, _buf: &[u8]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn write_vectored(&self, _bufs: &[IoSlice<'_>]) -> io::Result<usize> {
++        self.0
++    }
++
++    pub fn is_write_vectored(&self) -> bool {
++        self.0
++    }
++
++    pub fn diverge(&self) -> ! {
++        self.0
++    }
++}
++
++pub fn read2(p1: AnonPipe, _v1: &mut Vec<u8>, _p2: AnonPipe, _v2: &mut Vec<u8>) -> io::Result<()> {
++    match p1.0 {}
++}
+diff --git a/library/std/src/sys/cryptos/process.rs b/library/std/src/sys/cryptos/process.rs
+new file mode 100644
+index 00000000000..a639afcc674
+--- /dev/null
++++ b/library/std/src/sys/cryptos/process.rs
+@@ -0,0 +1,239 @@
++use crate::ffi::OsStr;
++use crate::fmt;
++use crate::io;
++use crate::marker::PhantomData;
++use crate::num::NonZeroI32;
++use crate::path::Path;
++use crate::sys::fs::File;
++use crate::sys::pipe::AnonPipe;
++use crate::sys::unsupported;
++use crate::sys_common::process::{CommandEnv, CommandEnvs};
++
++pub use crate::ffi::OsString as EnvKey;
++
++////////////////////////////////////////////////////////////////////////////////
++// Command
++////////////////////////////////////////////////////////////////////////////////
++
++pub struct Command {
++    env: CommandEnv,
++}
++
++// passed back to std::process with the pipes connected to the child, if any
++// were requested
++pub struct StdioPipes {
++    pub stdin: Option<AnonPipe>,
++    pub stdout: Option<AnonPipe>,
++    pub stderr: Option<AnonPipe>,
++}
++
++// FIXME: This should be a unit struct, so we can always construct it
++// The value here should be never used, since we cannot spawn processes.
++pub enum Stdio {
++    Inherit,
++    Null,
++    MakePipe,
++}
++
++impl Command {
++    pub fn new(_program: &OsStr) -> Command {
++        Command { env: Default::default() }
++    }
++
++    pub fn arg(&mut self, _arg: &OsStr) {}
++
++    pub fn env_mut(&mut self) -> &mut CommandEnv {
++        &mut self.env
++    }
++
++    pub fn cwd(&mut self, _dir: &OsStr) {}
++
++    pub fn stdin(&mut self, _stdin: Stdio) {}
++
++    pub fn stdout(&mut self, _stdout: Stdio) {}
++
++    pub fn stderr(&mut self, _stderr: Stdio) {}
++
++    pub fn get_program(&self) -> &OsStr {
++        panic!("unsupported")
++    }
++
++    pub fn get_args(&self) -> CommandArgs<'_> {
++        CommandArgs { _p: PhantomData }
++    }
++
++    pub fn get_envs(&self) -> CommandEnvs<'_> {
++        self.env.iter()
++    }
++
++    pub fn get_current_dir(&self) -> Option<&Path> {
++        None
++    }
++
++    pub fn spawn(
++        &mut self,
++        _default: Stdio,
++        _needs_stdin: bool,
++    ) -> io::Result<(Process, StdioPipes)> {
++        unsupported()
++    }
++
++    pub fn output(&mut self) -> io::Result<(ExitStatus, Vec<u8>, Vec<u8>)> {
++        unsupported()
++    }
++}
++
++impl From<AnonPipe> for Stdio {
++    fn from(pipe: AnonPipe) -> Stdio {
++        pipe.diverge()
++    }
++}
++
++impl From<io::Stdout> for Stdio {
++    fn from(_: io::Stdout) -> Stdio {
++        // FIXME: This is wrong.
++        // Instead, the Stdio we have here should be a unit struct.
++        panic!("unsupported")
++    }
++}
++
++impl From<io::Stderr> for Stdio {
++    fn from(_: io::Stderr) -> Stdio {
++        // FIXME: This is wrong.
++        // Instead, the Stdio we have here should be a unit struct.
++        panic!("unsupported")
++    }
++}
++
++impl From<File> for Stdio {
++    fn from(_file: File) -> Stdio {
++        // FIXME: This is wrong.
++        // Instead, the Stdio we have here should be a unit struct.
++        panic!("unsupported")
++    }
++}
++
++impl fmt::Debug for Command {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        Ok(())
++    }
++}
++
++#[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
++#[non_exhaustive]
++pub struct ExitStatus();
++
++impl ExitStatus {
++    pub fn exit_ok(&self) -> Result<(), ExitStatusError> {
++        Ok(())
++    }
++
++    pub fn code(&self) -> Option<i32> {
++        Some(0)
++    }
++}
++
++impl fmt::Display for ExitStatus {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        write!(f, "<dummy exit status>")
++    }
++}
++
++pub struct ExitStatusError(!);
++
++impl Clone for ExitStatusError {
++    fn clone(&self) -> ExitStatusError {
++        self.0
++    }
++}
++
++impl Copy for ExitStatusError {}
++
++impl PartialEq for ExitStatusError {
++    fn eq(&self, _other: &ExitStatusError) -> bool {
++        self.0
++    }
++}
++
++impl Eq for ExitStatusError {}
++
++impl fmt::Debug for ExitStatusError {
++    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.0
++    }
++}
++
++impl Into<ExitStatus> for ExitStatusError {
++    fn into(self) -> ExitStatus {
++        self.0
++    }
++}
++
++impl ExitStatusError {
++    pub fn code(self) -> Option<NonZeroI32> {
++        self.0
++    }
++}
++
++#[derive(PartialEq, Eq, Clone, Copy, Debug)]
++pub struct ExitCode(bool);
++
++impl ExitCode {
++    pub const SUCCESS: ExitCode = ExitCode(false);
++    pub const FAILURE: ExitCode = ExitCode(true);
++
++    pub fn as_i32(&self) -> i32 {
++        self.0 as i32
++    }
++}
++
++impl From<u8> for ExitCode {
++    fn from(code: u8) -> Self {
++        match code {
++            0 => Self::SUCCESS,
++            1..=255 => Self::FAILURE,
++        }
++    }
++}
++
++pub struct Process(!);
++
++impl Process {
++    pub fn id(&self) -> u32 {
++        self.0
++    }
++
++    pub fn kill(&mut self) -> io::Result<()> {
++        self.0
++    }
++
++    pub fn wait(&mut self) -> io::Result<ExitStatus> {
++        self.0
++    }
++
++    pub fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {
++        self.0
++    }
++}
++
++pub struct CommandArgs<'a> {
++    _p: PhantomData<&'a ()>,
++}
++
++impl<'a> Iterator for CommandArgs<'a> {
++    type Item = &'a OsStr;
++    fn next(&mut self) -> Option<&'a OsStr> {
++        None
++    }
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        (0, Some(0))
++    }
++}
++
++impl<'a> ExactSizeIterator for CommandArgs<'a> {}
++
++impl<'a> fmt::Debug for CommandArgs<'a> {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.debug_list().finish()
++    }
++}
+diff --git a/library/std/src/sys/cryptos/stdio.rs b/library/std/src/sys/cryptos/stdio.rs
+new file mode 100644
+index 00000000000..b5e3f5be988
+--- /dev/null
++++ b/library/std/src/sys/cryptos/stdio.rs
+@@ -0,0 +1,59 @@
++use crate::io;
++
++pub struct Stdin;
++pub struct Stdout;
++pub struct Stderr;
++
++impl Stdin {
++    pub const fn new() -> Stdin {
++        Stdin
++    }
++}
++
++impl io::Read for Stdin {
++    fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
++        Ok(0)
++    }
++}
++
++impl Stdout {
++    pub const fn new() -> Stdout {
++        Stdout
++    }
++}
++
++impl io::Write for Stdout {
++    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
++        Ok(buf.len())
++    }
++
++    fn flush(&mut self) -> io::Result<()> {
++        Ok(())
++    }
++}
++
++impl Stderr {
++    pub const fn new() -> Stderr {
++        Stderr
++    }
++}
++
++impl io::Write for Stderr {
++    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
++        Ok(buf.len())
++    }
++
++    fn flush(&mut self) -> io::Result<()> {
++        Ok(())
++    }
++}
++
++pub const STDIN_BUF_SIZE: usize = 0;
++
++pub fn is_ebadf(_err: &io::Error) -> bool {
++    true
++}
++
++pub fn panic_output() -> Option<Vec<u8>> {
++    None
++}
+diff --git a/library/std/src/sys/cryptos/thread.rs b/library/std/src/sys/cryptos/thread.rs
+new file mode 100644
+index 00000000000..a8db251de20
+--- /dev/null
++++ b/library/std/src/sys/cryptos/thread.rs
+@@ -0,0 +1,46 @@
++use super::unsupported;
++use crate::ffi::CStr;
++use crate::io;
++use crate::num::NonZeroUsize;
++use crate::time::Duration;
++
++pub struct Thread(!);
++
++pub const DEFAULT_MIN_STACK_SIZE: usize = 4096;
++
++impl Thread {
++    // unsafe: see thread::Builder::spawn_unchecked for safety requirements
++    pub unsafe fn new(_stack: usize, _p: Box<dyn FnOnce()>) -> io::Result<Thread> {
++        unsupported()
++    }
++
++    pub fn yield_now() {
++        // do nothing
++    }
++
++    pub fn set_name(_name: &CStr) {
++        // nope
++    }
++
++    pub fn sleep(_dur: Duration) {
++        panic!("can't sleep");
++    }
++
++    pub fn join(self) {
++        self.0
++    }
++}
++
++pub fn available_parallelism() -> io::Result<NonZeroUsize> {
++    unsupported()
++}
++
++pub mod guard {
++    pub type Guard = !;
++    pub unsafe fn current() -> Option<Guard> {
++        None
++    }
++    pub unsafe fn init() -> Option<Guard> {
++        None
++    }
++}
+diff --git a/library/std/src/sys/cryptos/thread_local_dtor.rs b/library/std/src/sys/cryptos/thread_local_dtor.rs
+new file mode 100644
+index 00000000000..84660ea5881
+--- /dev/null
++++ b/library/std/src/sys/cryptos/thread_local_dtor.rs
+@@ -0,0 +1,10 @@
++#![unstable(feature = "thread_local_internals", issue = "none")]
++
++#[cfg_attr(target_family = "wasm", allow(unused))] // unused on wasm32-unknown-unknown
++pub unsafe fn register_dtor(_t: *mut u8, _dtor: unsafe extern "C" fn(*mut u8)) {
++    // FIXME: right now there is no concept of "thread exit", but this is likely
++    // going to show up at some point in the form of an exported symbol that the
++    // wasm runtime is going to be expected to call. For now we basically just
++    // ignore the arguments, but if such a function starts to exist it will
++    // likely look like the OSX implementation in `unix/fast_thread_local.rs`
++}
+diff --git a/library/std/src/sys/cryptos/thread_local_key.rs b/library/std/src/sys/cryptos/thread_local_key.rs
+new file mode 100644
+index 00000000000..b6e5e4cd2e1
+--- /dev/null
++++ b/library/std/src/sys/cryptos/thread_local_key.rs
+@@ -0,0 +1,21 @@
++pub type Key = usize;
++
++#[inline]
++pub unsafe fn create(_dtor: Option<unsafe extern "C" fn(*mut u8)>) -> Key {
++    panic!("should not be used on this target");
++}
++
++#[inline]
++pub unsafe fn set(_key: Key, _value: *mut u8) {
++    panic!("should not be used on this target");
++}
++
++#[inline]
++pub unsafe fn get(_key: Key) -> *mut u8 {
++    panic!("should not be used on this target");
++}
++
++#[inline]
++pub unsafe fn destroy(_key: Key) {
++    panic!("should not be used on this target");
++}
+diff --git a/library/std/src/sys/cryptos/thread_parking.rs b/library/std/src/sys/cryptos/thread_parking.rs
+new file mode 100644
+index 00000000000..197078bb186
+--- /dev/null
++++ b/library/std/src/sys/cryptos/thread_parking.rs
+@@ -0,0 +1,11 @@
++use crate::pin::Pin;
++use crate::time::Duration;
++
++pub struct Parker {}
++
++impl Parker {
++    pub unsafe fn new_in_place(_parker: *mut Parker) {}
++    pub unsafe fn park(self: Pin<&Self>) {}
++    pub unsafe fn park_timeout(self: Pin<&Self>, _dur: Duration) {}
++    pub fn unpark(self: Pin<&Self>) {}
++}
+diff --git a/library/std/src/sys/cryptos/time.rs b/library/std/src/sys/cryptos/time.rs
+new file mode 100644
+index 00000000000..6d67b538a96
+--- /dev/null
++++ b/library/std/src/sys/cryptos/time.rs
+@@ -0,0 +1,45 @@
++use crate::time::Duration;
++
++#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
++pub struct Instant(Duration);
++
++#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
++pub struct SystemTime(Duration);
++
++pub const UNIX_EPOCH: SystemTime = SystemTime(Duration::from_secs(0));
++
++impl Instant {
++    pub fn now() -> Instant {
++        panic!("time not implemented on this platform")
++    }
++
++    pub fn checked_sub_instant(&self, other: &Instant) -> Option<Duration> {
++        self.0.checked_sub(other.0)
++    }
++
++    pub fn checked_add_duration(&self, other: &Duration) -> Option<Instant> {
++        Some(Instant(self.0.checked_add(*other)?))
++    }
++
++    pub fn checked_sub_duration(&self, other: &Duration) -> Option<Instant> {
++        Some(Instant(self.0.checked_sub(*other)?))
++    }
++}
++
++impl SystemTime {
++    pub fn now() -> SystemTime {
++        panic!("time not implemented on this platform")
++    }
++
++    pub fn sub_time(&self, other: &SystemTime) -> Result<Duration, Duration> {
++        self.0.checked_sub(other.0).ok_or_else(|| other.0 - self.0)
++    }
++
++    pub fn checked_add_duration(&self, other: &Duration) -> Option<SystemTime> {
++        Some(SystemTime(self.0.checked_add(*other)?))
++    }
++
++    pub fn checked_sub_duration(&self, other: &Duration) -> Option<SystemTime> {
++        Some(SystemTime(self.0.checked_sub(*other)?))
++    }
++}
+diff --git a/library/std/src/sys_common/mod.rs b/library/std/src/sys_common/mod.rs
+index e18638f2a5f..f0faa3a5e2c 100644
+--- a/library/std/src/sys_common/mod.rs
++++ b/library/std/src/sys_common/mod.rs
+@@ -45,6 +45,7 @@
+ cfg_if::cfg_if! {
+     if #[cfg(any(target_os = "l4re",
+                  target_os = "uefi",
++                 target_os = "cryptos",
+                  feature = "restricted-std",
+                  all(target_family = "wasm", not(target_os = "emscripten")),
+                  target_os = "xous",
+-- 
+2.39.3 (Apple Git-145)
+

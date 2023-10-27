@@ -1,0 +1,89 @@
+From 1b48263c6895f68cf9e79ebc07c5d182a68a2007 Mon Sep 17 00:00:00 2001
+From: Kenny Strawn <Kenny.Strawn@gmail.com>
+Date: Thu, 26 Oct 2023 21:27:56 -0700
+Subject: [PATCH 4/4] Something else the OSDev wiki article failed to mention
+
+---
+ .../rustc_target/src/spec/cryptos_base.rs     |  6 ++--
+ compiler/rustc_target/src/spec/mod.rs         |  1 +
+ .../src/spec/x86_64_unknown_cryptos.rs        | 31 ++++++-------------
+ 3 files changed, 14 insertions(+), 24 deletions(-)
+
+diff --git a/compiler/rustc_target/src/spec/cryptos_base.rs b/compiler/rustc_target/src/spec/cryptos_base.rs
+index b9539e43fba..79cf814b0eb 100644
+--- a/compiler/rustc_target/src/spec/cryptos_base.rs
++++ b/compiler/rustc_target/src/spec/cryptos_base.rs
+@@ -1,11 +1,11 @@
+-use crate::spec::{LinkerFlavor, LldFlavor, TargetOptions};
+- 
++use crate::spec::{StackProbeType, LinkerFlavorCli, LldFlavor, TargetOptions};
++
+ pub fn opts() -> TargetOptions {
+     TargetOptions {
+         os: "cryptos".into(),
+         executables: true,
+         linker: Some("ld.lld".into()),
+-        linker_flavor: LinkerFlavor::Lld(LldFlavor::Ld),
++        linker_flavor_json: LinkerFlavorCli::Lld(LldFlavor::Ld),
+         stack_probes: StackProbeType::Inline,
+         ..Default::default()
+     }
+diff --git a/compiler/rustc_target/src/spec/mod.rs b/compiler/rustc_target/src/spec/mod.rs
+index 065ae5382d3..9983fb50316 100644
+--- a/compiler/rustc_target/src/spec/mod.rs
++++ b/compiler/rustc_target/src/spec/mod.rs
+@@ -1608,6 +1608,7 @@ fn $module() {
+     ("aarch64-unknown-linux-ohos", aarch64_unknown_linux_ohos),
+     ("armv7-unknown-linux-ohos", armv7_unknown_linux_ohos),
+     ("x86_64-unknown-linux-ohos", x86_64_unknown_linux_ohos),
++    ("x86_64-unknown-cryptos", x86_64_unknown_cryptos),
+ }
+ 
+ /// Cow-Vec-Str: Cow<'static, [Cow<'static, str>]>
+diff --git a/compiler/rustc_target/src/spec/x86_64_unknown_cryptos.rs b/compiler/rustc_target/src/spec/x86_64_unknown_cryptos.rs
+index fe3b24f2d4a..2801900d464 100644
+--- a/compiler/rustc_target/src/spec/x86_64_unknown_cryptos.rs
++++ b/compiler/rustc_target/src/spec/x86_64_unknown_cryptos.rs
+@@ -4,29 +4,18 @@
+ // `target-cpu` compiler flags to opt-in more hardware-specific
+ // features.
+ 
+-use super::{Cc, CodeModel, LinkerFlavor, Lld, PanicStrategy};
+-use super::{RelroLevel, SanitizerSet, StackProbeType, Target, TargetOptions};
++use super::{CodeModel, PanicStrategy};
++use super::Target;
+ 
+ pub fn target() -> Target {
+-    let opts = TargetOptions {
+-        cpu: "x86-64".into(),
+-        plt_by_default: false,
+-        max_atomic_width: Some(64),
+-        stack_probes: StackProbeType::X86,
+-        position_independent_executables: true,
+-        static_position_independent_executables: true,
+-        relro_level: RelroLevel::Full,
+-        linker_flavor: LinkerFlavor::Gnu(Cc::No, Lld::Yes),
+-        linker: Some("rust-lld".into()),
+-        features:
+-            "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-3dnow,-3dnowa,-avx,-avx2,+soft-float"
+-                .into(),
+-        supported_sanitizers: SanitizerSet::KCFI | SanitizerSet::KERNELADDRESS,
+-        disable_redzone: true,
+-        panic_strategy: PanicStrategy::Abort,
+-        code_model: Some(CodeModel::Kernel),
+-        ..Default::default()
+-    };
++    let mut opts = super::cryptos_base::opts();
++    opts.cpu = "x86-64".into();
++    opts.disable_redzone = true;
++    opts.panic_strategy = PanicStrategy::Abort;
++    opts.code_model = Some(CodeModel::Kernel);
++    opts.features = "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-3dnow,-3dnowa,-avx,-avx2,+soft-float"
++        .into();
++
+     Target {
+         llvm_target: "x86_64-unknown-none-elf".into(),
+         pointer_width: 64,
+-- 
+2.39.3 (Apple Git-145)
+
