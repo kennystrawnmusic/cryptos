@@ -1,3 +1,5 @@
+// TODO: https://wiki.osdev.org/Porting_Rust_standard_library
+
 extern crate alloc as inner_alloc;
 
 pub mod alloc {
@@ -10,9 +12,10 @@ pub use core::arch;
 pub use core::array;
 pub use core::ascii;
 
-pub mod backtrace {
-    pub use x86_64::structures::idt::InterruptStackFrame as BacktraceFrame;
-}
+// TODO: properly redefine this module
+// pub mod backtrace {
+//     pub use x86_64::structures::idt::InterruptStackFrame as BacktraceFrame;
+// }
 
 pub mod borrow {
     extern crate alloc as inner_alloc;
@@ -99,8 +102,9 @@ pub mod sync {
     extern crate alloc as inner_alloc;
     pub use core::sync::*;
     pub use inner_alloc::sync::*;
-    pub use super::super::RwLock as RwLock;
-    pub use super::super::Mutex as Mutex;
+    pub use super::super::RwLock;
+    pub use super::super::Mutex;
+    pub use spin::Lazy as LazyLock;
 }
 
 pub mod task {
@@ -116,7 +120,7 @@ pub mod vec {
     pub use inner_alloc::vec::*;
 }
 
-
+// Need to redefine this macro because attempting to import it causes a name conflict
 #[macro_export]
 macro_rules! vec {
     () => (::alloc::vec![]);
