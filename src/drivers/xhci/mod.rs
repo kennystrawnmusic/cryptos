@@ -437,6 +437,9 @@ impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
     extcaps: Option<List<XhciMapper>>,
+    cmd_ring: &'static mut [CommandKind<'static>],
+    event_ring_dequeue: &'static mut [EventKind<'static>],
+    transfer_ring: &'static mut [TransferKind<'static>],
 }
 
 impl XhciImpl {
@@ -485,57 +488,109 @@ impl XhciImpl {
             extended_caps
         });
 
-        Self { regs, extcaps }
+        Self {
+            regs,
+            extcaps,
+            cmd_ring: unsafe {
+                core::slice::from_raw_parts_mut::<'static>(
+                    addralloc::<CommandKind<'_>>(),
+                    Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>(),
+                )
+            },
+            event_ring_dequeue: unsafe {
+                core::slice::from_raw_parts_mut::<'static>(
+                    addralloc::<EventKind<'_>>(),
+                    Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<EventKind<'_>>(),
+                )
+            },
+            transfer_ring: unsafe {
+                core::slice::from_raw_parts_mut::<'static>(
+                    addralloc::<TransferKind<'_>>(),
+                    Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<TransferKind<'_>>(),
+                )
+            },
+        }
     }
     pub fn capabilities_mut(&mut self) -> Option<&mut Capability<XhciMapper>> {
-        self.regs.as_mut().map(|regs| &mut regs.capability)
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
+            .as_mut()
+            .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).capability })
     }
     pub fn doorbell_mut(&mut self) -> Option<&mut ReadWrite<Register, XhciMapper>> {
-        self.regs.as_mut().map(|regs| &mut regs.doorbell)
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
+            .as_mut()
+            .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).doorbell })
     }
     pub fn operational_mut(&mut self) -> Option<&mut Operational<XhciMapper>> {
-        self.regs.as_mut().map(|regs| &mut regs.operational)
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
+            .as_mut()
+            .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).operational })
     }
     pub fn port_register_set_mut(&mut self) -> Option<&mut ReadWrite<PortRegisterSet, XhciMapper>> {
-        self.regs.as_mut().map(|regs| &mut regs.port_register_set)
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
+            .as_mut()
+            .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).port_register_set })
     }
     pub fn runtime_mut(&mut self) -> Option<&mut Runtime<XhciMapper>> {
-        self.regs.as_mut().map(|regs| &mut regs.runtime)
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
+            .as_mut()
+            .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).runtime })
     }
     pub fn interrupter_register_set_mut(
         &mut self,
     ) -> Option<&mut InterrupterRegisterSet<XhciMapper>> {
-        self.regs
+        unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
-            .map(|regs| &mut regs.interrupter_register_set)
+            .map(|regs| unsafe {
+                &mut (*(regs as *mut Registers<XhciMapper>)).interrupter_register_set
+            })
     }
     pub fn capabilities(&self) -> Option<&Capability<XhciMapper>> {
-        self.regs.as_ref().map(|regs| &regs.capability)
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
+            .as_ref()
+            .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).capability })
     }
     pub fn doorbell(&self) -> Option<&ReadWrite<Register, XhciMapper>> {
-        self.regs.as_ref().map(|regs| &regs.doorbell)
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
+            .as_ref()
+            .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).doorbell })
     }
     pub fn operational(&self) -> Option<&Operational<XhciMapper>> {
-        self.regs.as_ref().map(|regs| &regs.operational)
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
+            .as_ref()
+            .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).operational })
     }
     pub fn port_register_set(&self) -> Option<&ReadWrite<PortRegisterSet, XhciMapper>> {
-        self.regs.as_ref().map(|regs| &regs.port_register_set)
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
+            .as_ref()
+            .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).port_register_set })
     }
     pub fn runtime(&self) -> Option<&Runtime<XhciMapper>> {
-        self.regs.as_ref().map(|regs| &regs.runtime)
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
+            .as_ref()
+            .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).runtime })
     }
     pub fn interrupter_register_set(&self) -> Option<&InterrupterRegisterSet<XhciMapper>> {
-        self.regs
+        unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
-            .map(|regs| &regs.interrupter_register_set)
+            .map(|regs| unsafe {
+                &(*(regs as *const Registers<XhciMapper>)).interrupter_register_set
+            })
     }
     pub fn extcaps(&self) -> Option<&List<XhciMapper>> {
-        self.extcaps.as_ref()
+        unsafe { *(&(self.extcaps.as_ref()) as *const Option<&List<XhciMapper>>)}
     }
     pub fn extcaps_mut(&mut self) -> Option<&mut List<XhciMapper>> {
-        self.extcaps.as_mut()
+        unsafe { &mut *((&mut self.extcaps) as *mut Option<List<XhciMapper>>) }.as_mut()
     }
     pub fn init(&mut self) {
+        // borrow checker
+        let cmd_ring_ptr = self.cmd_ring as *mut [CommandKind<'_>];
+        let event_ring_ptr = self.event_ring_dequeue as *mut [EventKind<'_>];
+
+        // will need this later
+        let _transfer_ring_ptr = self.transfer_ring as *mut [TransferKind<'_>];
+
         if let Some(op) = self.operational_mut() {
             log::info!("XHCI: Waiting for controller");
             while op.usbsts.read_volatile().controller_not_ready() {
@@ -610,17 +665,6 @@ impl XhciImpl {
                 );
             }
 
-            // Create command ring with (4096 / 16) entries
-            // All TRBs are arrays of [u32; 4] at their core
-            let entries_per_page =
-                Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>();
-            let cmd_ring = unsafe {
-                core::slice::from_raw_parts_mut::<'static>(
-                    addralloc::<CommandKind<'_>>(),
-                    entries_per_page,
-                )
-            };
-
             // Use max_slots and core::slice::from_raw_parts_mut to create a slot context array
             let dev_context_array = unsafe {
                 core::slice::from_raw_parts_mut::<'static>(
@@ -645,7 +689,7 @@ impl XhciImpl {
             if let Some(op) = self.operational_mut() {
                 op.crcr.update_volatile(|crcr| {
                     crcr.set_command_ring_pointer(
-                        cmd_ring
+                        unsafe { &mut *cmd_ring_ptr }
                             .first()
                             .map(|cmd| cmd as *const _ as u64)
                             .expect("No commands present in command ring"),
@@ -663,15 +707,8 @@ impl XhciImpl {
 
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
-                        let event_ring_dequeue = unsafe {
-                            core::slice::from_raw_parts_mut::<'static>(
-                                addralloc::<EventKind<'_>>(),
-                                4096 / core::mem::size_of::<EventKind<'_>>(),
-                            )
-                        };
-
                         erdp.set_event_ring_dequeue_pointer(
-                            event_ring_dequeue
+                            unsafe { &mut *event_ring_ptr }
                                 .first()
                                 .map(|event| event as *const _ as u64)
                                 .expect("No commands present in command ring"),
