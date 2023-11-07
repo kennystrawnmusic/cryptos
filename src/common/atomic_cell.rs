@@ -59,24 +59,24 @@ impl<T> AtomicCell<T> {
         self.0.swap(Box::into_raw(Box::new(data)), Ordering::SeqCst)
     }
 
-    pub fn compare_exchange(&self, current: T, new: T, success: Ordering, failure: Ordering) -> Result<*mut T, *mut T> {
+    pub fn compare_exchange(&self, current: T, new: T) -> Result<*mut T, *mut T> {
         let current = Box::into_raw(Box::new(current));
         let new = Box::into_raw(Box::new(new));
         match self
             .0
-            .compare_exchange(current, new, success, failure)
+            .compare_exchange(current, new, Ordering::SeqCst, Ordering::SeqCst)
         {
             Ok(_) => Ok(current),
             Err(_) => Err(new),
         }
     }
 
-    pub fn compare_exchange_weak(&self, current: T, new: T, success: Ordering, failure: Ordering) -> Result<*mut T, *mut T> {
+    pub fn compare_exchange_weak(&self, current: T, new: T) -> Result<*mut T, *mut T> {
         let current = Box::into_raw(Box::new(current));
         let new = Box::into_raw(Box::new(new));
         match self
             .0
-            .compare_exchange_weak(current, new, success, failure)
+            .compare_exchange_weak(current, new, Ordering::SeqCst, Ordering::SeqCst)
         {
             Ok(_) => Ok(current),
             Err(_) => Err(new),
