@@ -7,7 +7,7 @@ use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::RelaxStrategy;
 use x86_64::instructions::{hlt, interrupts::without_interrupts};
-use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, Size4KiB};
+use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, Size4KiB, PhysFrame};
 use x86_64::VirtAddr;
 
 pub mod atomic_cell;
@@ -153,12 +153,17 @@ impl<T: Copy> SeqLock<T> {
     }
 }
 
-/// Helper function for creating raw pointers safely
-pub fn addralloc<T>() -> *mut T {
-    let frame = FRAME_ALLOCATOR
+/// Wrapper for allocating frames
+pub fn allocate_frame() -> PhysFrame<Size4KiB> {
+    FRAME_ALLOCATOR
         .write()
         .allocate_frame()
-        .expect("Out of memory");
+        .expect("Out of memory")
+}
+
+/// Helper function for creating raw pointers safely
+pub fn addralloc<T>() -> *mut T {
+    let frame = allocate_frame();
 
     let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
         frame.start_address().as_u64() + get_phys_offset(),
@@ -179,10 +184,7 @@ pub fn addralloc<T>() -> *mut T {
         let mut i = Page::<Size4KiB>::SIZE;
 
         while i < total_size {
-            let frame = FRAME_ALLOCATOR
-                .write()
-                .allocate_frame()
-                .expect("Out of memory");
+            let frame = allocate_frame();
 
             let page = Page::<Size4KiB>::containing_address(VirtAddr::new(
                 frame.start_address().as_u64() + get_phys_offset(),
