@@ -274,10 +274,7 @@ impl<'a> Process<'a> {
         // Errors already handled inside the generator
         Pin::new(&mut main).resume(());
     }
-
-    /// Sets this process's state
-    ///
-    /// This paves the way for proper preemption
+    
     fn set_state(&mut self, state: State) {
         self.state = state;
     }
