@@ -707,12 +707,7 @@ impl XhciImpl {
 
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
-                        erdp.set_event_ring_dequeue_pointer(
-                            unsafe { &mut *event_ring_ptr }
-                                .first()
-                                .map(|event| event as *const _ as u64)
-                                .expect("No commands present in command ring"),
-                        )
+                        erdp.set_event_ring_dequeue_pointer(event_ring_ptr as *const () as u64);
                     });
 
                     // Set the event ring segment table base address
