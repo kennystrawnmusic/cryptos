@@ -132,8 +132,8 @@ impl<T> PhysBox<T> {
 pub struct LazyHeap(Lazy<LockedHeap>);
 
 impl LazyHeap {
-    pub const fn new(f: fn() -> LockedHeap) -> Self {
-        Self(Lazy::new(f))
+    pub const fn new(init: fn() -> LockedHeap) -> Self {
+        Self(Lazy::new(init))
     }
 
     pub fn init(&self, begin: usize, len: usize) {
