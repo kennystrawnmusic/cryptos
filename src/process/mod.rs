@@ -278,7 +278,7 @@ impl<'a> Process<'a> {
     /// Sets this process's state
     ///
     /// This paves the way for proper preemption
-    pub(crate) fn set_state(&mut self, state: State) {
+    fn set_state(&mut self, state: State) {
         self.state = state;
     }
 
