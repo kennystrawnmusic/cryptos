@@ -5,7 +5,7 @@
 macro_rules! map_page {
     ($phys:expr, $virt:expr, $size:ty, $flags:expr) => {
         // macros expect everything to be imported each time they're used in a new file, so best to hardcode paths
-        let frame = x86_64::structures::paging::PhysFrame::containing_address(x86_64::PhysAddr::new($phys as u64));
+        let phys_frame = x86_64::structures::paging::PhysFrame::containing_address(x86_64::PhysAddr::new($phys as u64));
         let page = x86_64::structures::paging::Page::<$size>::containing_address(x86_64::VirtAddr::new($virt as u64));
 
         x86_64::instructions::interrupts::without_interrupts(|| {
@@ -17,7 +17,7 @@ macro_rules! map_page {
 
                 $crate::MAPPER.write().map_to(
                     page,
-                    frame,
+                    phys_frame,
                     $flags,
                     &mut *$crate::FRAME_ALLOCATOR.write(),
                 )
