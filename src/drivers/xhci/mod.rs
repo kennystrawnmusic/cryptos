@@ -124,12 +124,44 @@ impl TrbAnalyzer for Normal {}
 impl TrbAnalyzer for SetupStage {}
 impl TrbAnalyzer for StatusStage {}
 
-trait TrbKindMarker {}
+impl TrbAnalyzer for Link {}
 
-impl TrbKindMarker for CommandKind<'_> {}
-impl TrbKindMarker for EventKind<'_> {}
-impl TrbKindMarker for TransferKind<'_> {}
-impl<'a> TrbKindMarker for &'a mut Link {}
+impl<'a> TrbAnalyzer for &'a mut AddressDevice {}
+impl<'a> TrbAnalyzer for &'a mut ConfigureEndpoint {}
+impl<'a> TrbAnalyzer for &'a mut DisableSlot {}
+impl<'a> TrbAnalyzer for &'a mut EnableSlot {}
+impl<'a> TrbAnalyzer for &'a mut EvaluateContext {}
+impl<'a> TrbAnalyzer for &'a mut ForceEvent {}
+impl<'a> TrbAnalyzer for &'a mut ForceHeader {}
+impl<'a> TrbAnalyzer for &'a mut GetExtendedProperty {}
+impl<'a> TrbAnalyzer for &'a mut GetPortBandwidth {}
+impl<'a> TrbAnalyzer for &'a mut NegotiateBandwidth {}
+impl<'a> TrbAnalyzer for &'a mut CmdNoop {}
+impl<'a> TrbAnalyzer for &'a mut ResetDevice {}
+impl<'a> TrbAnalyzer for &'a mut ResetEndpoint {}
+impl<'a> TrbAnalyzer for &'a mut SetExtendedProperty {}
+impl<'a> TrbAnalyzer for &'a mut SetLatencyToleranceValue {}
+impl<'a> TrbAnalyzer for &'a mut SetTrDequeuePointer {}
+impl<'a> TrbAnalyzer for &'a mut StopEndpoint {}
+
+impl<'a> TrbAnalyzer for &'a mut BandwidthRequest {}
+impl<'a> TrbAnalyzer for &'a mut CommandCompletion {}
+impl<'a> TrbAnalyzer for &'a mut DeviceNotification {}
+impl<'a> TrbAnalyzer for &'a mut Doorbell {}
+impl<'a> TrbAnalyzer for &'a mut HostController {}
+impl<'a> TrbAnalyzer for &'a mut MfindexWrap {}
+impl<'a> TrbAnalyzer for &'a mut PortStatusChange {}
+impl<'a> TrbAnalyzer for &'a mut TransferEvent {}
+
+impl<'a> TrbAnalyzer for &'a mut DataStage {}
+impl<'a> TrbAnalyzer for &'a mut EventData {}
+impl<'a> TrbAnalyzer for &'a mut Isoch {}
+impl<'a> TrbAnalyzer for &'a mut TransferNoop {}
+impl<'a> TrbAnalyzer for &'a mut Normal {}
+impl<'a> TrbAnalyzer for &'a mut SetupStage {}
+impl<'a> TrbAnalyzer for &'a mut StatusStage {}
+
+impl<'a> TrbAnalyzer for &'a mut Link {}
 
 enum CommandKind<'a> {
     AddressDevice(&'a mut AddressDevice),
@@ -291,12 +323,53 @@ impl_from_ref_for_trb_kind!(StatusStage, Transfer);
 
 impl<'a> TrbKind<'a> {
     #[allow(dead_code)] // not finished
-    pub fn as_inner(&'a mut self) -> &'a mut dyn TrbKindMarker {
+    pub fn as_inner(&'a mut self) -> &'a mut dyn TrbAnalyzer {
         match self {
-            TrbKind::Command(cmd) => cmd,
-            TrbKind::Event(event) => event,
-            TrbKind::Transfer(transfer) => transfer,
-            TrbKind::Link(link) => link,
+            TrbKind::Command(cmd) => {
+                match cmd {
+                    CommandKind::AddressDevice(cmd) => cmd,
+                    CommandKind::ConfigureEndpoint(cmd) => cmd,
+                    CommandKind::DisableSlot(cmd) => cmd,
+                    CommandKind::EnableSlot(cmd) => cmd,
+                    CommandKind::EvaluateContext(cmd) => cmd,
+                    CommandKind::ForceEvent(cmd) => cmd,
+                    CommandKind::ForceHeader(cmd) => cmd,
+                    CommandKind::GetExtendedProperty(cmd) => cmd,
+                    CommandKind::GetPortBandwidth(cmd) => cmd,
+                    CommandKind::NegotiateBandwidth(cmd) => cmd,
+                    CommandKind::CmdNoop(cmd) => cmd,
+                    CommandKind::ResetDevice(cmd) => cmd,
+                    CommandKind::ResetEndpoint(cmd) => cmd,
+                    CommandKind::SetExtendedProperty(cmd) => cmd,
+                    CommandKind::SetLatencyToleranceValue(cmd) => cmd,
+                    CommandKind::SetTrDequeuePointer(cmd) => cmd,
+                    CommandKind::StopEndpoint(cmd) => cmd,
+                }
+            },
+            TrbKind::Event(evt) => {
+                match evt {
+                    EventKind::BandwidthRequest(evt) => evt,
+                    EventKind::CommandCompletion(evt) => evt,
+                    EventKind::DeviceNotification(evt) => evt,
+                    EventKind::Doorbell(evt) => evt,
+                    EventKind::HostController(evt) => evt,
+                    EventKind::MfindexWrap(evt) => evt,
+                    EventKind::PortStatusChange(evt) => evt,
+                    EventKind::TransferEvent(evt) => evt,
+                }
+            },
+            TrbKind::Transfer(tr) => {
+                match tr {
+                    TransferKind::DataStage(tr) => tr,
+                    TransferKind::EventData(tr) => tr,
+                    TransferKind::Isoch(tr) => tr,
+                    TransferKind::TransferNoop(tr) => tr,
+                    TransferKind::Normal(tr) => tr,
+                    TransferKind::SetupStage(tr) => tr,
+                    TransferKind::StatusStage(tr) => tr,
+                }
+            },
+            TrbKind::Link(l) => l
         }
     }
 }
