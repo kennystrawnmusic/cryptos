@@ -70,27 +70,27 @@ use bootloader_api::{
     info::{FrameBuffer, FrameBufferInfo, Optional, TlsTemplate},
     *,
 };
-use common::{Printk, RwLock};
+use common::Printk;
 use conquer_once::spin::OnceCell;
 use core::{
     alloc::Layout,
     panic::PanicInfo,
     sync::atomic::{AtomicU64, Ordering},
 };
-use cralloc::{
-    frames::{map_memory, KernelFrameAlloc},
-    BEGIN_HEAP,
-};
+
 use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
-use spin::{Lazy, Once};
+use spin::Once;
 use x86_64::{
-    structures::paging::{OffsetPageTable, Page, PhysFrame, Size4KiB},
+    structures::paging::{Page, PhysFrame, Size4KiB},
     VirtAddr,
 };
 
 pub use common::std_init as std;
+
+// Needed to clean up main while still ensuring that everything else works
+pub use cralloc::*;
 
 //compatibility
 #[cfg(target_arch = "x86_64")]
@@ -160,19 +160,6 @@ pub fn page_align(size: u64, addr: u64) -> usize {
 }
 
 pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
-
-// Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
-pub static MAPPER: Lazy<RwLock<OffsetPageTable>> = Lazy::new(|| {
-    let map = unsafe { map_memory() };
-    RwLock::new(map)
-});
-
-pub static FRAME_ALLOCATOR: Lazy<RwLock<KernelFrameAlloc>> = Lazy::new(|| {
-    let boot_info = get_boot_info();
-
-    let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
-    RwLock::new(falloc)
-});
 
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {

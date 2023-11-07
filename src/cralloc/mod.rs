@@ -5,12 +5,15 @@ use core::{
 
 use alloc::alloc::Global;
 use conquer_once::spin::Lazy;
+use spin::RwLock;
 use x86_64::{
-    structures::paging::{PageSize, PhysFrame},
+    structures::paging::{PageSize, PhysFrame, OffsetPageTable},
     PhysAddr,
 };
 
-use crate::{FRAME_ALLOCATOR, MAPPER};
+use crate::get_boot_info;
+
+use self::frames::{map_memory, KernelFrameAlloc};
 
 pub mod frames;
 
@@ -21,6 +24,19 @@ use {
         VirtAddr,
     },
 };
+
+// Needed to allow page/frame allocation outside of the entry point, by things like the ACPI handler
+pub static MAPPER: Lazy<RwLock<OffsetPageTable>> = Lazy::new(|| {
+    let map = unsafe { map_memory() };
+    RwLock::new(map)
+});
+
+pub static FRAME_ALLOCATOR: Lazy<RwLock<KernelFrameAlloc>> = Lazy::new(|| {
+    let boot_info = get_boot_info();
+
+    let falloc = unsafe { KernelFrameAlloc::new(&boot_info.memory_regions) };
+    RwLock::new(falloc)
+});
 
 #[global_allocator]
 pub static ALLOC: LazyHeap = LazyHeap::new(|| {
