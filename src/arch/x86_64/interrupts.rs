@@ -258,7 +258,7 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
     );
 }
 
-extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
+extern "x86-interrupt" fn page_fault(stack_frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
         let virt = Page::<Size4KiB>::containing_address(Cr2::read())
@@ -276,14 +276,14 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
                 | PageTableFlags::WRITE_THROUGH
         );
 
-        unsafe { frame.iretq() }
+        unsafe { stack_frame.iretq() }
     } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl() {
         // kernel mode
         panic!(
             "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
             Cr2::read(),
             code,
-            frame
+            stack_frame
         );
     } else {
         // user mode
