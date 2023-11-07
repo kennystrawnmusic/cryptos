@@ -82,10 +82,7 @@ use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
 use spin::Once;
-use x86_64::{
-    structures::paging::{Page, PhysFrame, Size4KiB},
-    VirtAddr,
-};
+use x86_64::structures::paging::PhysFrame;
 
 pub use common::std_init as std;
 
@@ -149,15 +146,6 @@ const CONFIG: BootloaderConfig = {
     config.kernel_stack_size = 1024 * 1024 * 128;
     config
 };
-
-/// Creates a page-aligned size of something by creating a test page at a given address
-///
-pub fn page_align(size: u64, addr: u64) -> usize {
-    let test = Page::<Size4KiB>::containing_address(VirtAddr::new(addr));
-    let test_size = test.size() as usize;
-
-    (((size as usize) - 1) / test_size + 1) * test_size
-}
 
 pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
 
