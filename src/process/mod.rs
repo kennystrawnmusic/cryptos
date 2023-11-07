@@ -14,7 +14,7 @@ use alloc::{
     vec::Vec,
 };
 use conquer_once::spin::OnceCell;
-use spin::RwLock;
+use crate::common::RwLock;
 use syscall::{Error, EBADF};
 use xmas_elf::ElfFile;
 
