@@ -270,7 +270,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     loop {
         if !(COMPOSITING_TABLE.read().is_empty()) {
             for canvas in COMPOSITING_TABLE.read().iter() {
-                canvas.merge_down(get_boot_info().framebuffer.as_mut().unwrap());
+                canvas.merge_down(get_framebuffer());
             }
         }
     }
