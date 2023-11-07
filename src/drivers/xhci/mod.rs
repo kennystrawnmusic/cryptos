@@ -327,49 +327,49 @@ impl<'a> TrbKind<'a> {
         match self {
             TrbKind::Command(cmd) => {
                 match cmd {
-                    CommandKind::AddressDevice(cmd) => cmd,
-                    CommandKind::ConfigureEndpoint(cmd) => cmd,
-                    CommandKind::DisableSlot(cmd) => cmd,
-                    CommandKind::EnableSlot(cmd) => cmd,
-                    CommandKind::EvaluateContext(cmd) => cmd,
-                    CommandKind::ForceEvent(cmd) => cmd,
-                    CommandKind::ForceHeader(cmd) => cmd,
-                    CommandKind::GetExtendedProperty(cmd) => cmd,
-                    CommandKind::GetPortBandwidth(cmd) => cmd,
-                    CommandKind::NegotiateBandwidth(cmd) => cmd,
-                    CommandKind::CmdNoop(cmd) => cmd,
-                    CommandKind::ResetDevice(cmd) => cmd,
-                    CommandKind::ResetEndpoint(cmd) => cmd,
-                    CommandKind::SetExtendedProperty(cmd) => cmd,
-                    CommandKind::SetLatencyToleranceValue(cmd) => cmd,
-                    CommandKind::SetTrDequeuePointer(cmd) => cmd,
-                    CommandKind::StopEndpoint(cmd) => cmd,
+                    CommandKind::AddressDevice(cmd) => *cmd,
+                    CommandKind::ConfigureEndpoint(cmd) => *cmd,
+                    CommandKind::DisableSlot(cmd) => *cmd,
+                    CommandKind::EnableSlot(cmd) => *cmd,
+                    CommandKind::EvaluateContext(cmd) => *cmd,
+                    CommandKind::ForceEvent(cmd) => *cmd,
+                    CommandKind::ForceHeader(cmd) => *cmd,
+                    CommandKind::GetExtendedProperty(cmd) => *cmd,
+                    CommandKind::GetPortBandwidth(cmd) => *cmd,
+                    CommandKind::NegotiateBandwidth(cmd) => *cmd,
+                    CommandKind::CmdNoop(cmd) => *cmd,
+                    CommandKind::ResetDevice(cmd) => *cmd,
+                    CommandKind::ResetEndpoint(cmd) => *cmd,
+                    CommandKind::SetExtendedProperty(cmd) => *cmd,
+                    CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
+                    CommandKind::SetTrDequeuePointer(cmd) => *cmd,
+                    CommandKind::StopEndpoint(cmd) => *cmd,
                 }
             },
             TrbKind::Event(evt) => {
                 match evt {
-                    EventKind::BandwidthRequest(evt) => evt,
-                    EventKind::CommandCompletion(evt) => evt,
-                    EventKind::DeviceNotification(evt) => evt,
-                    EventKind::Doorbell(evt) => evt,
-                    EventKind::HostController(evt) => evt,
-                    EventKind::MfindexWrap(evt) => evt,
-                    EventKind::PortStatusChange(evt) => evt,
-                    EventKind::TransferEvent(evt) => evt,
+                    EventKind::BandwidthRequest(evt) => *evt,
+                    EventKind::CommandCompletion(evt) => *evt,
+                    EventKind::DeviceNotification(evt) => *evt,
+                    EventKind::Doorbell(evt) => *evt,
+                    EventKind::HostController(evt) => *evt,
+                    EventKind::MfindexWrap(evt) => *evt,
+                    EventKind::PortStatusChange(evt) => *evt,
+                    EventKind::TransferEvent(evt) => *evt,
                 }
             },
             TrbKind::Transfer(tr) => {
                 match tr {
-                    TransferKind::DataStage(tr) => tr,
-                    TransferKind::EventData(tr) => tr,
-                    TransferKind::Isoch(tr) => tr,
-                    TransferKind::TransferNoop(tr) => tr,
-                    TransferKind::Normal(tr) => tr,
-                    TransferKind::SetupStage(tr) => tr,
-                    TransferKind::StatusStage(tr) => tr,
+                    TransferKind::DataStage(tr) => *tr,
+                    TransferKind::EventData(tr) => *tr,
+                    TransferKind::Isoch(tr) => *tr,
+                    TransferKind::TransferNoop(tr) => *tr,
+                    TransferKind::Normal(tr) => *tr,
+                    TransferKind::SetupStage(tr) => *tr,
+                    TransferKind::StatusStage(tr) => *tr,
                 }
             },
-            TrbKind::Link(l) => l
+            TrbKind::Link(l) => *l
         }
     }
 }
