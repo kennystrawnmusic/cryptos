@@ -325,51 +325,45 @@ impl<'a> TrbKind<'a> {
     #[allow(dead_code)] // not finished
     pub fn as_inner(&'a mut self) -> &'a mut dyn TrbAnalyzer {
         match self {
-            TrbKind::Command(cmd) => {
-                match cmd {
-                    CommandKind::AddressDevice(cmd) => *cmd,
-                    CommandKind::ConfigureEndpoint(cmd) => *cmd,
-                    CommandKind::DisableSlot(cmd) => *cmd,
-                    CommandKind::EnableSlot(cmd) => *cmd,
-                    CommandKind::EvaluateContext(cmd) => *cmd,
-                    CommandKind::ForceEvent(cmd) => *cmd,
-                    CommandKind::ForceHeader(cmd) => *cmd,
-                    CommandKind::GetExtendedProperty(cmd) => *cmd,
-                    CommandKind::GetPortBandwidth(cmd) => *cmd,
-                    CommandKind::NegotiateBandwidth(cmd) => *cmd,
-                    CommandKind::CmdNoop(cmd) => *cmd,
-                    CommandKind::ResetDevice(cmd) => *cmd,
-                    CommandKind::ResetEndpoint(cmd) => *cmd,
-                    CommandKind::SetExtendedProperty(cmd) => *cmd,
-                    CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
-                    CommandKind::SetTrDequeuePointer(cmd) => *cmd,
-                    CommandKind::StopEndpoint(cmd) => *cmd,
-                }
+            TrbKind::Command(cmd) => match cmd {
+                CommandKind::AddressDevice(cmd) => *cmd,
+                CommandKind::ConfigureEndpoint(cmd) => *cmd,
+                CommandKind::DisableSlot(cmd) => *cmd,
+                CommandKind::EnableSlot(cmd) => *cmd,
+                CommandKind::EvaluateContext(cmd) => *cmd,
+                CommandKind::ForceEvent(cmd) => *cmd,
+                CommandKind::ForceHeader(cmd) => *cmd,
+                CommandKind::GetExtendedProperty(cmd) => *cmd,
+                CommandKind::GetPortBandwidth(cmd) => *cmd,
+                CommandKind::NegotiateBandwidth(cmd) => *cmd,
+                CommandKind::CmdNoop(cmd) => *cmd,
+                CommandKind::ResetDevice(cmd) => *cmd,
+                CommandKind::ResetEndpoint(cmd) => *cmd,
+                CommandKind::SetExtendedProperty(cmd) => *cmd,
+                CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
+                CommandKind::SetTrDequeuePointer(cmd) => *cmd,
+                CommandKind::StopEndpoint(cmd) => *cmd,
             },
-            TrbKind::Event(evt) => {
-                match evt {
-                    EventKind::BandwidthRequest(evt) => *evt,
-                    EventKind::CommandCompletion(evt) => *evt,
-                    EventKind::DeviceNotification(evt) => *evt,
-                    EventKind::Doorbell(evt) => *evt,
-                    EventKind::HostController(evt) => *evt,
-                    EventKind::MfindexWrap(evt) => *evt,
-                    EventKind::PortStatusChange(evt) => *evt,
-                    EventKind::TransferEvent(evt) => *evt,
-                }
+            TrbKind::Event(evt) => match evt {
+                EventKind::BandwidthRequest(evt) => *evt,
+                EventKind::CommandCompletion(evt) => *evt,
+                EventKind::DeviceNotification(evt) => *evt,
+                EventKind::Doorbell(evt) => *evt,
+                EventKind::HostController(evt) => *evt,
+                EventKind::MfindexWrap(evt) => *evt,
+                EventKind::PortStatusChange(evt) => *evt,
+                EventKind::TransferEvent(evt) => *evt,
             },
-            TrbKind::Transfer(tr) => {
-                match tr {
-                    TransferKind::DataStage(tr) => *tr,
-                    TransferKind::EventData(tr) => *tr,
-                    TransferKind::Isoch(tr) => *tr,
-                    TransferKind::TransferNoop(tr) => *tr,
-                    TransferKind::Normal(tr) => *tr,
-                    TransferKind::SetupStage(tr) => *tr,
-                    TransferKind::StatusStage(tr) => *tr,
-                }
+            TrbKind::Transfer(tr) => match tr {
+                TransferKind::DataStage(tr) => *tr,
+                TransferKind::EventData(tr) => *tr,
+                TransferKind::Isoch(tr) => *tr,
+                TransferKind::TransferNoop(tr) => *tr,
+                TransferKind::Normal(tr) => *tr,
+                TransferKind::SetupStage(tr) => *tr,
+                TransferKind::StatusStage(tr) => *tr,
             },
-            TrbKind::Link(l) => *l
+            TrbKind::Link(l) => *l,
         }
     }
 }
@@ -640,7 +634,7 @@ impl XhciImpl {
                 op.dcbaap.update_volatile(|dcbaap| {
                     dcbaap.set(
                         dev_context_array
-                            .get(0)
+                            .first()
                             .map(|dev| dev as *const _ as u64)
                             .expect("No devices present in device context array"),
                     )
@@ -652,7 +646,7 @@ impl XhciImpl {
                 op.crcr.update_volatile(|crcr| {
                     crcr.set_command_ring_pointer(
                         cmd_ring
-                            .get(0)
+                            .first()
                             .map(|cmd| cmd as *const _ as u64)
                             .expect("No commands present in command ring"),
                     )
@@ -678,7 +672,7 @@ impl XhciImpl {
 
                         erdp.set_event_ring_dequeue_pointer(
                             event_ring_dequeue
-                                .get(0)
+                                .first()
                                 .map(|event| event as *const _ as u64)
                                 .expect("No commands present in command ring"),
                         )

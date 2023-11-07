@@ -7,7 +7,7 @@ use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use spin::RelaxStrategy;
 use x86_64::instructions::{hlt, interrupts::without_interrupts};
-use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, Size4KiB, PhysFrame};
+use x86_64::structures::paging::{FrameAllocator, Page, PageTableFlags, PhysFrame, Size4KiB};
 use x86_64::VirtAddr;
 
 pub mod atomic_cell;

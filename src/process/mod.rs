@@ -7,6 +7,7 @@ use core::{
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };
 
+use crate::common::RwLock;
 use alloc::{
     boxed::Box,
     collections::BTreeMap,
@@ -14,7 +15,6 @@ use alloc::{
     vec::Vec,
 };
 use conquer_once::spin::OnceCell;
-use crate::common::RwLock;
 use syscall::{Error, EBADF};
 use xmas_elf::ElfFile;
 
@@ -274,7 +274,7 @@ impl<'a> Process<'a> {
         // Errors already handled inside the generator
         Pin::new(&mut main).resume(());
     }
-    
+
     fn set_state(&mut self, state: State) {
         self.state = state;
     }

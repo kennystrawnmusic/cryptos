@@ -7,7 +7,7 @@ use alloc::alloc::Global;
 use conquer_once::spin::Lazy;
 use spin::RwLock;
 use x86_64::{
-    structures::paging::{PageSize, PhysFrame, OffsetPageTable},
+    structures::paging::{OffsetPageTable, PageSize, PhysFrame},
     PhysAddr,
 };
 

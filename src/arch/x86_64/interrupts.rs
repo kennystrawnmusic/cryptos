@@ -264,7 +264,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
         let virt = Page::<Size4KiB>::containing_address(Cr2::read())
             .start_address()
             .as_u64();
-        
+
         let phys = Cr2::read().as_u64();
 
         map_page!(
