@@ -889,11 +889,9 @@ pub unsafe fn system_shutdown() -> ! {
         .ok()
         .and_then(|block_opt| block_opt.map(|block| block.address));
 
-    let no_value = [None, None, None, None, None, None, None];
-
     if let Ok(AmlValue::Package(pkg)) = aml_ctx.invoke_method(
         &AmlName::from_str("\\_S5").unwrap_or_else(|e| panic!("Failed to execute method: {:?}", e)),
-        Args(no_value),
+        Args([None, None, None, None, None, None, None]),
     ) {
         if let Some(pm1a) = pm1a_block {
             let mut p = Port::new(pm1a as u16);
@@ -918,5 +916,5 @@ pub unsafe fn system_shutdown() -> ! {
         }
     };
 
-    unreachable!()
+    unreachable!("System should already have been shut down by this point")
 }
