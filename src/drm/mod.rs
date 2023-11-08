@@ -45,37 +45,35 @@ impl core::ops::Add<Self> for PixelColorKind {
 
     fn add(self, rhs: Self) -> Self::Output {
         match self {
-            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
-                Self::Rgb(
-                    Rgb888::new(
+            Self::Rgb(own_rgb) => {
+                if let Self::Rgb(other_rgb) = rhs {
+                    Self::Rgb(Rgb888::new(
                         own_rgb.r() + other_rgb.r(),
                         own_rgb.g() + other_rgb.g(),
                         own_rgb.b() + other_rgb.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
-                Self::Bgr(
-                    Bgr888::new(
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::Bgr(own_bgr) => {
+                if let Self::Bgr(other_bgr) = rhs {
+                    Self::Bgr(Bgr888::new(
                         own_bgr.r() + other_bgr.r(),
                         own_bgr.g() + other_bgr.g(),
                         own_bgr.b() + other_bgr.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
-                Self::U8(
-                    Gray8::new(
-                        own_gray.luma() + other_gray.luma(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::U8(own_gray) => {
+                if let Self::U8(other_gray) = rhs {
+                    Self::U8(Gray8::new(own_gray.luma() + other_gray.luma()))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
         }
     }
 }
@@ -85,37 +83,35 @@ impl core::ops::Sub<Self> for PixelColorKind {
 
     fn sub(self, rhs: Self) -> Self::Output {
         match self {
-            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
-                Self::Rgb(
-                    Rgb888::new(
+            Self::Rgb(own_rgb) => {
+                if let Self::Rgb(other_rgb) = rhs {
+                    Self::Rgb(Rgb888::new(
                         own_rgb.r() - other_rgb.r(),
                         own_rgb.g() - other_rgb.g(),
                         own_rgb.b() - other_rgb.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
-                Self::Bgr(
-                    Bgr888::new(
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::Bgr(own_bgr) => {
+                if let Self::Bgr(other_bgr) = rhs {
+                    Self::Bgr(Bgr888::new(
                         own_bgr.r() - other_bgr.r(),
                         own_bgr.g() - other_bgr.g(),
                         own_bgr.b() - other_bgr.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
-                Self::U8(
-                    Gray8::new(
-                        own_gray.luma() - other_gray.luma(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::U8(own_gray) => {
+                if let Self::U8(other_gray) = rhs {
+                    Self::U8(Gray8::new(own_gray.luma() - other_gray.luma()))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
         }
     }
 }
@@ -125,37 +121,35 @@ impl core::ops::Mul<Self> for PixelColorKind {
 
     fn mul(self, rhs: Self) -> Self::Output {
         match self {
-            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
-                Self::Rgb(
-                    Rgb888::new(
+            Self::Rgb(own_rgb) => {
+                if let Self::Rgb(other_rgb) = rhs {
+                    Self::Rgb(Rgb888::new(
                         own_rgb.r() * other_rgb.r(),
                         own_rgb.g() * other_rgb.g(),
                         own_rgb.b() * other_rgb.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
-                Self::Bgr(
-                    Bgr888::new(
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::Bgr(own_bgr) => {
+                if let Self::Bgr(other_bgr) = rhs {
+                    Self::Bgr(Bgr888::new(
                         own_bgr.r() * other_bgr.r(),
                         own_bgr.g() * other_bgr.g(),
                         own_bgr.b() * other_bgr.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
-                Self::U8(
-                    Gray8::new(
-                        own_gray.luma() * other_gray.luma(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::U8(own_gray) => {
+                if let Self::U8(other_gray) = rhs {
+                    Self::U8(Gray8::new(own_gray.luma() * other_gray.luma()))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
         }
     }
 }
@@ -165,25 +159,17 @@ impl core::ops::Add<f32> for PixelColorKind {
 
     fn add(self, rhs: f32) -> Self::Output {
         match self {
-            PixelColorKind::Rgb(rgb) => Self::Rgb(
-                Rgb888::new(
-                    (rgb.r() as f32 + rhs) as u8,
-                    (rgb.g() as f32 + rhs) as u8,
-                    (rgb.b() as f32 + rhs) as u8,
-                )
-            ),
-            PixelColorKind::Bgr(bgr) => Self::Bgr(
-                Bgr888::new(
-                    (bgr.r() as f32 + rhs) as u8,
-                    (bgr.g() as f32 + rhs) as u8,
-                    (bgr.b() as f32 + rhs) as u8,
-                )
-            ),
-            PixelColorKind::U8(gray) => Self::U8(
-                Gray8::new(
-                    (gray.luma() as f32 + rhs) as u8,
-                )
-            ),
+            PixelColorKind::Rgb(rgb) => Self::Rgb(Rgb888::new(
+                (rgb.r() as f32 + rhs) as u8,
+                (rgb.g() as f32 + rhs) as u8,
+                (rgb.b() as f32 + rhs) as u8,
+            )),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(Bgr888::new(
+                (bgr.r() as f32 + rhs) as u8,
+                (bgr.g() as f32 + rhs) as u8,
+                (bgr.b() as f32 + rhs) as u8,
+            )),
+            PixelColorKind::U8(gray) => Self::U8(Gray8::new((gray.luma() as f32 + rhs) as u8)),
         }
     }
 }
@@ -193,25 +179,17 @@ impl core::ops::Sub<f32> for PixelColorKind {
 
     fn sub(self, rhs: f32) -> Self::Output {
         match self {
-            PixelColorKind::Rgb(rgb) => Self::Rgb(
-                Rgb888::new(
-                    (rgb.r() as f32 - rhs) as u8,
-                    (rgb.g() as f32 - rhs) as u8,
-                    (rgb.b() as f32 - rhs) as u8,
-                )
-            ),
-            PixelColorKind::Bgr(bgr) => Self::Bgr(
-                Bgr888::new(
-                    (bgr.r() as f32 - rhs) as u8,
-                    (bgr.g() as f32 - rhs) as u8,
-                    (bgr.b() as f32 - rhs) as u8,
-                )
-            ),
-            PixelColorKind::U8(gray) => Self::U8(
-                Gray8::new(
-                    (gray.luma() as f32 - rhs) as u8,
-                )
-            ),
+            PixelColorKind::Rgb(rgb) => Self::Rgb(Rgb888::new(
+                (rgb.r() as f32 - rhs) as u8,
+                (rgb.g() as f32 - rhs) as u8,
+                (rgb.b() as f32 - rhs) as u8,
+            )),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(Bgr888::new(
+                (bgr.r() as f32 - rhs) as u8,
+                (bgr.g() as f32 - rhs) as u8,
+                (bgr.b() as f32 - rhs) as u8,
+            )),
+            PixelColorKind::U8(gray) => Self::U8(Gray8::new((gray.luma() as f32 - rhs) as u8)),
         }
     }
 }
@@ -221,25 +199,17 @@ impl core::ops::Mul<f32> for PixelColorKind {
 
     fn mul(self, rhs: f32) -> Self::Output {
         match self {
-            PixelColorKind::Rgb(rgb) => Self::Rgb(
-                Rgb888::new(
-                    (rgb.r() as f32 * rhs) as u8,
-                    (rgb.g() as f32 * rhs) as u8,
-                    (rgb.b() as f32 * rhs) as u8,
-                )
-            ),
-            PixelColorKind::Bgr(bgr) => Self::Bgr(
-                Bgr888::new(
-                    (bgr.r() as f32 * rhs) as u8,
-                    (bgr.g() as f32 * rhs) as u8,
-                    (bgr.b() as f32 * rhs) as u8,
-                )
-            ),
-            PixelColorKind::U8(gray) => Self::U8(
-                Gray8::new(
-                    (gray.luma() as f32 * rhs) as u8,
-                )
-            ),
+            PixelColorKind::Rgb(rgb) => Self::Rgb(Rgb888::new(
+                (rgb.r() as f32 * rhs) as u8,
+                (rgb.g() as f32 * rhs) as u8,
+                (rgb.b() as f32 * rhs) as u8,
+            )),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(Bgr888::new(
+                (bgr.r() as f32 * rhs) as u8,
+                (bgr.g() as f32 * rhs) as u8,
+                (bgr.b() as f32 * rhs) as u8,
+            )),
+            PixelColorKind::U8(gray) => Self::U8(Gray8::new((gray.luma() as f32 * rhs) as u8)),
         }
     }
 }
@@ -249,25 +219,17 @@ impl core::ops::Div<f32> for PixelColorKind {
 
     fn div(self, rhs: f32) -> Self::Output {
         match self {
-            PixelColorKind::Rgb(rgb) => Self::Rgb(
-                Rgb888::new(
-                    (rgb.r() as f32 / rhs) as u8,
-                    (rgb.g() as f32 / rhs) as u8,
-                    (rgb.b() as f32 / rhs) as u8,
-                )
-            ),
-            PixelColorKind::Bgr(bgr) => Self::Bgr(
-                Bgr888::new(
-                    (bgr.r() as f32 / rhs) as u8,
-                    (bgr.g() as f32 / rhs) as u8,
-                    (bgr.b() as f32 / rhs) as u8,
-                )
-            ),
-            PixelColorKind::U8(gray) => Self::U8(
-                Gray8::new(
-                    (gray.luma() as f32 / rhs) as u8,
-                )
-            ),
+            PixelColorKind::Rgb(rgb) => Self::Rgb(Rgb888::new(
+                (rgb.r() as f32 / rhs) as u8,
+                (rgb.g() as f32 / rhs) as u8,
+                (rgb.b() as f32 / rhs) as u8,
+            )),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(Bgr888::new(
+                (bgr.r() as f32 / rhs) as u8,
+                (bgr.g() as f32 / rhs) as u8,
+                (bgr.b() as f32 / rhs) as u8,
+            )),
+            PixelColorKind::U8(gray) => Self::U8(Gray8::new((gray.luma() as f32 / rhs) as u8)),
         }
     }
 }
@@ -277,37 +239,35 @@ impl core::ops::Div<Self> for PixelColorKind {
 
     fn div(self, rhs: Self) -> Self::Output {
         match self {
-            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
-                Self::Rgb(
-                    Rgb888::new(
+            Self::Rgb(own_rgb) => {
+                if let Self::Rgb(other_rgb) = rhs {
+                    Self::Rgb(Rgb888::new(
                         own_rgb.r() / other_rgb.r(),
                         own_rgb.g() / other_rgb.g(),
                         own_rgb.b() / other_rgb.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
-                Self::Bgr(
-                    Bgr888::new(
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::Bgr(own_bgr) => {
+                if let Self::Bgr(other_bgr) = rhs {
+                    Self::Bgr(Bgr888::new(
                         own_bgr.r() / other_bgr.r(),
                         own_bgr.g() / other_bgr.g(),
                         own_bgr.b() / other_bgr.b(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
-            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
-                Self::U8(
-                    Gray8::new(
-                        own_gray.luma() / other_gray.luma(),
-                    )
-                )
-            } else {
-                unreachable!("Mismatched pixel color types")
-            },
+                    ))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
+            Self::U8(own_gray) => {
+                if let Self::U8(other_gray) = rhs {
+                    Self::U8(Gray8::new(own_gray.luma() / other_gray.luma()))
+                } else {
+                    unreachable!("Mismatched pixel color types")
+                }
+            }
         }
     }
 }
@@ -492,7 +452,7 @@ impl Pixelx16 {
         if !(0.0..1.0).contains(&alpha) {
             panic!("Alpha value out of bounds (must be between 0 and 1)")
         }
-        
+
         let alpha_simd = Simd::<f32, 16>::from_array([alpha; 16]);
         let max_simd = Simd::<f32, 16>::from_array([1.0; 16]);
 
@@ -590,7 +550,7 @@ impl core::ops::Div<Self> for Pixelx16 {
     fn div(self, rhs: Self) -> Self::Output {
         let me = self.as_slice();
         let other = rhs.as_slice();
-        
+
         Self::from_array([
             Pixel(me[0].0, me[0].1 / other[0].1),
             Pixel(me[1].0, me[1].1 / other[1].1),
