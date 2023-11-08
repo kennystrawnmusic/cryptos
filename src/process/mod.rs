@@ -28,7 +28,10 @@ pub mod signal;
 
 use signal::abort;
 
+int_like!(Tid, AtomicTid, usize, AtomicUsize);
 int_like!(Pid, AtomicPid, usize, AtomicUsize);
+int_like!(Sid, AtomicSid, u64, AtomicU64);
+int_like!(Gid, AtomicGid, u64, AtomicU64);
 
 /// State that the context is left in
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -127,10 +130,10 @@ pub struct Process<'a> {
     state: State,
 
     pid: AtomicPid,
-    tid: AtomicPid,
+    tid: AtomicTid,
 
-    sid: AtomicU64,
-    gid: AtomicU64,
+    sid: AtomicSid,
+    gid: AtomicGid,
 
     parent: RwLock<Option<Arc<Process<'a>>>>,
 
@@ -173,9 +176,9 @@ impl<'a> Process<'a> {
             self_reference: Weak::new(),
             state: State::Blocked, // don't make process Runnable until it's actually ready to be run
             pid: AtomicPid::new(Pid::new(global_id)),
-            tid: AtomicPid::new(Pid::new(global_id)),
-            sid: AtomicU64::new(global_id as u64),
-            gid: AtomicU64::new(global_id as u64),
+            tid: AtomicTid::new(Tid::new(global_id)),
+            sid: AtomicSid::new(Sid::new(global_id as u64)),
+            gid: AtomicGid::new(Gid::new(global_id as u64)),
             parent: RwLock::new(None),
             sleep: AtomicU64::new(global_id as u64),
             signal_received: Signal::Success,
