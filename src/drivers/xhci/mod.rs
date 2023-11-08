@@ -585,8 +585,8 @@ impl XhciImpl {
     }
     pub fn init(&mut self) {
         // borrow checker
-        let cmd_ring_ptr = self.cmd_ring as *mut [CommandKind<'_>];
-        let event_ring_ptr = self.event_ring_dequeue as *mut [EventKind<'_>];
+        let cmd_ring_addr = self.cmd_ring.first().unwrap() as *const CommandKind<'_> as u64;
+        let erdp_raw = self.event_ring_dequeue.first().unwrap() as *const EventKind<'_> as u64;
 
         // will need this later
         let _transfer_ring_ptr = self.transfer_ring as *mut [TransferKind<'_>];
@@ -616,13 +616,16 @@ impl XhciImpl {
             let max_slots = self
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_device_slots());
+
             let max_ports = self
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_ports());
+
             let max_interrupts = self
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
                 .expect("No interrupt vectors available");
+            
             let config_info = self.capabilities().map(|cap| {
                 cap.hccparams2
                     .read_volatile()
@@ -688,12 +691,7 @@ impl XhciImpl {
             // Set the command ring control register
             if let Some(op) = self.operational_mut() {
                 op.crcr.update_volatile(|crcr| {
-                    crcr.set_command_ring_pointer(
-                        unsafe { &mut *cmd_ring_ptr }
-                            .first()
-                            .map(|cmd| cmd as *const _ as u64)
-                            .expect("No commands present in command ring"),
-                    )
+                    crcr.set_command_ring_pointer(cmd_ring_addr)
                 })
             }
 
@@ -707,7 +705,7 @@ impl XhciImpl {
 
                     // Set the event ring dequeue pointer
                     int.interrupter_mut(i).erdp.update_volatile(|erdp| {
-                        erdp.set_event_ring_dequeue_pointer(event_ring_ptr as *const () as u64);
+                        erdp.set_event_ring_dequeue_pointer(erdp_raw);
                     });
 
                     // Set the event ring segment table base address
@@ -803,10 +801,9 @@ impl XhciImpl {
                         while port.portsc.port_reset() {
                             core::hint::spin_loop();
                         }
-
-                        log::info!("Ports successfully reset");
                     }
                 }
+                log::info!("Ports successfully reset");
             });
 
             // Debug
