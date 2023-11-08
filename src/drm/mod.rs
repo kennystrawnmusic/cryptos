@@ -744,6 +744,8 @@ impl core::ops::Div<&mut Self> for Pixelx16 {
     }
 }
 
+// Clone implementation needs to clone the underlying pixels
+#[allow(clippy::non_canonical_clone_impl)]
 impl Clone for Pixelx16 {
     fn clone(&self) -> Self {
         Self::from_slice(self.as_slice())
