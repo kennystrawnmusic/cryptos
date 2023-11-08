@@ -680,7 +680,7 @@ impl core::ops::Div<Simd<f32, 16>> for Pixelx16 {
     }
 }
 
-impl<'a> core::ops::Add<Simd<f32, 16>> for &'a mut Pixelx16 {
+impl core::ops::Add<Simd<f32, 16>> for &mut Pixelx16 {
     type Output = Pixelx16;
 
     fn add(self, rhs: Simd<f32, 16>) -> Self::Output {
