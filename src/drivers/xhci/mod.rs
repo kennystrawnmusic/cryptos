@@ -512,26 +512,31 @@ impl XhciImpl {
         }
     }
     pub fn capabilities_mut(&mut self) -> Option<&mut Capability<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).capability })
     }
     pub fn doorbell_mut(&mut self) -> Option<&mut ReadWrite<Register, XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).doorbell })
     }
     pub fn operational_mut(&mut self) -> Option<&mut Operational<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).operational })
     }
     pub fn port_register_set_mut(&mut self) -> Option<&mut ReadWrite<PortRegisterSet, XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).port_register_set })
     }
     pub fn runtime_mut(&mut self) -> Option<&mut Runtime<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe { &mut (*(regs as *mut Registers<XhciMapper>)).runtime })
@@ -539,6 +544,7 @@ impl XhciImpl {
     pub fn interrupter_register_set_mut(
         &mut self,
     ) -> Option<&mut InterrupterRegisterSet<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.regs) as *mut Option<Registers<XhciMapper>>) }
             .as_mut()
             .map(|regs| unsafe {
@@ -546,31 +552,37 @@ impl XhciImpl {
             })
     }
     pub fn capabilities(&self) -> Option<&Capability<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).capability })
     }
     pub fn doorbell(&self) -> Option<&ReadWrite<Register, XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).doorbell })
     }
     pub fn operational(&self) -> Option<&Operational<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).operational })
     }
     pub fn port_register_set(&self) -> Option<&ReadWrite<PortRegisterSet, XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).port_register_set })
     }
     pub fn runtime(&self) -> Option<&Runtime<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe { &(*(regs as *const Registers<XhciMapper>)).runtime })
     }
     pub fn interrupter_register_set(&self) -> Option<&InterrupterRegisterSet<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &*((&self.regs) as *const Option<Registers<XhciMapper>>) }
             .as_ref()
             .map(|regs| unsafe {
@@ -578,9 +590,11 @@ impl XhciImpl {
             })
     }
     pub fn extcaps(&self) -> Option<&List<XhciMapper>> {
-        unsafe { *(&(self.extcaps.as_ref()) as *const Option<&List<XhciMapper>>)}
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
+        unsafe { *(&(self.extcaps.as_ref()) as *const Option<&List<XhciMapper>>) }
     }
     pub fn extcaps_mut(&mut self) -> Option<&mut List<XhciMapper>> {
+        // Borrow checker throws a hissy fit when raw pointers aren't used here
         unsafe { &mut *((&mut self.extcaps) as *mut Option<List<XhciMapper>>) }.as_mut()
     }
     pub fn init(&mut self) {
@@ -625,7 +639,7 @@ impl XhciImpl {
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
                 .expect("No interrupt vectors available");
-            
+
             let config_info = self.capabilities().map(|cap| {
                 cap.hccparams2
                     .read_volatile()
@@ -690,9 +704,8 @@ impl XhciImpl {
 
             // Set the command ring control register
             if let Some(op) = self.operational_mut() {
-                op.crcr.update_volatile(|crcr| {
-                    crcr.set_command_ring_pointer(cmd_ring_addr)
-                })
+                op.crcr
+                    .update_volatile(|crcr| crcr.set_command_ring_pointer(cmd_ring_addr))
             }
 
             // Set event ring segment table registers
