@@ -40,6 +40,278 @@ pub enum PixelColorKind {
     U8(Gray8),
 }
 
+impl core::ops::Add<Self> for PixelColorKind {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
+                Self::Rgb(
+                    Rgb888::new(
+                        own_rgb.r() + other_rgb.r(),
+                        own_rgb.g() + other_rgb.g(),
+                        own_rgb.b() + other_rgb.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
+                Self::Bgr(
+                    Bgr888::new(
+                        own_bgr.r() + other_bgr.r(),
+                        own_bgr.g() + other_bgr.g(),
+                        own_bgr.b() + other_bgr.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
+                Self::U8(
+                    Gray8::new(
+                        own_gray.luma() + other_gray.luma(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+        }
+    }
+}
+
+impl core::ops::Sub<Self> for PixelColorKind {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
+                Self::Rgb(
+                    Rgb888::new(
+                        own_rgb.r() - other_rgb.r(),
+                        own_rgb.g() - other_rgb.g(),
+                        own_rgb.b() - other_rgb.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
+                Self::Bgr(
+                    Bgr888::new(
+                        own_bgr.r() - other_bgr.r(),
+                        own_bgr.g() - other_bgr.g(),
+                        own_bgr.b() - other_bgr.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
+                Self::U8(
+                    Gray8::new(
+                        own_gray.luma() - other_gray.luma(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+        }
+    }
+}
+
+impl core::ops::Mul<Self> for PixelColorKind {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
+                Self::Rgb(
+                    Rgb888::new(
+                        own_rgb.r() * other_rgb.r(),
+                        own_rgb.g() * other_rgb.g(),
+                        own_rgb.b() * other_rgb.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
+                Self::Bgr(
+                    Bgr888::new(
+                        own_bgr.r() * other_bgr.r(),
+                        own_bgr.g() * other_bgr.g(),
+                        own_bgr.b() * other_bgr.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
+                Self::U8(
+                    Gray8::new(
+                        own_gray.luma() * other_gray.luma(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+        }
+    }
+}
+
+impl core::ops::Add<f32> for PixelColorKind {
+    type Output = Self;
+
+    fn add(self, rhs: f32) -> Self::Output {
+        match self {
+            PixelColorKind::Rgb(rgb) => Self::Rgb(
+                Rgb888::new(
+                    (rgb.r() as f32 + rhs) as u8,
+                    (rgb.g() as f32 + rhs) as u8,
+                    (rgb.b() as f32 + rhs) as u8,
+                )
+            ),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(
+                Bgr888::new(
+                    (bgr.r() as f32 + rhs) as u8,
+                    (bgr.g() as f32 + rhs) as u8,
+                    (bgr.b() as f32 + rhs) as u8,
+                )
+            ),
+            PixelColorKind::U8(gray) => Self::U8(
+                Gray8::new(
+                    (gray.luma() as f32 + rhs) as u8,
+                )
+            ),
+        }
+    }
+}
+
+impl core::ops::Sub<f32> for PixelColorKind {
+    type Output = Self;
+
+    fn sub(self, rhs: f32) -> Self::Output {
+        match self {
+            PixelColorKind::Rgb(rgb) => Self::Rgb(
+                Rgb888::new(
+                    (rgb.r() as f32 - rhs) as u8,
+                    (rgb.g() as f32 - rhs) as u8,
+                    (rgb.b() as f32 - rhs) as u8,
+                )
+            ),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(
+                Bgr888::new(
+                    (bgr.r() as f32 - rhs) as u8,
+                    (bgr.g() as f32 - rhs) as u8,
+                    (bgr.b() as f32 - rhs) as u8,
+                )
+            ),
+            PixelColorKind::U8(gray) => Self::U8(
+                Gray8::new(
+                    (gray.luma() as f32 - rhs) as u8,
+                )
+            ),
+        }
+    }
+}
+
+impl core::ops::Mul<f32> for PixelColorKind {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        match self {
+            PixelColorKind::Rgb(rgb) => Self::Rgb(
+                Rgb888::new(
+                    (rgb.r() as f32 * rhs) as u8,
+                    (rgb.g() as f32 * rhs) as u8,
+                    (rgb.b() as f32 * rhs) as u8,
+                )
+            ),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(
+                Bgr888::new(
+                    (bgr.r() as f32 * rhs) as u8,
+                    (bgr.g() as f32 * rhs) as u8,
+                    (bgr.b() as f32 * rhs) as u8,
+                )
+            ),
+            PixelColorKind::U8(gray) => Self::U8(
+                Gray8::new(
+                    (gray.luma() as f32 * rhs) as u8,
+                )
+            ),
+        }
+    }
+}
+
+impl core::ops::Div<f32> for PixelColorKind {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        match self {
+            PixelColorKind::Rgb(rgb) => Self::Rgb(
+                Rgb888::new(
+                    (rgb.r() as f32 / rhs) as u8,
+                    (rgb.g() as f32 / rhs) as u8,
+                    (rgb.b() as f32 / rhs) as u8,
+                )
+            ),
+            PixelColorKind::Bgr(bgr) => Self::Bgr(
+                Bgr888::new(
+                    (bgr.r() as f32 / rhs) as u8,
+                    (bgr.g() as f32 / rhs) as u8,
+                    (bgr.b() as f32 / rhs) as u8,
+                )
+            ),
+            PixelColorKind::U8(gray) => Self::U8(
+                Gray8::new(
+                    (gray.luma() as f32 / rhs) as u8,
+                )
+            ),
+        }
+    }
+}
+
+impl core::ops::Div<Self> for PixelColorKind {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Rgb(own_rgb) => if let Self::Rgb(other_rgb) = rhs {
+                Self::Rgb(
+                    Rgb888::new(
+                        own_rgb.r() / other_rgb.r(),
+                        own_rgb.g() / other_rgb.g(),
+                        own_rgb.b() / other_rgb.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::Bgr(own_bgr) => if let Self::Bgr(other_bgr) = rhs {
+                Self::Bgr(
+                    Bgr888::new(
+                        own_bgr.r() / other_bgr.r(),
+                        own_bgr.g() / other_bgr.g(),
+                        own_bgr.b() / other_bgr.b(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+            Self::U8(own_gray) => if let Self::U8(other_gray) = rhs {
+                Self::U8(
+                    Gray8::new(
+                        own_gray.luma() / other_gray.luma(),
+                    )
+                )
+            } else {
+                unreachable!("Mismatched pixel color types")
+            },
+        }
+    }
+}
+
 /// SIMD-accelerated pixel buffer
 #[repr(simd)]
 pub struct Pixelx16(
@@ -214,29 +486,311 @@ impl Pixelx16 {
     /// # Panics
     /// Panics if the alpha value is out of range (i.e. less than 0 or greater than 1)
     pub fn alpha_blend(&mut self, alpha: f32, other: Self) {
-        let me = self.as_mut_slice();
-        let other = other.as_slice();
+        // borrow checker
+        let me_ptr = self as *mut _;
 
-        // Need to hardcode all these individually due to SIMD performance requirements
-        // Looping will iterate over these serially, while SIMD can do them all in parallel
-        me[0].1 = me[0].1.alpha_blend(alpha, other[0].1);
-        me[1].1 = me[1].1.alpha_blend(alpha, other[1].1);
-        me[2].1 = me[2].1.alpha_blend(alpha, other[2].1);
-        me[3].1 = me[3].1.alpha_blend(alpha, other[3].1);
-        me[4].1 = me[4].1.alpha_blend(alpha, other[4].1);
-        me[5].1 = me[5].1.alpha_blend(alpha, other[5].1);
-        me[6].1 = me[6].1.alpha_blend(alpha, other[6].1);
-        me[7].1 = me[7].1.alpha_blend(alpha, other[7].1);
-        me[8].1 = me[8].1.alpha_blend(alpha, other[8].1);
-        me[9].1 = me[9].1.alpha_blend(alpha, other[9].1);
-        me[10].1 = me[10].1.alpha_blend(alpha, other[10].1);
-        me[11].1 = me[11].1.alpha_blend(alpha, other[11].1);
-        me[12].1 = me[12].1.alpha_blend(alpha, other[12].1);
-        me[13].1 = me[13].1.alpha_blend(alpha, other[13].1);
-        me[14].1 = me[14].1.alpha_blend(alpha, other[14].1);
-        me[15].1 = me[15].1.alpha_blend(alpha, other[15].1);
+        if !(0.0..1.0).contains(&alpha) {
+            panic!("Alpha value out of bounds (must be between 0 and 1)")
+        }
+        
+        let alpha_simd = Simd::<f32, 16>::from_array([alpha; 16]);
+        let max_simd = Simd::<f32, 16>::from_array([1.0; 16]);
+
+        unsafe { *me_ptr = (self * alpha_simd) + (other * (max_simd - alpha_simd)) };
     }
 }
+
+impl core::ops::Add<Self> for Pixelx16 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let me = self.as_slice();
+        let other = rhs.as_slice();
+
+        Self::from_array([
+            Pixel(me[0].0, me[0].1 + other[0].1),
+            Pixel(me[1].0, me[1].1 + other[1].1),
+            Pixel(me[2].0, me[2].1 + other[2].1),
+            Pixel(me[3].0, me[3].1 + other[3].1),
+            Pixel(me[4].0, me[4].1 + other[4].1),
+            Pixel(me[5].0, me[5].1 + other[5].1),
+            Pixel(me[6].0, me[6].1 + other[6].1),
+            Pixel(me[7].0, me[7].1 + other[7].1),
+            Pixel(me[8].0, me[8].1 + other[8].1),
+            Pixel(me[9].0, me[9].1 + other[9].1),
+            Pixel(me[10].0, me[10].1 + other[10].1),
+            Pixel(me[11].0, me[11].1 + other[11].1),
+            Pixel(me[12].0, me[12].1 + other[12].1),
+            Pixel(me[13].0, me[13].1 + other[13].1),
+            Pixel(me[14].0, me[14].1 + other[14].1),
+            Pixel(me[15].0, me[15].1 + other[15].1),
+        ])
+    }
+}
+
+impl core::ops::Sub<Self> for Pixelx16 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let me = self.as_slice();
+        let other = rhs.as_slice();
+
+        Self::from_array([
+            Pixel(me[0].0, me[0].1 - other[0].1),
+            Pixel(me[1].0, me[1].1 - other[1].1),
+            Pixel(me[2].0, me[2].1 - other[2].1),
+            Pixel(me[3].0, me[3].1 - other[3].1),
+            Pixel(me[4].0, me[4].1 - other[4].1),
+            Pixel(me[5].0, me[5].1 - other[5].1),
+            Pixel(me[6].0, me[6].1 - other[6].1),
+            Pixel(me[7].0, me[7].1 - other[7].1),
+            Pixel(me[8].0, me[8].1 - other[8].1),
+            Pixel(me[9].0, me[9].1 - other[9].1),
+            Pixel(me[10].0, me[10].1 - other[10].1),
+            Pixel(me[11].0, me[11].1 - other[11].1),
+            Pixel(me[12].0, me[12].1 - other[12].1),
+            Pixel(me[13].0, me[13].1 - other[13].1),
+            Pixel(me[14].0, me[14].1 - other[14].1),
+            Pixel(me[15].0, me[15].1 - other[15].1),
+        ])
+    }
+}
+
+impl core::ops::Mul<Self> for Pixelx16 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let me = self.as_slice();
+        let other = rhs.as_slice();
+
+        Self::from_array([
+            Pixel(me[0].0, me[0].1 * other[0].1),
+            Pixel(me[1].0, me[1].1 * other[1].1),
+            Pixel(me[2].0, me[2].1 * other[2].1),
+            Pixel(me[3].0, me[3].1 * other[3].1),
+            Pixel(me[4].0, me[4].1 * other[4].1),
+            Pixel(me[5].0, me[5].1 * other[5].1),
+            Pixel(me[6].0, me[6].1 * other[6].1),
+            Pixel(me[7].0, me[7].1 * other[7].1),
+            Pixel(me[8].0, me[8].1 * other[8].1),
+            Pixel(me[9].0, me[9].1 * other[9].1),
+            Pixel(me[10].0, me[10].1 * other[10].1),
+            Pixel(me[11].0, me[11].1 * other[11].1),
+            Pixel(me[12].0, me[12].1 * other[12].1),
+            Pixel(me[13].0, me[13].1 * other[13].1),
+            Pixel(me[14].0, me[14].1 * other[14].1),
+            Pixel(me[15].0, me[15].1 * other[15].1),
+        ])
+    }
+}
+
+impl core::ops::Div<Self> for Pixelx16 {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let me = self.as_slice();
+        let other = rhs.as_slice();
+        
+        Self::from_array([
+            Pixel(me[0].0, me[0].1 / other[0].1),
+            Pixel(me[1].0, me[1].1 / other[1].1),
+            Pixel(me[2].0, me[2].1 / other[2].1),
+            Pixel(me[3].0, me[3].1 / other[3].1),
+            Pixel(me[4].0, me[4].1 / other[4].1),
+            Pixel(me[5].0, me[5].1 / other[5].1),
+            Pixel(me[6].0, me[6].1 / other[6].1),
+            Pixel(me[7].0, me[7].1 / other[7].1),
+            Pixel(me[8].0, me[8].1 / other[8].1),
+            Pixel(me[9].0, me[9].1 / other[9].1),
+            Pixel(me[10].0, me[10].1 / other[10].1),
+            Pixel(me[11].0, me[11].1 / other[11].1),
+            Pixel(me[12].0, me[12].1 / other[12].1),
+            Pixel(me[13].0, me[13].1 / other[13].1),
+            Pixel(me[14].0, me[14].1 / other[14].1),
+            Pixel(me[15].0, me[15].1 / other[15].1),
+        ])
+    }
+}
+
+impl core::ops::Add<Simd<f32, 16>> for Pixelx16 {
+    type Output = Self;
+
+    fn add(self, rhs: Simd<f32, 16>) -> Self::Output {
+        let rhs_arr = rhs.as_array();
+
+        Self::from_array([
+            Pixel(self.as_slice()[0].0, self.as_slice()[0].1 + rhs_arr[0]),
+            Pixel(self.as_slice()[1].0, self.as_slice()[1].1 + rhs_arr[1]),
+            Pixel(self.as_slice()[2].0, self.as_slice()[2].1 + rhs_arr[2]),
+            Pixel(self.as_slice()[3].0, self.as_slice()[3].1 + rhs_arr[3]),
+            Pixel(self.as_slice()[4].0, self.as_slice()[4].1 + rhs_arr[4]),
+            Pixel(self.as_slice()[5].0, self.as_slice()[5].1 + rhs_arr[5]),
+            Pixel(self.as_slice()[6].0, self.as_slice()[6].1 + rhs_arr[6]),
+            Pixel(self.as_slice()[7].0, self.as_slice()[7].1 + rhs_arr[7]),
+            Pixel(self.as_slice()[8].0, self.as_slice()[8].1 + rhs_arr[8]),
+            Pixel(self.as_slice()[9].0, self.as_slice()[9].1 + rhs_arr[9]),
+            Pixel(self.as_slice()[10].0, self.as_slice()[10].1 + rhs_arr[10]),
+            Pixel(self.as_slice()[11].0, self.as_slice()[11].1 + rhs_arr[11]),
+            Pixel(self.as_slice()[12].0, self.as_slice()[12].1 + rhs_arr[12]),
+            Pixel(self.as_slice()[13].0, self.as_slice()[13].1 + rhs_arr[13]),
+            Pixel(self.as_slice()[14].0, self.as_slice()[14].1 + rhs_arr[14]),
+            Pixel(self.as_slice()[15].0, self.as_slice()[15].1 + rhs_arr[15]),
+        ])
+    }
+}
+
+impl core::ops::Sub<Simd<f32, 16>> for Pixelx16 {
+    type Output = Self;
+
+    fn sub(self, rhs: Simd<f32, 16>) -> Self::Output {
+        let rhs_arr = rhs.as_array();
+
+        Self::from_array([
+            Pixel(self.as_slice()[0].0, self.as_slice()[0].1 - rhs_arr[0]),
+            Pixel(self.as_slice()[1].0, self.as_slice()[1].1 - rhs_arr[1]),
+            Pixel(self.as_slice()[2].0, self.as_slice()[2].1 - rhs_arr[2]),
+            Pixel(self.as_slice()[3].0, self.as_slice()[3].1 - rhs_arr[3]),
+            Pixel(self.as_slice()[4].0, self.as_slice()[4].1 - rhs_arr[4]),
+            Pixel(self.as_slice()[5].0, self.as_slice()[5].1 - rhs_arr[5]),
+            Pixel(self.as_slice()[6].0, self.as_slice()[6].1 - rhs_arr[6]),
+            Pixel(self.as_slice()[7].0, self.as_slice()[7].1 - rhs_arr[7]),
+            Pixel(self.as_slice()[8].0, self.as_slice()[8].1 - rhs_arr[8]),
+            Pixel(self.as_slice()[9].0, self.as_slice()[9].1 - rhs_arr[9]),
+            Pixel(self.as_slice()[10].0, self.as_slice()[10].1 - rhs_arr[10]),
+            Pixel(self.as_slice()[11].0, self.as_slice()[11].1 - rhs_arr[11]),
+            Pixel(self.as_slice()[12].0, self.as_slice()[12].1 - rhs_arr[12]),
+            Pixel(self.as_slice()[13].0, self.as_slice()[13].1 - rhs_arr[13]),
+            Pixel(self.as_slice()[14].0, self.as_slice()[14].1 - rhs_arr[14]),
+            Pixel(self.as_slice()[15].0, self.as_slice()[15].1 - rhs_arr[15]),
+        ])
+    }
+}
+
+impl core::ops::Mul<Simd<f32, 16>> for Pixelx16 {
+    type Output = Self;
+
+    fn mul(self, rhs: Simd<f32, 16>) -> Self::Output {
+        let rhs_arr = rhs.as_array();
+
+        Self::from_array([
+            Pixel(self.as_slice()[0].0, self.as_slice()[0].1 * rhs_arr[0]),
+            Pixel(self.as_slice()[1].0, self.as_slice()[1].1 * rhs_arr[1]),
+            Pixel(self.as_slice()[2].0, self.as_slice()[2].1 * rhs_arr[2]),
+            Pixel(self.as_slice()[3].0, self.as_slice()[3].1 * rhs_arr[3]),
+            Pixel(self.as_slice()[4].0, self.as_slice()[4].1 * rhs_arr[4]),
+            Pixel(self.as_slice()[5].0, self.as_slice()[5].1 * rhs_arr[5]),
+            Pixel(self.as_slice()[6].0, self.as_slice()[6].1 * rhs_arr[6]),
+            Pixel(self.as_slice()[7].0, self.as_slice()[7].1 * rhs_arr[7]),
+            Pixel(self.as_slice()[8].0, self.as_slice()[8].1 * rhs_arr[8]),
+            Pixel(self.as_slice()[9].0, self.as_slice()[9].1 * rhs_arr[9]),
+            Pixel(self.as_slice()[10].0, self.as_slice()[10].1 * rhs_arr[10]),
+            Pixel(self.as_slice()[11].0, self.as_slice()[11].1 * rhs_arr[11]),
+            Pixel(self.as_slice()[12].0, self.as_slice()[12].1 * rhs_arr[12]),
+            Pixel(self.as_slice()[13].0, self.as_slice()[13].1 * rhs_arr[13]),
+            Pixel(self.as_slice()[14].0, self.as_slice()[14].1 * rhs_arr[14]),
+            Pixel(self.as_slice()[15].0, self.as_slice()[15].1 * rhs_arr[15]),
+        ])
+    }
+}
+
+impl core::ops::Div<Simd<f32, 16>> for Pixelx16 {
+    type Output = Self;
+
+    fn div(self, rhs: Simd<f32, 16>) -> Self::Output {
+        let rhs_arr = rhs.as_array();
+
+        Self::from_array([
+            Pixel(self.as_slice()[0].0, self.as_slice()[0].1 / rhs_arr[0]),
+            Pixel(self.as_slice()[1].0, self.as_slice()[1].1 / rhs_arr[1]),
+            Pixel(self.as_slice()[2].0, self.as_slice()[2].1 / rhs_arr[2]),
+            Pixel(self.as_slice()[3].0, self.as_slice()[3].1 / rhs_arr[3]),
+            Pixel(self.as_slice()[4].0, self.as_slice()[4].1 / rhs_arr[4]),
+            Pixel(self.as_slice()[5].0, self.as_slice()[5].1 / rhs_arr[5]),
+            Pixel(self.as_slice()[6].0, self.as_slice()[6].1 / rhs_arr[6]),
+            Pixel(self.as_slice()[7].0, self.as_slice()[7].1 / rhs_arr[7]),
+            Pixel(self.as_slice()[8].0, self.as_slice()[8].1 / rhs_arr[8]),
+            Pixel(self.as_slice()[9].0, self.as_slice()[9].1 / rhs_arr[9]),
+            Pixel(self.as_slice()[10].0, self.as_slice()[10].1 / rhs_arr[10]),
+            Pixel(self.as_slice()[11].0, self.as_slice()[11].1 / rhs_arr[11]),
+            Pixel(self.as_slice()[12].0, self.as_slice()[12].1 / rhs_arr[12]),
+            Pixel(self.as_slice()[13].0, self.as_slice()[13].1 / rhs_arr[13]),
+            Pixel(self.as_slice()[14].0, self.as_slice()[14].1 / rhs_arr[14]),
+            Pixel(self.as_slice()[15].0, self.as_slice()[15].1 / rhs_arr[15]),
+        ])
+    }
+}
+
+impl<'a> core::ops::Add<Simd<f32, 16>> for &'a mut Pixelx16 {
+    type Output = Pixelx16;
+
+    fn add(self, rhs: Simd<f32, 16>) -> Self::Output {
+        (*self).add(rhs)
+    }
+}
+
+impl core::ops::Sub<Simd<f32, 16>> for &mut Pixelx16 {
+    type Output = Pixelx16;
+
+    fn sub(self, rhs: Simd<f32, 16>) -> Self::Output {
+        (*self).sub(rhs)
+    }
+}
+
+impl core::ops::Mul<Simd<f32, 16>> for &mut Pixelx16 {
+    type Output = Pixelx16;
+
+    fn mul(self, rhs: Simd<f32, 16>) -> Self::Output {
+        (*self).mul(rhs)
+    }
+}
+
+impl core::ops::Div<Simd<f32, 16>> for &mut Pixelx16 {
+    type Output = Pixelx16;
+
+    fn div(self, rhs: Simd<f32, 16>) -> Self::Output {
+        (*self).div(rhs)
+    }
+}
+
+impl core::ops::Add<&mut Self> for Pixelx16 {
+    type Output = Self;
+
+    fn add(self, rhs: &mut Self) -> Self::Output {
+        self.add(*rhs)
+    }
+}
+
+impl core::ops::Sub<&mut Self> for Pixelx16 {
+    type Output = Self;
+
+    fn sub(self, rhs: &mut Self) -> Self::Output {
+        self.sub(*rhs)
+    }
+}
+
+impl core::ops::Mul<&mut Self> for Pixelx16 {
+    type Output = Self;
+
+    fn mul(self, rhs: &mut Self) -> Self::Output {
+        self.mul(*rhs)
+    }
+}
+
+impl core::ops::Div<&mut Self> for Pixelx16 {
+    type Output = Self;
+
+    fn div(self, rhs: &mut Self) -> Self::Output {
+        self.div(*rhs)
+    }
+}
+
+impl Clone for Pixelx16 {
+    fn clone(&self) -> Self {
+        Self::from_slice(self.as_slice())
+    }
+}
+
+impl Copy for Pixelx16 {}
 
 impl PixelColorKind {
     pub fn from_png_metadata(
