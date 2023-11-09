@@ -21,6 +21,8 @@ pub enum ImageKind<'a> {
     Png(Box<ImageData<'a>>),
 }
 
+use crate::get_framebuffer;
+
 use super::{CanvasBuf, PixelColorKind};
 
 pub type Text<'a> = embedded_graphics::text::Text<'a, U8g2TextStyle<PixelColorKind>>;
@@ -174,7 +176,7 @@ pub fn png_color<'a>(inner: &'a ImageData) -> Box<dyn Iterator<Item = PixelColor
     Box::new(png_points(inner).map(move |point| {
         let pixel_chunk = inner
             .pixels()
-            .chunks_exact(4)
+            .chunks_exact(get_framebuffer().info().bytes_per_pixel)
             .nth(((point.x as u32) + (point.y as u32) * inner.width()) as usize)
             .unwrap();
 
