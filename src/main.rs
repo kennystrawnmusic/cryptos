@@ -152,7 +152,7 @@ pub static PRINTK: OnceCell<Printk> = OnceCell::uninit();
 /// Convenient wrapper for getting the next usable `PhysFrame` on the frame allocator's list
 pub fn get_next_usable_frame() -> PhysFrame {
     FRAME_ALLOCATOR
-        .write()
+        .read()
         .usable()
         .next()
         .expect("Out of memory")
