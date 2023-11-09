@@ -684,7 +684,7 @@ impl core::ops::Add<Simd<f32, 16>> for &mut Pixelx16 {
     type Output = Pixelx16;
 
     fn add(self, rhs: Simd<f32, 16>) -> Self::Output {
-        (*self).add(rhs)
+        (*self) + rhs
     }
 }
 
@@ -692,7 +692,7 @@ impl core::ops::Sub<Simd<f32, 16>> for &mut Pixelx16 {
     type Output = Pixelx16;
 
     fn sub(self, rhs: Simd<f32, 16>) -> Self::Output {
-        (*self).sub(rhs)
+        (*self) - rhs
     }
 }
 
@@ -700,7 +700,7 @@ impl core::ops::Mul<Simd<f32, 16>> for &mut Pixelx16 {
     type Output = Pixelx16;
 
     fn mul(self, rhs: Simd<f32, 16>) -> Self::Output {
-        (*self).mul(rhs)
+        (*self) * rhs
     }
 }
 
@@ -708,7 +708,7 @@ impl core::ops::Div<Simd<f32, 16>> for &mut Pixelx16 {
     type Output = Pixelx16;
 
     fn div(self, rhs: Simd<f32, 16>) -> Self::Output {
-        (*self).div(rhs)
+        (*self) / rhs
     }
 }
 
@@ -716,7 +716,7 @@ impl core::ops::Add<&mut Self> for Pixelx16 {
     type Output = Self;
 
     fn add(self, rhs: &mut Self) -> Self::Output {
-        self.add(*rhs)
+        self + (*rhs)
     }
 }
 
@@ -724,7 +724,7 @@ impl core::ops::Sub<&mut Self> for Pixelx16 {
     type Output = Self;
 
     fn sub(self, rhs: &mut Self) -> Self::Output {
-        self.sub(*rhs)
+        self - (*rhs)
     }
 }
 
@@ -732,7 +732,7 @@ impl core::ops::Mul<&mut Self> for Pixelx16 {
     type Output = Self;
 
     fn mul(self, rhs: &mut Self) -> Self::Output {
-        self.mul(*rhs)
+        self * (*rhs)
     }
 }
 
@@ -740,7 +740,7 @@ impl core::ops::Div<&mut Self> for Pixelx16 {
     type Output = Self;
 
     fn div(self, rhs: &mut Self) -> Self::Output {
-        self.div(*rhs)
+        self / (*rhs)
     }
 }
 
