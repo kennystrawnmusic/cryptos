@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 use alloc::sync::Arc;
 use bit_field::BitField;
 use conquer_once::spin::OnceCell;

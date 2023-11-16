@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /// 256-bit unsigned integer
 #[allow(non_camel_case_types)]
 pub struct u256([u128; 2]);

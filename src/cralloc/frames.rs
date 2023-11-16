@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
 use x86_64::structures::paging::{frame::PhysFrameRangeInclusive, FrameDeallocator};
 
