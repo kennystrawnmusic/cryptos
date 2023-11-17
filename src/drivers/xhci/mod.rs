@@ -322,6 +322,98 @@ impl_from_ref_for_trb_kind!(Normal, Transfer);
 impl_from_ref_for_trb_kind!(SetupStage, Transfer);
 impl_from_ref_for_trb_kind!(StatusStage, Transfer);
 
+macro_rules! impl_from_ptr_for_kind {
+    ($sub:ident, $kind:ident) => {
+        impl<'a> From<*mut $sub> for $kind<'a> {
+            #[allow(clippy::not_unsafe_ptr_arg_deref)]
+            fn from(sub: *mut $sub) -> Self {
+                $kind::$sub(unsafe { &mut *sub })
+            }
+        }
+    };
+}
+
+impl_from_ptr_for_kind!(AddressDevice, CommandKind);
+impl_from_ptr_for_kind!(ConfigureEndpoint, CommandKind);
+impl_from_ptr_for_kind!(DisableSlot, CommandKind);
+impl_from_ptr_for_kind!(EnableSlot, CommandKind);
+impl_from_ptr_for_kind!(EvaluateContext, CommandKind);
+impl_from_ptr_for_kind!(ForceEvent, CommandKind);
+impl_from_ptr_for_kind!(ForceHeader, CommandKind);
+impl_from_ptr_for_kind!(GetExtendedProperty, CommandKind);
+impl_from_ptr_for_kind!(GetPortBandwidth, CommandKind);
+impl_from_ptr_for_kind!(NegotiateBandwidth, CommandKind);
+impl_from_ptr_for_kind!(CmdNoop, CommandKind);
+impl_from_ptr_for_kind!(ResetDevice, CommandKind);
+impl_from_ptr_for_kind!(ResetEndpoint, CommandKind);
+impl_from_ptr_for_kind!(SetExtendedProperty, CommandKind);
+impl_from_ptr_for_kind!(SetLatencyToleranceValue, CommandKind);
+impl_from_ptr_for_kind!(SetTrDequeuePointer, CommandKind);
+impl_from_ptr_for_kind!(StopEndpoint, CommandKind);
+
+impl_from_ptr_for_kind!(BandwidthRequest, EventKind);
+impl_from_ptr_for_kind!(CommandCompletion, EventKind);
+impl_from_ptr_for_kind!(DeviceNotification, EventKind);
+impl_from_ptr_for_kind!(Doorbell, EventKind);
+impl_from_ptr_for_kind!(HostController, EventKind);
+impl_from_ptr_for_kind!(MfindexWrap, EventKind);
+impl_from_ptr_for_kind!(PortStatusChange, EventKind);
+impl_from_ptr_for_kind!(TransferEvent, EventKind);
+
+impl_from_ptr_for_kind!(DataStage, TransferKind);
+impl_from_ptr_for_kind!(EventData, TransferKind);
+impl_from_ptr_for_kind!(Isoch, TransferKind);
+impl_from_ptr_for_kind!(TransferNoop, TransferKind);
+impl_from_ptr_for_kind!(Normal, TransferKind);
+impl_from_ptr_for_kind!(SetupStage, TransferKind);
+impl_from_ptr_for_kind!(StatusStage, TransferKind);
+
+macro_rules! impl_from_ptr_for_trb_kind {
+    ($sub:ident, $kind:ident) => {
+        impl<'a> From<*mut $sub> for TrbKind<'a> {
+            #[allow(clippy::not_unsafe_ptr_arg_deref)]
+            fn from(sub: *mut $sub) -> Self {
+                TrbKind::$kind(unsafe { &mut *sub }.into())
+            }
+        }
+    };
+}
+
+impl_from_ptr_for_trb_kind!(AddressDevice, Command);
+impl_from_ptr_for_trb_kind!(ConfigureEndpoint, Command);
+impl_from_ptr_for_trb_kind!(DisableSlot, Command);
+impl_from_ptr_for_trb_kind!(EnableSlot, Command);
+impl_from_ptr_for_trb_kind!(EvaluateContext, Command);
+impl_from_ptr_for_trb_kind!(ForceEvent, Command);
+impl_from_ptr_for_trb_kind!(ForceHeader, Command);
+impl_from_ptr_for_trb_kind!(GetExtendedProperty, Command);
+impl_from_ptr_for_trb_kind!(GetPortBandwidth, Command);
+impl_from_ptr_for_trb_kind!(NegotiateBandwidth, Command);
+impl_from_ptr_for_trb_kind!(CmdNoop, Command);
+impl_from_ptr_for_trb_kind!(ResetDevice, Command);
+impl_from_ptr_for_trb_kind!(ResetEndpoint, Command);
+impl_from_ptr_for_trb_kind!(SetExtendedProperty, Command);
+impl_from_ptr_for_trb_kind!(SetLatencyToleranceValue, Command);
+impl_from_ptr_for_trb_kind!(SetTrDequeuePointer, Command);
+impl_from_ptr_for_trb_kind!(StopEndpoint, Command);
+
+impl_from_ptr_for_trb_kind!(BandwidthRequest, Event);
+impl_from_ptr_for_trb_kind!(CommandCompletion, Event);
+impl_from_ptr_for_trb_kind!(DeviceNotification, Event);
+impl_from_ptr_for_trb_kind!(Doorbell, Event);
+impl_from_ptr_for_trb_kind!(HostController, Event);
+impl_from_ptr_for_trb_kind!(MfindexWrap, Event);
+impl_from_ptr_for_trb_kind!(PortStatusChange, Event);
+impl_from_ptr_for_trb_kind!(TransferEvent, Event);
+
+impl_from_ptr_for_trb_kind!(DataStage, Transfer);
+impl_from_ptr_for_trb_kind!(EventData, Transfer);
+impl_from_ptr_for_trb_kind!(Isoch, Transfer);
+impl_from_ptr_for_trb_kind!(TransferNoop, Transfer);
+impl_from_ptr_for_trb_kind!(Normal, Transfer);
+impl_from_ptr_for_trb_kind!(SetupStage, Transfer);
+impl_from_ptr_for_trb_kind!(StatusStage, Transfer);
+
 impl<'a> TrbKind<'a> {
     pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
         match self {
@@ -1014,39 +1106,28 @@ impl XhciImpl {
         None
     }
 
-    pub fn exec_cmd<F: FnOnce(&mut TrbKind<'static>, bool)>(
-        &'static mut self,
-        sub: F,
-    ) -> TrbKind<'static> {
-        let int_set = self
-            .interrupter_register_set_mut()
-            .expect("No interrupter register set present");
-        let int = int_set.interrupter(0);
+    pub fn exec_cmd<F: FnOnce(&mut [TrbKind<'_>]) -> bool>(&mut self, f: F) {
+        let cmd_ring = &mut self.cmd_ring;
+        let event_ring_dequeue = &mut self.event_ring_dequeue;
 
-        if int.erdp.read_volatile().event_handler_busy() {
-            int.erdp.read_volatile().set_0_event_handler_busy();
+        // Clear the command ring
+        for cmd in cmd_ring.iter_mut() {
+            *cmd = TrbKind::from((&mut CmdNoop::new()) as *mut _);
         }
 
-        let next_event = {
-            let mut cmd_ring = self.cmd_ring.iter_mut().enumerate();
-            let (i, _) = cmd_ring.next().unwrap();
+        // Clear the event ring dequeue
+        for evt in event_ring_dequeue.iter_mut() {
+            *evt = EventKind::from((&mut TransferEvent::new()) as *mut _);
+        }
 
-            let cycle = matches!(cmd_ring.nth(i).unwrap(), (_, TrbKind::Link(_)));
+        // Execute the command
+        let success = f(cmd_ring);
 
-            {
-                let (_, trb) = cmd_ring.nth(i).unwrap();
-                sub(trb, cycle);
-
-                cmd_ring
-                    .map(|i| i.1.clone())
-                    .find(|trb| trb.as_inner().get_type() == TrbType::CommandCompletion)
-                    .expect("No command completion event found")
-            }
-        };
-
-        let out_ptr = next_event.as_ptr();
-
-        TrbKind::from(out_ptr)
+        // Wait for the command to complete
+        #[allow(clippy::while_immutable_condition)]
+        while !success {
+            core::hint::spin_loop();
+        }
     }
 }
 
