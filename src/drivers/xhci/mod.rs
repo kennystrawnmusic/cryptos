@@ -49,7 +49,7 @@ pub static ROOT_LINK: OnceCell<RwLock<Link>> = OnceCell::uninit();
 pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 
 /// Helper trait for parsing the specific TRBs we're dealing with
-trait TrbAnalyzer: AsRef<[u32]> {
+pub trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
             1 => TrbType::Normal,
@@ -164,7 +164,7 @@ impl<'a> TrbAnalyzer for &'a mut StatusStage {}
 
 impl<'a> TrbAnalyzer for &'a mut Link {}
 
-enum CommandKind<'a> {
+pub enum CommandKind<'a> {
     AddressDevice(&'a mut AddressDevice),
     ConfigureEndpoint(&'a mut ConfigureEndpoint),
     DisableSlot(&'a mut DisableSlot),
@@ -184,7 +184,7 @@ enum CommandKind<'a> {
     StopEndpoint(&'a mut StopEndpoint),
 }
 
-enum EventKind<'a> {
+pub enum EventKind<'a> {
     BandwidthRequest(&'a mut BandwidthRequest),
     CommandCompletion(&'a mut CommandCompletion),
     DeviceNotification(&'a mut DeviceNotification),
@@ -195,7 +195,7 @@ enum EventKind<'a> {
     TransferEvent(&'a mut TransferEvent),
 }
 
-enum TransferKind<'a> {
+pub enum TransferKind<'a> {
     DataStage(&'a mut DataStage),
     EventData(&'a mut EventData),
     Isoch(&'a mut Isoch),
@@ -205,7 +205,7 @@ enum TransferKind<'a> {
     StatusStage(&'a mut StatusStage),
 }
 
-enum TrbKind<'a> {
+pub enum TrbKind<'a> {
     Command(CommandKind<'a>),
     Event(EventKind<'a>),
     Transfer(TransferKind<'a>),
@@ -323,8 +323,7 @@ impl_from_ref_for_trb_kind!(SetupStage, Transfer);
 impl_from_ref_for_trb_kind!(StatusStage, Transfer);
 
 impl<'a> TrbKind<'a> {
-    #[allow(dead_code)] // not finished
-    pub fn as_inner(&'a mut self) -> &'a mut dyn TrbAnalyzer {
+    pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
         match self {
             TrbKind::Command(cmd) => match cmd {
                 CommandKind::AddressDevice(cmd) => *cmd,
@@ -367,9 +366,60 @@ impl<'a> TrbKind<'a> {
             TrbKind::Link(l) => *l,
         }
     }
+    #[allow(dead_code)] // not finished
+    pub fn as_inner_mut(&'a mut self) -> &'a mut dyn TrbAnalyzer {
+        match self {
+            TrbKind::Command(cmd) => match cmd {
+                CommandKind::AddressDevice(cmd) => *cmd,
+                CommandKind::ConfigureEndpoint(cmd) => *cmd,
+                CommandKind::DisableSlot(cmd) => *cmd,
+                CommandKind::EnableSlot(cmd) => *cmd,
+                CommandKind::EvaluateContext(cmd) => *cmd,
+                CommandKind::ForceEvent(cmd) => *cmd,
+                CommandKind::ForceHeader(cmd) => *cmd,
+                CommandKind::GetExtendedProperty(cmd) => *cmd,
+                CommandKind::GetPortBandwidth(cmd) => *cmd,
+                CommandKind::NegotiateBandwidth(cmd) => *cmd,
+                CommandKind::CmdNoop(cmd) => *cmd,
+                CommandKind::ResetDevice(cmd) => *cmd,
+                CommandKind::ResetEndpoint(cmd) => *cmd,
+                CommandKind::SetExtendedProperty(cmd) => *cmd,
+                CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
+                CommandKind::SetTrDequeuePointer(cmd) => *cmd,
+                CommandKind::StopEndpoint(cmd) => *cmd,
+            },
+            TrbKind::Event(evt) => match evt {
+                EventKind::BandwidthRequest(evt) => *evt,
+                EventKind::CommandCompletion(evt) => *evt,
+                EventKind::DeviceNotification(evt) => *evt,
+                EventKind::Doorbell(evt) => *evt,
+                EventKind::HostController(evt) => *evt,
+                EventKind::MfindexWrap(evt) => *evt,
+                EventKind::PortStatusChange(evt) => *evt,
+                EventKind::TransferEvent(evt) => *evt,
+            },
+            TrbKind::Transfer(tr) => match tr {
+                TransferKind::DataStage(tr) => *tr,
+                TransferKind::EventData(tr) => *tr,
+                TransferKind::Isoch(tr) => *tr,
+                TransferKind::TransferNoop(tr) => *tr,
+                TransferKind::Normal(tr) => *tr,
+                TransferKind::SetupStage(tr) => *tr,
+                TransferKind::StatusStage(tr) => *tr,
+            },
+            TrbKind::Link(l) => *l,
+        }
+    }
+
+    pub fn as_ptr(&'a self) -> *mut dyn TrbAnalyzer {
+        let self_ptr = self as *const Self as *mut Self;
+        unsafe { &*self_ptr }.as_inner() as *const _ as *mut _
+    }
 }
 
 impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
+    // cannot be implemented any other way
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(value: *mut dyn TrbAnalyzer) -> Self {
         match unsafe { &*(value) }.get_type() {
             TrbType::Normal => TrbKind::from(unsafe { &mut *(value as *mut Normal) }),
@@ -435,10 +485,130 @@ impl From<*mut dyn TrbAnalyzer> for TrbKind<'_> {
     }
 }
 
+impl<'a> Clone for CommandKind<'a> {
+    fn clone(&self) -> Self {
+        match self {
+            CommandKind::AddressDevice(_) => {
+                Self::AddressDevice(unsafe { &mut *(addralloc::<AddressDevice>()) })
+            }
+            CommandKind::ConfigureEndpoint(_) => {
+                Self::ConfigureEndpoint(unsafe { &mut *(addralloc::<ConfigureEndpoint>()) })
+            }
+            CommandKind::DisableSlot(_) => {
+                Self::DisableSlot(unsafe { &mut *(addralloc::<DisableSlot>()) })
+            }
+            CommandKind::EnableSlot(_) => {
+                Self::EnableSlot(unsafe { &mut *(addralloc::<EnableSlot>()) })
+            }
+            CommandKind::EvaluateContext(_) => {
+                Self::EvaluateContext(unsafe { &mut *(addralloc::<EvaluateContext>()) })
+            }
+            CommandKind::ForceEvent(_) => {
+                Self::ForceEvent(unsafe { &mut *(addralloc::<ForceEvent>()) })
+            }
+            CommandKind::ForceHeader(_) => {
+                Self::ForceHeader(unsafe { &mut *(addralloc::<ForceHeader>()) })
+            }
+            CommandKind::GetExtendedProperty(_) => {
+                Self::GetExtendedProperty(unsafe { &mut *(addralloc::<GetExtendedProperty>()) })
+            }
+            CommandKind::GetPortBandwidth(_) => {
+                Self::GetPortBandwidth(unsafe { &mut *(addralloc::<GetPortBandwidth>()) })
+            }
+            CommandKind::NegotiateBandwidth(_) => {
+                Self::NegotiateBandwidth(unsafe { &mut *(addralloc::<NegotiateBandwidth>()) })
+            }
+            CommandKind::CmdNoop(_) => Self::CmdNoop(unsafe { &mut *(addralloc::<CmdNoop>()) }),
+            CommandKind::ResetDevice(_) => {
+                Self::ResetDevice(unsafe { &mut *(addralloc::<ResetDevice>()) })
+            }
+            CommandKind::ResetEndpoint(_) => {
+                Self::ResetEndpoint(unsafe { &mut *(addralloc::<ResetEndpoint>()) })
+            }
+            CommandKind::SetExtendedProperty(_) => {
+                Self::SetExtendedProperty(unsafe { &mut *(addralloc::<SetExtendedProperty>()) })
+            }
+            CommandKind::SetLatencyToleranceValue(_) => Self::SetLatencyToleranceValue(unsafe {
+                &mut *(addralloc::<SetLatencyToleranceValue>())
+            }),
+            CommandKind::SetTrDequeuePointer(_) => {
+                Self::SetTrDequeuePointer(unsafe { &mut *(addralloc::<SetTrDequeuePointer>()) })
+            }
+            CommandKind::StopEndpoint(_) => {
+                Self::StopEndpoint(unsafe { &mut *(addralloc::<StopEndpoint>()) })
+            }
+        }
+    }
+}
+
+impl<'a> Clone for EventKind<'a> {
+    fn clone(&self) -> Self {
+        match self {
+            EventKind::BandwidthRequest(_) => {
+                Self::BandwidthRequest(unsafe { &mut *(addralloc::<BandwidthRequest>()) })
+            }
+            EventKind::CommandCompletion(_) => {
+                Self::CommandCompletion(unsafe { &mut *(addralloc::<CommandCompletion>()) })
+            }
+            EventKind::DeviceNotification(_) => {
+                Self::DeviceNotification(unsafe { &mut *(addralloc::<DeviceNotification>()) })
+            }
+            EventKind::Doorbell(_) => Self::Doorbell(unsafe { &mut *(addralloc::<Doorbell>()) }),
+            EventKind::HostController(_) => {
+                Self::HostController(unsafe { &mut *(addralloc::<HostController>()) })
+            }
+            EventKind::MfindexWrap(_) => {
+                Self::MfindexWrap(unsafe { &mut *(addralloc::<MfindexWrap>()) })
+            }
+            EventKind::PortStatusChange(_) => {
+                Self::PortStatusChange(unsafe { &mut *(addralloc::<PortStatusChange>()) })
+            }
+            EventKind::TransferEvent(_) => {
+                Self::TransferEvent(unsafe { &mut *(addralloc::<TransferEvent>()) })
+            }
+        }
+    }
+}
+
+impl<'a> Clone for TransferKind<'a> {
+    fn clone(&self) -> Self {
+        match self {
+            TransferKind::DataStage(_) => {
+                Self::DataStage(unsafe { &mut *(addralloc::<DataStage>()) })
+            }
+            TransferKind::EventData(_) => {
+                Self::EventData(unsafe { &mut *(addralloc::<EventData>()) })
+            }
+            TransferKind::Isoch(_) => Self::Isoch(unsafe { &mut *(addralloc::<Isoch>()) }),
+            TransferKind::TransferNoop(_) => {
+                Self::TransferNoop(unsafe { &mut *(addralloc::<TransferNoop>()) })
+            }
+            TransferKind::Normal(_) => Self::Normal(unsafe { &mut *(addralloc::<Normal>()) }),
+            TransferKind::SetupStage(_) => {
+                Self::SetupStage(unsafe { &mut *(addralloc::<SetupStage>()) })
+            }
+            TransferKind::StatusStage(_) => {
+                Self::StatusStage(unsafe { &mut *(addralloc::<StatusStage>()) })
+            }
+        }
+    }
+}
+
+impl<'a> Clone for TrbKind<'a> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Command(cmd) => Self::Command(cmd.clone()),
+            Self::Event(evt) => Self::Event(evt.clone()),
+            Self::Transfer(tr) => Self::Transfer(tr.clone()),
+            Self::Link(_) => Self::Link(unsafe { &mut *(addralloc::<Link>()) }),
+        }
+    }
+}
+
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
     extcaps: Option<List<XhciMapper>>,
-    cmd_ring: &'static mut [CommandKind<'static>],
+    cmd_ring: &'static mut [TrbKind<'static>],
     event_ring_dequeue: &'static mut [EventKind<'static>],
     transfer_ring: &'static mut [TransferKind<'static>],
 }
@@ -494,7 +664,7 @@ impl XhciImpl {
             extcaps,
             cmd_ring: unsafe {
                 core::slice::from_raw_parts_mut::<'static>(
-                    addralloc::<CommandKind<'_>>(),
+                    addralloc::<TrbKind<'_>>(),
                     Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>(),
                 )
             },
@@ -600,7 +770,7 @@ impl XhciImpl {
     }
     pub fn init(&mut self) {
         // borrow checker
-        let cmd_ring_addr = self.cmd_ring.first().unwrap() as *const CommandKind<'_> as u64;
+        let cmd_ring_addr = self.cmd_ring.first().unwrap() as *const TrbKind<'_> as u64;
         let erdp_raw = self.event_ring_dequeue.first().unwrap() as *const EventKind<'_> as u64;
 
         // will need this later
@@ -842,6 +1012,41 @@ impl XhciImpl {
             }
         }
         None
+    }
+
+    pub fn exec_cmd<F: FnOnce(&mut TrbKind<'static>, bool)>(
+        &'static mut self,
+        sub: F,
+    ) -> TrbKind<'static> {
+        let int_set = self
+            .interrupter_register_set_mut()
+            .expect("No interrupter register set present");
+        let int = int_set.interrupter(0);
+
+        if int.erdp.read_volatile().event_handler_busy() {
+            int.erdp.read_volatile().set_0_event_handler_busy();
+        }
+
+        let next_event = {
+            let mut cmd_ring = self.cmd_ring.iter_mut().enumerate();
+            let (i, _) = cmd_ring.next().unwrap();
+
+            let cycle = matches!(cmd_ring.nth(i).unwrap(), (_, TrbKind::Link(_)));
+
+            {
+                let (_, trb) = cmd_ring.nth(i).unwrap();
+                sub(trb, cycle);
+
+                cmd_ring
+                    .map(|i| i.1.clone())
+                    .find(|trb| trb.as_inner().get_type() == TrbType::CommandCompletion)
+                    .expect("No command completion event found")
+            }
+        };
+
+        let out_ptr = next_event.as_ptr();
+
+        TrbKind::from(out_ptr)
     }
 }
 
