@@ -2,7 +2,11 @@
 use alloc::sync::Arc;
 use bit_field::BitField;
 use conquer_once::spin::OnceCell;
-use core::ptr::addr_of;
+use core::{
+    ptr::addr_of,
+    sync::atomic::{AtomicUsize, Ordering},
+};
+use num_traits::cast::FromPrimitive;
 use x86_64::{
     structures::paging::{Page, Size4KiB},
     VirtAddr,
@@ -18,7 +22,7 @@ use pcics::{header::HeaderType, Header};
 use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
-    context::Device,
+    context::{Device, SlotState},
     extended_capabilities::List,
     registers::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
@@ -32,8 +36,8 @@ use xhci::{
             SetLatencyToleranceValue, SetTrDequeuePointer, StopEndpoint,
         },
         event::{
-            BandwidthRequest, CommandCompletion, DeviceNotification, Doorbell, HostController,
-            MfindexWrap, PortStatusChange, TransferEvent,
+            BandwidthRequest, CommandCompletion, CompletionCode, DeviceNotification, Doorbell,
+            HostController, MfindexWrap, PortStatusChange, TransferEvent,
         },
         transfer::{
             DataStage, EventData, Isoch, Noop as TransferNoop, Normal, SetupStage, StatusStage,
@@ -164,6 +168,7 @@ impl<'a> TrbAnalyzer for &'a mut StatusStage {}
 
 impl<'a> TrbAnalyzer for &'a mut Link {}
 
+#[derive(Debug)]
 pub enum CommandKind<'a> {
     AddressDevice(&'a mut AddressDevice),
     ConfigureEndpoint(&'a mut ConfigureEndpoint),
@@ -414,52 +419,43 @@ impl_from_ptr_for_trb_kind!(Normal, Transfer);
 impl_from_ptr_for_trb_kind!(SetupStage, Transfer);
 impl_from_ptr_for_trb_kind!(StatusStage, Transfer);
 
-impl<'a> TrbKind<'a> {
+impl<'a> CommandKind<'a> {
     pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
         match self {
-            TrbKind::Command(cmd) => match cmd {
-                CommandKind::AddressDevice(cmd) => *cmd,
-                CommandKind::ConfigureEndpoint(cmd) => *cmd,
-                CommandKind::DisableSlot(cmd) => *cmd,
-                CommandKind::EnableSlot(cmd) => *cmd,
-                CommandKind::EvaluateContext(cmd) => *cmd,
-                CommandKind::ForceEvent(cmd) => *cmd,
-                CommandKind::ForceHeader(cmd) => *cmd,
-                CommandKind::GetExtendedProperty(cmd) => *cmd,
-                CommandKind::GetPortBandwidth(cmd) => *cmd,
-                CommandKind::NegotiateBandwidth(cmd) => *cmd,
-                CommandKind::CmdNoop(cmd) => *cmd,
-                CommandKind::ResetDevice(cmd) => *cmd,
-                CommandKind::ResetEndpoint(cmd) => *cmd,
-                CommandKind::SetExtendedProperty(cmd) => *cmd,
-                CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
-                CommandKind::SetTrDequeuePointer(cmd) => *cmd,
-                CommandKind::StopEndpoint(cmd) => *cmd,
-            },
-            TrbKind::Event(evt) => match evt {
-                EventKind::BandwidthRequest(evt) => *evt,
-                EventKind::CommandCompletion(evt) => *evt,
-                EventKind::DeviceNotification(evt) => *evt,
-                EventKind::Doorbell(evt) => *evt,
-                EventKind::HostController(evt) => *evt,
-                EventKind::MfindexWrap(evt) => *evt,
-                EventKind::PortStatusChange(evt) => *evt,
-                EventKind::TransferEvent(evt) => *evt,
-            },
-            TrbKind::Transfer(tr) => match tr {
-                TransferKind::DataStage(tr) => *tr,
-                TransferKind::EventData(tr) => *tr,
-                TransferKind::Isoch(tr) => *tr,
-                TransferKind::TransferNoop(tr) => *tr,
-                TransferKind::Normal(tr) => *tr,
-                TransferKind::SetupStage(tr) => *tr,
-                TransferKind::StatusStage(tr) => *tr,
-            },
-            TrbKind::Link(l) => *l,
+            CommandKind::AddressDevice(cmd) => *cmd,
+            CommandKind::ConfigureEndpoint(cmd) => *cmd,
+            CommandKind::DisableSlot(cmd) => *cmd,
+            CommandKind::EnableSlot(cmd) => *cmd,
+            CommandKind::EvaluateContext(cmd) => *cmd,
+            CommandKind::ForceEvent(cmd) => *cmd,
+            CommandKind::ForceHeader(cmd) => *cmd,
+            CommandKind::GetExtendedProperty(cmd) => *cmd,
+            CommandKind::GetPortBandwidth(cmd) => *cmd,
+            CommandKind::NegotiateBandwidth(cmd) => *cmd,
+            CommandKind::CmdNoop(cmd) => *cmd,
+            CommandKind::ResetDevice(cmd) => *cmd,
+            CommandKind::ResetEndpoint(cmd) => *cmd,
+            CommandKind::SetExtendedProperty(cmd) => *cmd,
+            CommandKind::SetLatencyToleranceValue(cmd) => *cmd,
+            CommandKind::SetTrDequeuePointer(cmd) => *cmd,
+            CommandKind::StopEndpoint(cmd) => *cmd,
         }
     }
-    #[allow(dead_code)] // not finished
-    pub fn as_inner_mut(&'a mut self) -> &'a mut dyn TrbAnalyzer {
+
+    pub fn as_ptr(&self) -> *mut dyn TrbAnalyzer {
+        let self_ptr = self as *const Self as *mut Self;
+        unsafe { &*self_ptr }.as_inner() as *const _ as *mut _
+    }
+
+    // Using raw pointers on purpose to enable exactly this
+    #[allow(clippy::mut_from_ref)]
+    pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
+        unsafe { &mut *(self.as_ptr()) }
+    }
+}
+
+impl<'a> TrbKind<'a> {
+    pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
         match self {
             TrbKind::Command(cmd) => match cmd {
                 CommandKind::AddressDevice(cmd) => *cmd,
@@ -506,6 +502,12 @@ impl<'a> TrbKind<'a> {
     pub fn as_ptr(&'a self) -> *mut dyn TrbAnalyzer {
         let self_ptr = self as *const Self as *mut Self;
         unsafe { &*self_ptr }.as_inner() as *const _ as *mut _
+    }
+
+    // Using raw pointers on purpose to enable exactly this
+    #[allow(clippy::mut_from_ref)]
+    pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
+        unsafe { &mut *(self.as_ptr()) }
     }
 }
 
@@ -697,10 +699,14 @@ impl<'a> Clone for TrbKind<'a> {
     }
 }
 
+// Needed for ensuring proper synchronization of indices
+static CMD_RING_IDX: AtomicUsize = AtomicUsize::new(0);
+static EVENT_RING_IDX: AtomicUsize = AtomicUsize::new(0);
+
 pub struct XhciImpl {
     regs: Option<Registers<XhciMapper>>,
     extcaps: Option<List<XhciMapper>>,
-    cmd_ring: &'static mut [TrbKind<'static>],
+    cmd_ring: &'static mut [CommandKind<'static>],
     event_ring_dequeue: &'static mut [EventKind<'static>],
     transfer_ring: &'static mut [TransferKind<'static>],
 }
@@ -756,7 +762,7 @@ impl XhciImpl {
             extcaps,
             cmd_ring: unsafe {
                 core::slice::from_raw_parts_mut::<'static>(
-                    addralloc::<TrbKind<'_>>(),
+                    addralloc::<CommandKind<'_>>(),
                     Page::<Size4KiB>::SIZE as usize / core::mem::size_of::<CommandKind<'_>>(),
                 )
             },
@@ -862,7 +868,7 @@ impl XhciImpl {
     }
     pub fn init(&mut self) {
         // borrow checker
-        let cmd_ring_addr = self.cmd_ring.first().unwrap() as *const TrbKind<'_> as u64;
+        let cmd_ring_addr = self.cmd_ring.first().unwrap() as *const CommandKind<'_> as u64;
         let erdp_raw = self.event_ring_dequeue.first().unwrap() as *const EventKind<'_> as u64;
 
         // will need this later
@@ -1106,28 +1112,159 @@ impl XhciImpl {
         None
     }
 
-    pub fn exec_cmd<F: FnOnce(&mut [TrbKind<'_>]) -> bool>(&mut self, f: F) {
-        let cmd_ring = &mut self.cmd_ring;
-        let event_ring_dequeue = &mut self.event_ring_dequeue;
+    pub fn next_in_cmd_ring(&mut self) -> (usize, CommandKind<'_>) {
+        let mut cmd_ring_iter = self.cmd_ring.iter().cloned().enumerate();
+        cmd_ring_iter
+            .nth(CMD_RING_IDX.fetch_add(1, Ordering::Relaxed))
+            .unwrap_or_else(move || {
+                CMD_RING_IDX.store(0, Ordering::Relaxed);
+                cmd_ring_iter.next().unwrap()
+            })
+    }
 
-        // Clear the command ring
-        for cmd in cmd_ring.iter_mut() {
-            *cmd = TrbKind::from((&mut CmdNoop::new()) as *mut _);
-        }
+    pub fn next_in_event_ring(&mut self) -> (usize, EventKind<'_>) {
+        let mut event_ring_iter = self.event_ring_dequeue.iter().cloned().enumerate();
+        event_ring_iter
+            .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+            .unwrap_or_else(move || {
+                EVENT_RING_IDX.store(0, Ordering::Relaxed);
+                event_ring_iter.next().unwrap()
+            })
+    }
 
-        // Clear the event ring dequeue
-        for evt in event_ring_dequeue.iter_mut() {
-            *evt = EventKind::from((&mut TransferEvent::new()) as *mut _);
-        }
+    pub fn exec_cmd<F: FnOnce(&mut [CommandKind<'_>], bool)>(
+        &mut self,
+        f: F,
+    ) -> (EventKind, CommandKind) {
+        let cmd_ring = unsafe { &mut *(self.cmd_ring as *mut [CommandKind<'_>]) };
 
-        // Execute the command
-        let success = f(cmd_ring);
+        // borrow checker
+        let cmd_ring_ptr = cmd_ring as *mut _;
 
-        // Wait for the command to complete
-        #[allow(clippy::while_immutable_condition)]
-        while !success {
+        // Clear "Event Handler Busy" bit if set
+        if let Some(ints) = self.interrupter_register_set_mut() {
+            ints.interrupter_mut(0).erdp.update_volatile(|erdp| {
+                erdp.clear_event_handler_busy();
+            })
+        };
+
+        let (idx, cycle) = {
+            let (idx, cmd) = self.next_in_cmd_ring();
+            (
+                idx,
+                match cmd {
+                    CommandKind::AddressDevice(cmd) => cmd.cycle_bit(),
+                    CommandKind::ConfigureEndpoint(cmd) => cmd.cycle_bit(),
+                    CommandKind::DisableSlot(cmd) => cmd.cycle_bit(),
+                    CommandKind::EnableSlot(cmd) => cmd.cycle_bit(),
+                    CommandKind::EvaluateContext(cmd) => cmd.cycle_bit(),
+                    CommandKind::ForceEvent(cmd) => cmd.cycle_bit(),
+                    CommandKind::ForceHeader(cmd) => cmd.cycle_bit(),
+                    CommandKind::GetExtendedProperty(cmd) => cmd.cycle_bit(),
+                    CommandKind::GetPortBandwidth(cmd) => cmd.cycle_bit(),
+                    CommandKind::NegotiateBandwidth(cmd) => cmd.cycle_bit(),
+                    CommandKind::CmdNoop(cmd) => cmd.cycle_bit(),
+                    CommandKind::ResetDevice(cmd) => cmd.cycle_bit(),
+                    CommandKind::ResetEndpoint(cmd) => cmd.cycle_bit(),
+                    CommandKind::SetExtendedProperty(cmd) => cmd.cycle_bit(),
+                    CommandKind::SetLatencyToleranceValue(cmd) => cmd.cycle_bit(),
+                    CommandKind::SetTrDequeuePointer(cmd) => cmd.cycle_bit(),
+                    CommandKind::StopEndpoint(cmd) => cmd.cycle_bit(),
+                },
+            )
+        };
+
+        let trb = &mut cmd_ring[idx];
+        f(unsafe { &mut *cmd_ring_ptr }, cycle);
+
+        // Spinloop until command completes
+        while {
+            let (_, evt) = self.next_in_event_ring();
+            if let EventKind::CommandCompletion(evt) = evt {
+                if evt.command_trb_pointer() == trb as *mut _ as u64 {
+                    log::debug!("Command completed");
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } {
             core::hint::spin_loop();
         }
+
+        let (_, evt) = self.next_in_event_ring();
+        (evt.clone(), trb.clone())
+    }
+
+    pub fn enable_port_slot(&mut self, slot: u8) {
+        self.exec_cmd(|cmd_ring, _| {
+            let len = cmd_ring.len();
+            let cmd = cmd_ring.get_mut(slot as usize).unwrap_or_else(|| {
+                panic!(
+                    "Attempt to enable slot {} when there are only {} slots",
+                    slot, len
+                )
+            });
+            *cmd = CommandKind::from((&mut EnableSlot::new()) as *mut _);
+        });
+    }
+
+    pub fn disable_port_slot(&mut self, slot: u8) {
+        self.exec_cmd(|cmd_ring, _| {
+            let len = cmd_ring.len();
+            let cmd = cmd_ring.get_mut(slot as usize).unwrap_or_else(|| {
+                panic!(
+                    "Attempt to disable slot {} when there are only {} slots",
+                    slot, len
+                )
+            });
+            *cmd = CommandKind::from((&mut DisableSlot::new()) as *mut _);
+        });
+    }
+
+    // Reference implementation: https://github.com/redox-os/drivers/blob/5400dc12133c59b36b700488d197e57cfe73844a/xhcid/src/xhci/mod.rs#L484
+    pub fn slot_state(&mut self, slot: u8) -> Option<SlotState> {
+        let mut slot_state = None;
+        self.exec_cmd(|cmd_ring, _| {
+            let cmd = cmd_ring.get_mut(slot as usize).unwrap();
+            *cmd = CommandKind::from((&mut EvaluateContext::new()) as *mut _);
+        });
+
+        if let Some(EventKind::CommandCompletion(evt)) =
+            self.event_ring_dequeue.get_mut(slot as usize)
+        {
+            if evt.slot_id() == slot {
+                slot_state = Some(SlotState::from_u32(evt.completion_code().unwrap() as u32));
+            }
+        }
+
+        slot_state.flatten()
+    }
+
+    pub fn handle_event(
+        name: &str,
+        cmd: CommandKind<'_>,
+        evt: EventKind<'_>,
+    ) -> syscall::Result<()> {
+        let mut out = Ok(());
+        if let EventKind::CommandCompletion(cc) = evt {
+            if let Ok(code) = cc.completion_code() {
+                if code != CompletionCode::Success {
+                    log::error!("{}: Command failed with code {:?}", name, code);
+                    out = Err(syscall::Error::new(syscall::EIO));
+                } else {
+                    log::debug!("{}: Command {:#?} completed successfully", name, cmd);
+                }
+            } else {
+                log::error!("{}: Command {:#?} failed with unknown code", name, cmd);
+                out = Err(syscall::Error::new(syscall::EIO));
+            }
+        } else {
+            log::warn!("Not a command completion TRB");
+        };
+        out
     }
 }
 

@@ -36,6 +36,7 @@ minipng = { version = "0.1.1", features = ["adler"] }
 mr-mime = { version = "0.1.1", default-features = false, features = ["alloc"] }
 nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
+num-traits = { version = "0.2.17", default-features = false }
 pcics = "0.3.1"
 raw-cpuid = "11.0.1"
 redox_syscall = "^0.4"

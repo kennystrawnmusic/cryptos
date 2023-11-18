@@ -532,6 +532,7 @@ dependencies = [
  "mr-mime",
  "nalgebra 0.32.3",
  "noto-sans-mono-bitmap",
+ "num-traits",
  "pcics",
  "raw-cpuid 11.0.1",
  "redox_syscall",
