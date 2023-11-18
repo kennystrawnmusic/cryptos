@@ -1189,6 +1189,7 @@ impl XhciImpl {
                     log::debug!("Command completed");
                     true
                 } else {
+                    log::warn!("Command completion TRB does not match command TRB");
                     false
                 }
             } else {
@@ -1214,7 +1215,7 @@ impl XhciImpl {
             *cmd = CommandKind::from((&mut EnableSlot::new()) as *mut _);
         });
 
-        log::info!("Slot {} enabled", slot);
+        log::info!("Slot {} successfully enabled", slot);
     }
 
     pub fn disable_port_slot(&mut self, slot: u8) {
@@ -1229,7 +1230,7 @@ impl XhciImpl {
             *cmd = CommandKind::from((&mut DisableSlot::new()) as *mut _);
         });
 
-        log::info!("Slot {} disabled", slot);
+        log::info!("Slot {} successfully disabled", slot);
     }
 
     pub fn slot_state(&mut self, slot: u8) -> Option<SlotState> {
