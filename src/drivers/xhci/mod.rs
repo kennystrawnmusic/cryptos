@@ -1139,6 +1139,7 @@ impl XhciImpl {
         &mut self,
         f: F,
     ) -> (EventKind, CommandKind) {
+        // borrow checker
         let cmd_ring = unsafe { &mut *(self.cmd_ring as *mut [CommandKind<'_>]) };
 
         // borrow checker
