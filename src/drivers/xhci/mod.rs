@@ -1094,12 +1094,15 @@ impl XhciImpl {
     }
 
     pub fn probe<const N: usize>(&mut self) -> Option<UsbDeviceKind> {
+        // borrow checker
+        let me = self as *mut Self;
+
         if let Some(prs) = self.port_register_set() {
-            for (i, mut port) in prs.into_iter().enumerate() {
+            for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
                     log::debug!("Probing port {}", i);
-                    port.portsc.set_0_port_enabled_disabled();
-                    while port.portsc.port_enabled_disabled() {
+                    unsafe { &mut *me }.enable_port_slot(i as u8);
+                    while !port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();
                     }
                     if port.portsc.current_connect_status() {
@@ -1209,6 +1212,8 @@ impl XhciImpl {
             });
             *cmd = CommandKind::from((&mut EnableSlot::new()) as *mut _);
         });
+
+        log::info!("Slot {} enabled", slot);
     }
 
     pub fn disable_port_slot(&mut self, slot: u8) {
@@ -1222,6 +1227,8 @@ impl XhciImpl {
             });
             *cmd = CommandKind::from((&mut DisableSlot::new()) as *mut _);
         });
+
+        log::info!("Slot {} disabled", slot);
     }
 
     // Reference implementation: https://github.com/redox-os/drivers/blob/5400dc12133c59b36b700488d197e57cfe73844a/xhcid/src/xhci/mod.rs#L484
