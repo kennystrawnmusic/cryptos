@@ -1266,7 +1266,12 @@ impl XhciImpl {
                     log::debug!("{}: Command {:#?} completed successfully", name, cmd);
                 }
             } else {
-                log::error!("{}: Command {:#?} failed with unknown code", name, cmd);
+                log::error!(
+                    "{}: Command {:#?} failed with unknown/reserved code {:#?}",
+                    name,
+                    cmd,
+                    cc.completion_code().unwrap_err()
+                );
                 out = Err(syscall::Error::new(syscall::EIO));
             }
         } else {
