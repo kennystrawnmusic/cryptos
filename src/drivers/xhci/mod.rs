@@ -1232,7 +1232,6 @@ impl XhciImpl {
         log::info!("Slot {} disabled", slot);
     }
 
-    // Reference implementation: https://github.com/redox-os/drivers/blob/5400dc12133c59b36b700488d197e57cfe73844a/xhcid/src/xhci/mod.rs#L484
     pub fn slot_state(&mut self, slot: u8) -> Option<SlotState> {
         let mut slot_state = None;
         self.exec_cmd(|cmd_ring, _| {
@@ -1274,6 +1273,11 @@ impl XhciImpl {
         };
         out
     }
+}
+
+pub enum ControlFlow {
+    Continue,
+    Break,
 }
 
 #[repr(packed)]
