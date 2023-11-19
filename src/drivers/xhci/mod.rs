@@ -1565,19 +1565,15 @@ impl XhciImpl {
         slot_ctx.set_interrupter_target(interrupter);
 
         let endpoint_ctx = unsafe { &mut *input_ptr }.device_mut().endpoint_mut(0);
-        let speed = slot_ctx.speed();
 
         let max_errors = 3u8;
         let endpoint_type = 4u8;
-        let max_packet_size = match speed {
-            0 => 8u16,
-            1 => 64,
-            2 => 64,
-            3 => 512,
-            4 => 1024,
-            5 => 1024,
-            6 => 1024,
-            _ => 0,
+        let max_packet_size = match self.lookup_psie(slot) {
+            0 => 8,
+            1 => 16,
+            2 => 32,
+            3 => 64,
+            _ => unreachable!(),
         };
 
         let _host_init_disable = 0u8; // TODO
