@@ -1605,11 +1605,11 @@ impl XhciImpl {
         out.leak::<'static>()
     }
 
-    pub fn lookup_psiv(&mut self, port: u8) -> u32 {
-        let mut out = 0u32;
+    pub fn lookup_psie(&mut self, port: u8) -> u8 {
+        let mut out = 0u8;
         self.port_register_set_mut().map(|prs| {
             prs.update_volatile_at(port as usize, |port| {
-                out = port.portsc.port_speed() as u32;
+                out = port.portsc.port_speed().get_bits(4..5);
             });
         });
         out
