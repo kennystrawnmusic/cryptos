@@ -1570,9 +1570,9 @@ impl XhciImpl {
         let endpoint_type = 4u8;
         let max_packet_size = match self.lookup_psie(slot) {
             0 => 8,
-            1 => 16,
-            2 => 32,
-            3 => 64,
+            1 => 64,
+            2 => 64,
+            3 => 512,
             _ => unreachable!(),
         };
 
