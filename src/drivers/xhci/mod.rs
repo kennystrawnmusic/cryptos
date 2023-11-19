@@ -1571,12 +1571,9 @@ impl XhciImpl {
         let endpoint_type = 4u8;
         let max_packet_size = match speed {
             0 => 8u16,
-            1 => 8,
+            1 => 64,
             2 => 64,
             3 => 512,
-            4 => 1024,
-            5 => 1024,
-            6 => 1024,
             _ => 0,
         };
 
