@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-use alloc::sync::Arc;
+use alloc::{sync::Arc, vec::Vec};
 use bit_field::BitField;
 use conquer_once::spin::OnceCell;
 use core::{
@@ -22,7 +22,7 @@ use pcics::{header::HeaderType, Header};
 use spin::{Once, RwLock};
 use xhci::{
     accessor::array::ReadWrite,
-    context::{Device, SlotState},
+    context::{Device, EndpointType, Input, InputHandler, SlotState},
     extended_capabilities::List,
     registers::{
         doorbell::Register, Capability, InterrupterRegisterSet, Operational, PortRegisterSet,
@@ -89,7 +89,10 @@ pub trait TrbAnalyzer: AsRef<[u32]> {
             37 => TrbType::HostController,
             38 => TrbType::DeviceNotification,
             39 => TrbType::MfindexWrap,
-            _ => unreachable!(),
+            _ => panic!(
+                "Invalid TRB type: {:#?}",
+                self.as_ref()[3].get_bits(10..=15)
+            ),
         }
     }
 }
@@ -131,42 +134,40 @@ impl TrbAnalyzer for StatusStage {}
 
 impl TrbAnalyzer for Link {}
 
-impl<'a> TrbAnalyzer for &'a mut AddressDevice {}
-impl<'a> TrbAnalyzer for &'a mut ConfigureEndpoint {}
-impl<'a> TrbAnalyzer for &'a mut DisableSlot {}
-impl<'a> TrbAnalyzer for &'a mut EnableSlot {}
-impl<'a> TrbAnalyzer for &'a mut EvaluateContext {}
-impl<'a> TrbAnalyzer for &'a mut ForceEvent {}
-impl<'a> TrbAnalyzer for &'a mut ForceHeader {}
-impl<'a> TrbAnalyzer for &'a mut GetExtendedProperty {}
-impl<'a> TrbAnalyzer for &'a mut GetPortBandwidth {}
-impl<'a> TrbAnalyzer for &'a mut NegotiateBandwidth {}
-impl<'a> TrbAnalyzer for &'a mut CmdNoop {}
-impl<'a> TrbAnalyzer for &'a mut ResetDevice {}
-impl<'a> TrbAnalyzer for &'a mut ResetEndpoint {}
-impl<'a> TrbAnalyzer for &'a mut SetExtendedProperty {}
-impl<'a> TrbAnalyzer for &'a mut SetLatencyToleranceValue {}
-impl<'a> TrbAnalyzer for &'a mut SetTrDequeuePointer {}
-impl<'a> TrbAnalyzer for &'a mut StopEndpoint {}
+impl TrbAnalyzer for &'static mut AddressDevice {}
+impl TrbAnalyzer for &'static mut ConfigureEndpoint {}
+impl TrbAnalyzer for &'static mut DisableSlot {}
+impl TrbAnalyzer for &'static mut EnableSlot {}
+impl TrbAnalyzer for &'static mut EvaluateContext {}
+impl TrbAnalyzer for &'static mut ForceEvent {}
+impl TrbAnalyzer for &'static mut ForceHeader {}
+impl TrbAnalyzer for &'static mut GetExtendedProperty {}
+impl TrbAnalyzer for &'static mut GetPortBandwidth {}
+impl TrbAnalyzer for &'static mut NegotiateBandwidth {}
+impl TrbAnalyzer for &'static mut CmdNoop {}
+impl TrbAnalyzer for &'static mut ResetDevice {}
+impl TrbAnalyzer for &'static mut ResetEndpoint {}
+impl TrbAnalyzer for &'static mut SetExtendedProperty {}
+impl TrbAnalyzer for &'static mut SetLatencyToleranceValue {}
+impl TrbAnalyzer for &'static mut SetTrDequeuePointer {}
+impl TrbAnalyzer for &'static mut StopEndpoint {}
 
-impl<'a> TrbAnalyzer for &'a mut BandwidthRequest {}
-impl<'a> TrbAnalyzer for &'a mut CommandCompletion {}
-impl<'a> TrbAnalyzer for &'a mut DeviceNotification {}
-impl<'a> TrbAnalyzer for &'a mut Doorbell {}
-impl<'a> TrbAnalyzer for &'a mut HostController {}
-impl<'a> TrbAnalyzer for &'a mut MfindexWrap {}
-impl<'a> TrbAnalyzer for &'a mut PortStatusChange {}
-impl<'a> TrbAnalyzer for &'a mut TransferEvent {}
+impl TrbAnalyzer for &'static mut BandwidthRequest {}
+impl TrbAnalyzer for &'static mut CommandCompletion {}
+impl TrbAnalyzer for &'static mut DeviceNotification {}
+impl TrbAnalyzer for &'static mut Doorbell {}
+impl TrbAnalyzer for &'static mut HostController {}
+impl TrbAnalyzer for &'static mut MfindexWrap {}
+impl TrbAnalyzer for &'static mut PortStatusChange {}
+impl TrbAnalyzer for &'static mut TransferEvent {}
 
-impl<'a> TrbAnalyzer for &'a mut DataStage {}
-impl<'a> TrbAnalyzer for &'a mut EventData {}
-impl<'a> TrbAnalyzer for &'a mut Isoch {}
-impl<'a> TrbAnalyzer for &'a mut TransferNoop {}
-impl<'a> TrbAnalyzer for &'a mut Normal {}
-impl<'a> TrbAnalyzer for &'a mut SetupStage {}
-impl<'a> TrbAnalyzer for &'a mut StatusStage {}
-
-impl<'a> TrbAnalyzer for &'a mut Link {}
+impl TrbAnalyzer for &'static mut DataStage {}
+impl TrbAnalyzer for &'static mut EventData {}
+impl TrbAnalyzer for &'static mut Isoch {}
+impl TrbAnalyzer for &'static mut TransferNoop {}
+impl TrbAnalyzer for &'static mut Normal {}
+impl TrbAnalyzer for &'static mut SetupStage {}
+impl TrbAnalyzer for &'static mut StatusStage {}
 
 #[derive(Debug)]
 pub enum CommandKind<'a> {
@@ -453,6 +454,200 @@ impl<'a> CommandKind<'a> {
     pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
         unsafe { &mut *(self.as_ptr()) }
     }
+
+    pub fn cycle_bit(&self) -> bool {
+        match self {
+            CommandKind::AddressDevice(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::ConfigureEndpoint(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::DisableSlot(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::EnableSlot(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::EvaluateContext(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::ForceEvent(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::ForceHeader(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::GetExtendedProperty(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::GetPortBandwidth(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::NegotiateBandwidth(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::CmdNoop(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::ResetDevice(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::ResetEndpoint(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::SetExtendedProperty(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::SetLatencyToleranceValue(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::SetTrDequeuePointer(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+            CommandKind::StopEndpoint(cmd) => {
+                let cycle = cmd.cycle_bit();
+                cycle
+            }
+        }
+    }
+}
+
+impl<'a> EventKind<'a> {
+    pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
+        match self {
+            EventKind::BandwidthRequest(evt) => *evt,
+            EventKind::CommandCompletion(evt) => *evt,
+            EventKind::DeviceNotification(evt) => *evt,
+            EventKind::Doorbell(evt) => *evt,
+            EventKind::HostController(evt) => *evt,
+            EventKind::MfindexWrap(evt) => *evt,
+            EventKind::PortStatusChange(evt) => *evt,
+            EventKind::TransferEvent(evt) => *evt,
+        }
+    }
+
+    pub fn as_ptr(&self) -> *mut dyn TrbAnalyzer {
+        let self_ptr = self as *const Self as *mut Self;
+        unsafe { &*self_ptr }.as_inner() as *const _ as *mut _
+    }
+
+    // Using raw pointers on purpose to enable exactly this
+    #[allow(clippy::mut_from_ref)]
+    pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
+        unsafe { &mut *(self.as_ptr()) }
+    }
+
+    pub fn cycle_bit(&self) -> bool {
+        match self {
+            EventKind::BandwidthRequest(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::CommandCompletion(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::DeviceNotification(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::Doorbell(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::HostController(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::MfindexWrap(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::PortStatusChange(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+            EventKind::TransferEvent(evt) => {
+                let cycle = evt.cycle_bit();
+                cycle
+            }
+        }
+    }
+}
+
+impl<'a> TransferKind<'a> {
+    pub fn as_inner(&'a self) -> &'a dyn TrbAnalyzer {
+        match self {
+            TransferKind::DataStage(tr) => *tr,
+            TransferKind::EventData(tr) => *tr,
+            TransferKind::Isoch(tr) => *tr,
+            TransferKind::TransferNoop(tr) => *tr,
+            TransferKind::Normal(tr) => *tr,
+            TransferKind::SetupStage(tr) => *tr,
+            TransferKind::StatusStage(tr) => *tr,
+        }
+    }
+
+    pub fn as_ptr(&self) -> *mut dyn TrbAnalyzer {
+        let self_ptr = self as *const Self as *mut Self;
+        unsafe { &*self_ptr }.as_inner() as *const _ as *mut _
+    }
+
+    // Using raw pointers on purpose to enable exactly this
+    #[allow(clippy::mut_from_ref)]
+    pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
+        unsafe { &mut *(self.as_ptr()) }
+    }
+
+    pub fn cycle_bit(&self) -> bool {
+        match self {
+            TransferKind::DataStage(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::EventData(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::Isoch(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::TransferNoop(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::Normal(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::SetupStage(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+            TransferKind::StatusStage(tr) => {
+                let cycle = tr.cycle_bit();
+                cycle
+            }
+        }
+    }
 }
 
 impl<'a> TrbKind<'a> {
@@ -509,6 +704,15 @@ impl<'a> TrbKind<'a> {
     #[allow(clippy::mut_from_ref)]
     pub fn as_inner_mut(&'a self) -> &'a mut dyn TrbAnalyzer {
         unsafe { &mut *(self.as_ptr()) }
+    }
+
+    pub fn cycle_bit(&self) -> bool {
+        match self {
+            TrbKind::Command(cmd) => cmd.cycle_bit(),
+            TrbKind::Event(evt) => evt.cycle_bit(),
+            TrbKind::Transfer(tr) => tr.cycle_bit(),
+            TrbKind::Link(l) => l.cycle_bit(),
+        }
     }
 }
 
@@ -1102,8 +1306,8 @@ impl XhciImpl {
             for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
                     log::debug!("Probing port {}", i);
-                    unsafe { &mut *me }.enable_port_slot(i as u8);
                     unsafe { &mut *me }.negotiate_bandwidth(i as u8);
+                    unsafe { &mut *me }.enable_port_slot(i as u8);
                     while !port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();
                     }
@@ -1117,7 +1321,11 @@ impl XhciImpl {
         None
     }
 
-    pub fn next_command_completion_request(&mut self, slot: u8) -> (usize, EventKind<'_>) {
+    pub fn next_command_completion_request(
+        &mut self,
+        cycle: bool,
+        slot: u8,
+    ) -> (usize, EventKind<'_>) {
         let me = self as *mut Self;
         let mut event_ring = self.event_ring_dequeue.iter().cloned().enumerate();
 
@@ -1137,148 +1345,34 @@ impl XhciImpl {
 
                     new_inner.slot_id().set_bits(0.., slot);
 
-                    match &mut me.cmd_ring[slot as usize] {
-                        CommandKind::AddressDevice(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::ConfigureEndpoint(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::DisableSlot(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::EnableSlot(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::EvaluateContext(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::ForceEvent(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::ForceHeader(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::GetExtendedProperty(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::GetPortBandwidth(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::NegotiateBandwidth(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::CmdNoop(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::ResetDevice(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::ResetEndpoint(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::SetExtendedProperty(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::SetLatencyToleranceValue(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::SetTrDequeuePointer(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
-                        CommandKind::StopEndpoint(cmd) => {
-                            if cmd.cycle_bit() {
-                                new_inner.set_cycle_bit();
-                            } else {
-                                new_inner.clear_cycle_bit();
-                            }
-                        }
+                    if cycle {
+                        new_inner.set_cycle_bit();
                     }
 
                     let new_evt = EventKind::from(new_inner as *mut _);
                     new_evt
                 };
 
-                me.event_ring_dequeue[EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed)] = new_evt;
-                (
-                    EVENT_RING_IDX.load(Ordering::Relaxed),
-                    me.event_ring_dequeue[EVENT_RING_IDX.load(Ordering::Relaxed)].clone(),
-                )
+                me.event_ring_dequeue[EVENT_RING_IDX.load(Ordering::SeqCst)] = new_evt;
+
+                let out = (
+                    EVENT_RING_IDX.load(Ordering::SeqCst),
+                    me.event_ring_dequeue[EVENT_RING_IDX.load(Ordering::SeqCst)].clone(),
+                );
+
+                EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst);
+                out
             })
     }
 
     pub fn next_in_cmd_ring(&mut self) -> (usize, CommandKind<'_>) {
         let mut cmd_ring_iter = self.cmd_ring.iter().cloned().enumerate();
         cmd_ring_iter
-            .nth(CMD_RING_IDX.fetch_add(1, Ordering::Relaxed))
+            .nth(CMD_RING_IDX.fetch_add(1, Ordering::SeqCst))
             .unwrap_or_else(move || {
-                CMD_RING_IDX.store(0, Ordering::Relaxed);
+                CMD_RING_IDX.store(0, Ordering::SeqCst);
                 cmd_ring_iter
-                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
                     .unwrap()
             })
     }
@@ -1286,24 +1380,27 @@ impl XhciImpl {
     pub fn next_in_event_ring(&mut self) -> (usize, EventKind<'_>) {
         let mut event_ring_iter = self.event_ring_dequeue.iter().cloned().enumerate();
         event_ring_iter
-            .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+            .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
             .unwrap_or_else(move || {
-                EVENT_RING_IDX.store(0, Ordering::Relaxed);
+                EVENT_RING_IDX.store(0, Ordering::SeqCst);
                 event_ring_iter
-                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
                     .unwrap()
             })
     }
 
-    pub fn exec_cmd<F: FnOnce(&mut [CommandKind<'_>], bool)>(
+    pub fn exec_cmd<F: FnOnce(&mut CommandKind<'_>, bool)>(
         &mut self,
+        slot: u8,
         f: F,
     ) -> (EventKind, CommandKind) {
         // borrow checker
         let cmd_ring = unsafe { &mut *(self.cmd_ring as *mut [CommandKind<'_>]) };
 
         // borrow checker
-        let cmd_ring_ptr = cmd_ring as *mut _;
+        let cmd_ptr = cmd_ring
+            .get_mut(slot as usize)
+            .expect("Slot number must be between 0 and 255") as *mut _;
 
         // Clear "Event Handler Busy" bit if set
         if let Some(ints) = self.interrupter_register_set_mut() {
@@ -1314,49 +1411,31 @@ impl XhciImpl {
 
         let (idx, cycle) = {
             let (idx, cmd) = self.next_in_cmd_ring();
-            (
-                idx,
-                match cmd {
-                    CommandKind::AddressDevice(cmd) => cmd.cycle_bit(),
-                    CommandKind::ConfigureEndpoint(cmd) => cmd.cycle_bit(),
-                    CommandKind::DisableSlot(cmd) => cmd.cycle_bit(),
-                    CommandKind::EnableSlot(cmd) => cmd.cycle_bit(),
-                    CommandKind::EvaluateContext(cmd) => cmd.cycle_bit(),
-                    CommandKind::ForceEvent(cmd) => cmd.cycle_bit(),
-                    CommandKind::ForceHeader(cmd) => cmd.cycle_bit(),
-                    CommandKind::GetExtendedProperty(cmd) => cmd.cycle_bit(),
-                    CommandKind::GetPortBandwidth(cmd) => cmd.cycle_bit(),
-                    CommandKind::NegotiateBandwidth(cmd) => cmd.cycle_bit(),
-                    CommandKind::CmdNoop(cmd) => cmd.cycle_bit(),
-                    CommandKind::ResetDevice(cmd) => cmd.cycle_bit(),
-                    CommandKind::ResetEndpoint(cmd) => cmd.cycle_bit(),
-                    CommandKind::SetExtendedProperty(cmd) => cmd.cycle_bit(),
-                    CommandKind::SetLatencyToleranceValue(cmd) => cmd.cycle_bit(),
-                    CommandKind::SetTrDequeuePointer(cmd) => cmd.cycle_bit(),
-                    CommandKind::StopEndpoint(cmd) => cmd.cycle_bit(),
-                },
-            )
+            (idx, cmd.cycle_bit())
         };
 
         let trb = &mut cmd_ring[idx];
-        f(unsafe { &mut *cmd_ring_ptr }, cycle);
+        f(unsafe { &mut *cmd_ptr }, cycle);
 
         // Ring doorbell to initiate command execution
         if let Some(db) = self.doorbell_mut() {
-            db.update_volatile_at(0, |db| {
+            db.update_volatile_at(slot as usize, |db| {
                 db.set_doorbell_target(0);
             });
         }
 
         // Spinloop until command completes
         while {
-            let (_, evt) = self.next_command_completion_request(idx as u8);
+            let (_, evt) = self.next_command_completion_request(cycle, slot);
             if let EventKind::CommandCompletion(evt) = evt {
-                if evt.command_trb_pointer() == trb as *mut _ as u64 {
-                    log::debug!("Command completed");
+                let inner = trb.as_inner();
+                if evt.command_trb_pointer() == addr_of!(inner) as u64 {
                     true
                 } else {
-                    log::warn!("Command completion TRB does not match command TRB");
+                    log::warn!(
+                        "Unexpected command TRB pointer: {:#?}",
+                        evt.command_trb_pointer()
+                    );
                     false
                 }
             } else {
@@ -1364,7 +1443,6 @@ impl XhciImpl {
                 false
             }
         } {
-            log::info!("Waiting for command completion");
             core::hint::spin_loop();
         }
 
@@ -1373,40 +1451,36 @@ impl XhciImpl {
     }
 
     pub fn negotiate_bandwidth(&mut self, slot: u8) {
-        let (_, _) = self.exec_cmd(|cmd_ring, _| {
-            let len = cmd_ring.len();
-            if let Some(mut _cmd) = cmd_ring.get_mut(slot as usize) {
-                _cmd = &mut CommandKind::from((&mut NegotiateBandwidth::new()) as *mut _);
-            } else {
-                panic!(
-                    "Attempt to enable slot {} when there are only {} slots",
-                    slot, len
-                );
-            }
+        let (evt, _) = self.exec_cmd(slot, |cmd, _| {
+            *cmd = CommandKind::from(
+                (&mut {
+                    let mut nb = NegotiateBandwidth::new();
+                    nb.set_cycle_bit();
+                    nb.set_slot_id(slot);
+                    nb
+                }) as *mut _,
+            );
         });
+
+        if let EventKind::BandwidthRequest(br) = evt {
+            if let Ok(cc) = br.completion_code() {
+                while cc == CompletionCode::Invalid {
+                    core::hint::spin_loop();
+                }
+            }
+            log::info!("Bandwidth request: {:#?}", br);
+        } else {
+            log::warn!("Unexpected TRB type: {:?}", evt);
+        }
     }
 
     pub fn enable_port_slot(&mut self, slot: u8) {
-        let me = self as *mut Self;
-
-        let (evt, _) = self.exec_cmd(|cmd_ring, _| {
-            let len = cmd_ring.len();
-            if let Some(mut _cmd) = cmd_ring.get_mut(slot as usize) {
-                _cmd = &mut CommandKind::from((&mut EnableSlot::new()) as *mut _);
-            } else {
-                panic!(
-                    "Attempt to enable slot {} when there are only {} slots",
-                    slot, len
-                );
-            }
+        let (evt, _) = self.exec_cmd(slot, |cmd, _| {
+            *cmd = CommandKind::from((&mut EnableSlot::new()) as *mut _);
         });
 
         let evt_status = if let EventKind::CommandCompletion(cc) = evt {
             Some(cc.completion_code().unwrap())
-        } else if let EventKind::BandwidthRequest(br) = evt {
-            unsafe { &mut *me }.negotiate_bandwidth(slot);
-            log::info!("Bandwith request status: {:?}", br.completion_code());
-            None
         } else {
             log::warn!("Unexpected TRB type: {:?}", evt);
             None
@@ -1415,7 +1489,7 @@ impl XhciImpl {
         if let Some(CompletionCode::Success) = evt_status {
             log::info!("Slot {} successfully enabled", slot);
         } else {
-            if evt_status.is_some() {
+            if let Some(evt_status) = evt_status {
                 log::warn!(
                     "Error attempting to enable slot {}: {:#?}",
                     slot,
@@ -1428,14 +1502,7 @@ impl XhciImpl {
     }
 
     pub fn disable_port_slot(&mut self, slot: u8) {
-        self.exec_cmd(|cmd_ring, _| {
-            let len = cmd_ring.len();
-            let cmd = cmd_ring.get_mut(slot as usize).unwrap_or_else(|| {
-                panic!(
-                    "Attempt to disable slot {} when there are only {} slots",
-                    slot, len
-                )
-            });
+        self.exec_cmd(slot, |cmd, _| {
             *cmd = CommandKind::from((&mut DisableSlot::new()) as *mut _);
         });
 
@@ -1444,8 +1511,7 @@ impl XhciImpl {
 
     pub fn slot_state(&mut self, slot: u8) -> Option<SlotState> {
         let mut slot_state = None;
-        self.exec_cmd(|cmd_ring, _| {
-            let cmd = cmd_ring.get_mut(slot as usize).unwrap();
+        self.exec_cmd(slot, |cmd, _| {
             *cmd = CommandKind::from((&mut EvaluateContext::new()) as *mut _);
         });
 
@@ -1458,6 +1524,96 @@ impl XhciImpl {
         }
 
         slot_state.flatten()
+    }
+
+    // "Address device" function that this one is supposed to be modeled after: https://github.com/redox-os/drivers/blob/5400dc12133c59b36b700488d197e57cfe73844a/xhcid/src/xhci/mod.rs#L619
+    pub fn address_device<const N: usize>(
+        &mut self,
+        mut input_ctx: Input<N>,
+        idx: usize,
+        slot: u8,
+    ) -> &'static mut [EventKind<'static>] {
+        // borrow checker
+        let input_ptr = (&mut input_ctx) as *mut Input<N>;
+        let me = self as *mut Self;
+
+        input_ctx.control_mut().set_add_context_flag(0);
+        input_ctx.control_mut().set_add_context_flag(1);
+
+        let slot_ctx = input_ctx.device_mut().slot_mut();
+        let ctx_entries = 1u8;
+
+        slot_ctx.clear_multi_tt();
+        slot_ctx.clear_hub();
+        slot_ctx.set_context_entries(ctx_entries);
+
+        let max_exit_latency = 0u16;
+        let root_hub_port_num = (idx + 1) as u8;
+        let port_count = 0u8;
+
+        slot_ctx.set_max_exit_latency(max_exit_latency);
+        slot_ctx.set_root_hub_port_number(root_hub_port_num);
+        slot_ctx.set_number_of_ports(port_count);
+
+        let parent_hub_slot_id = 0u8;
+        let parent_port_num = 0u8;
+        let ttt = 0u8;
+        let interrupter = 0u16;
+
+        slot_ctx.set_parent_hub_slot_id(parent_hub_slot_id);
+        slot_ctx.set_parent_port_number(parent_port_num);
+        slot_ctx.set_tt_think_time(ttt);
+        slot_ctx.set_interrupter_target(interrupter);
+
+        let endpoint_ctx = unsafe { &mut *input_ptr }.device_mut().endpoint_mut(0);
+        let speed = slot_ctx.speed();
+
+        let max_errors = 3u8;
+        let endpoint_type = 4u8;
+        let max_packet_size = match speed {
+            0 => 8u16,
+            1 => 8,
+            2 => 64,
+            3 => 512,
+            4 => 1024,
+            5 => 1024,
+            6 => 1024,
+            _ => 0,
+        };
+
+        let _host_init_disable = 0u8; // TODO
+        let max_burst_size = 0u8; // TODO
+
+        assert_eq!(max_errors & 0b11, max_errors);
+
+        let tr = self.transfer_ring.iter().map(|tr| tr.as_inner());
+
+        endpoint_ctx.set_tr_dequeue_pointer(addr_of!(tr) as u64);
+        endpoint_ctx.set_max_packet_size(max_packet_size);
+        endpoint_ctx.set_max_burst_size(max_burst_size);
+        endpoint_ctx.set_error_count(max_errors);
+        endpoint_ctx.set_endpoint_type(EndpointType::from_u8(endpoint_type).unwrap());
+
+        let (evt, _) = unsafe { &mut *me }.exec_cmd(slot, |cmd, _| {
+            *cmd = CommandKind::from((&mut AddressDevice::new()) as *mut _);
+            if let CommandKind::AddressDevice(cmd) = cmd {
+                cmd.set_input_context_pointer(addr_of!(input_ctx) as u64);
+            }
+        });
+
+        let mut out = Vec::new();
+        out.push(evt);
+        out.leak::<'static>()
+    }
+
+    pub fn lookup_psiv(&mut self, port: u8) -> u32 {
+        let mut out = 0u32;
+        self.port_register_set_mut().map(|prs| {
+            prs.update_volatile_at(port as usize, |port| {
+                out = port.portsc.port_speed() as u32;
+            });
+        });
+        out
     }
 
     pub fn handle_event(

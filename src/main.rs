@@ -42,7 +42,8 @@
     const_format_args,
     format_args_nl,
     log_syntax,
-    trace_macros
+    trace_macros,
+    const_type_id
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
