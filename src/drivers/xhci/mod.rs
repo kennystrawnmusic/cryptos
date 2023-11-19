@@ -1102,8 +1102,8 @@ impl XhciImpl {
             for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
                     log::debug!("Probing port {}", i);
-                    unsafe { &mut *me }.negotiate_bandwidth(i as u8);
                     unsafe { &mut *me }.enable_port_slot(i as u8);
+                    unsafe { &mut *me }.negotiate_bandwidth(i as u8);
                     while !port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();
                     }
@@ -1117,7 +1117,7 @@ impl XhciImpl {
         None
     }
 
-    pub fn next_command_completion_request(&mut self) -> (usize, EventKind<'_>) {
+    pub fn next_command_completion_request(&mut self, slot: u8) -> (usize, EventKind<'_>) {
         let me = self as *mut Self;
         let mut event_ring = self.event_ring_dequeue.iter().cloned().enumerate();
 
@@ -1133,10 +1133,131 @@ impl XhciImpl {
                 let me = unsafe { &mut *me };
 
                 let new_evt = {
-                    let new_inner = unsafe { &mut *(addralloc::<CommandCompletion>()) };
-                    new_inner
-                        .command_trb_pointer()
-                        .set_bits(0..64, (&mut me.next_in_cmd_ring().1) as *mut _ as u64);
+                    let new_inner = &mut CommandCompletion::new();
+
+                    new_inner.slot_id().set_bits(0.., slot);
+
+                    match &mut me.cmd_ring[slot as usize] {
+                        CommandKind::AddressDevice(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::ConfigureEndpoint(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::DisableSlot(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::EnableSlot(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::EvaluateContext(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::ForceEvent(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::ForceHeader(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::GetExtendedProperty(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::GetPortBandwidth(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::NegotiateBandwidth(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::CmdNoop(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::ResetDevice(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::ResetEndpoint(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::SetExtendedProperty(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::SetLatencyToleranceValue(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::SetTrDequeuePointer(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                        CommandKind::StopEndpoint(cmd) => {
+                            if cmd.cycle_bit() {
+                                new_inner.set_cycle_bit();
+                            } else {
+                                new_inner.clear_cycle_bit();
+                            }
+                        }
+                    }
 
                     let new_evt = EventKind::from(new_inner as *mut _);
                     new_evt
@@ -1229,7 +1350,7 @@ impl XhciImpl {
 
         // Spinloop until command completes
         while {
-            let (_, evt) = self.next_command_completion_request();
+            let (_, evt) = self.next_command_completion_request(idx as u8);
             if let EventKind::CommandCompletion(evt) = evt {
                 if evt.command_trb_pointer() == trb as *mut _ as u64 {
                     log::debug!("Command completed");
