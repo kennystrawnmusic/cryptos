@@ -962,7 +962,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     header.command.interrupt_disable = true;
                     msix.message_control = msg_control;
 
-                    info!("MSI-X: {:#?}", msix);
+                    debug!("MSI-X: {:#?}", msix);
 
                     for entry in msg_table {
                         let irq = irqalloc();

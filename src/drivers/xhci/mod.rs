@@ -189,6 +189,7 @@ pub enum CommandKind<'a> {
     StopEndpoint(&'a mut StopEndpoint),
 }
 
+#[derive(Debug)]
 pub enum EventKind<'a> {
     BandwidthRequest(&'a mut BandwidthRequest),
     CommandCompletion(&'a mut CommandCompletion),
@@ -1101,6 +1102,7 @@ impl XhciImpl {
             for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
                     log::debug!("Probing port {}", i);
+                    unsafe { &mut *me }.negotiate_bandwidth(i as u8);
                     unsafe { &mut *me }.enable_port_slot(i as u8);
                     while !port.portsc.port_enabled_disabled() {
                         core::hint::spin_loop();
@@ -1115,13 +1117,48 @@ impl XhciImpl {
         None
     }
 
+    pub fn next_command_completion_request(&mut self) -> (usize, EventKind<'_>) {
+        let me = self as *mut Self;
+        let mut event_ring = self.event_ring_dequeue.iter().cloned().enumerate();
+
+        event_ring
+            .find(|(_, evt)| {
+                if let EventKind::CommandCompletion(_) = evt {
+                    true
+                } else {
+                    false
+                }
+            })
+            .unwrap_or_else(|| {
+                let me = unsafe { &mut *me };
+
+                let new_evt = {
+                    let new_inner = unsafe { &mut *(addralloc::<CommandCompletion>()) };
+                    new_inner
+                        .command_trb_pointer()
+                        .set_bits(0..64, (&mut me.next_in_cmd_ring().1) as *mut _ as u64);
+
+                    let new_evt = EventKind::from(new_inner as *mut _);
+                    new_evt
+                };
+
+                me.event_ring_dequeue[EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed)] = new_evt;
+                (
+                    EVENT_RING_IDX.load(Ordering::Relaxed),
+                    me.event_ring_dequeue[EVENT_RING_IDX.load(Ordering::Relaxed)].clone(),
+                )
+            })
+    }
+
     pub fn next_in_cmd_ring(&mut self) -> (usize, CommandKind<'_>) {
         let mut cmd_ring_iter = self.cmd_ring.iter().cloned().enumerate();
         cmd_ring_iter
             .nth(CMD_RING_IDX.fetch_add(1, Ordering::Relaxed))
             .unwrap_or_else(move || {
                 CMD_RING_IDX.store(0, Ordering::Relaxed);
-                cmd_ring_iter.next().unwrap()
+                cmd_ring_iter
+                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+                    .unwrap()
             })
     }
 
@@ -1131,7 +1168,9 @@ impl XhciImpl {
             .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
             .unwrap_or_else(move || {
                 EVENT_RING_IDX.store(0, Ordering::Relaxed);
-                event_ring_iter.next().unwrap()
+                event_ring_iter
+                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::Relaxed))
+                    .unwrap()
             })
     }
 
@@ -1181,9 +1220,16 @@ impl XhciImpl {
         let trb = &mut cmd_ring[idx];
         f(unsafe { &mut *cmd_ring_ptr }, cycle);
 
+        // Ring doorbell to initiate command execution
+        if let Some(db) = self.doorbell_mut() {
+            db.update_volatile_at(0, |db| {
+                db.set_doorbell_target(0);
+            });
+        }
+
         // Spinloop until command completes
         while {
-            let (_, evt) = self.next_in_event_ring();
+            let (_, evt) = self.next_command_completion_request();
             if let EventKind::CommandCompletion(evt) = evt {
                 if evt.command_trb_pointer() == trb as *mut _ as u64 {
                     log::debug!("Command completed");
@@ -1193,9 +1239,11 @@ impl XhciImpl {
                     false
                 }
             } else {
+                log::warn!("Not a command completion TRB");
                 false
             }
         } {
+            log::info!("Waiting for command completion");
             core::hint::spin_loop();
         }
 
@@ -1203,19 +1251,59 @@ impl XhciImpl {
         (evt.clone(), trb.clone())
     }
 
-    pub fn enable_port_slot(&mut self, slot: u8) {
-        self.exec_cmd(|cmd_ring, _| {
+    pub fn negotiate_bandwidth(&mut self, slot: u8) {
+        let (_, _) = self.exec_cmd(|cmd_ring, _| {
             let len = cmd_ring.len();
-            let cmd = cmd_ring.get_mut(slot as usize).unwrap_or_else(|| {
+            if let Some(mut _cmd) = cmd_ring.get_mut(slot as usize) {
+                _cmd = &mut CommandKind::from((&mut NegotiateBandwidth::new()) as *mut _);
+            } else {
                 panic!(
                     "Attempt to enable slot {} when there are only {} slots",
                     slot, len
-                )
-            });
-            *cmd = CommandKind::from((&mut EnableSlot::new()) as *mut _);
+                );
+            }
+        });
+    }
+
+    pub fn enable_port_slot(&mut self, slot: u8) {
+        let me = self as *mut Self;
+
+        let (evt, _) = self.exec_cmd(|cmd_ring, _| {
+            let len = cmd_ring.len();
+            if let Some(mut _cmd) = cmd_ring.get_mut(slot as usize) {
+                _cmd = &mut CommandKind::from((&mut EnableSlot::new()) as *mut _);
+            } else {
+                panic!(
+                    "Attempt to enable slot {} when there are only {} slots",
+                    slot, len
+                );
+            }
         });
 
-        log::info!("Slot {} successfully enabled", slot);
+        let evt_status = if let EventKind::CommandCompletion(cc) = evt {
+            Some(cc.completion_code().unwrap())
+        } else if let EventKind::BandwidthRequest(br) = evt {
+            unsafe { &mut *me }.negotiate_bandwidth(slot);
+            log::info!("Bandwith request status: {:?}", br.completion_code());
+            None
+        } else {
+            log::warn!("Unexpected TRB type: {:?}", evt);
+            None
+        };
+
+        if let Some(CompletionCode::Success) = evt_status {
+            log::info!("Slot {} successfully enabled", slot);
+        } else {
+            if evt_status.is_some() {
+                log::warn!(
+                    "Error attempting to enable slot {}: {:#?}",
+                    slot,
+                    evt_status
+                );
+            } else {
+                log::warn!("Incorrect event type received");
+            }
+        }
     }
 
     pub fn disable_port_slot(&mut self, slot: u8) {
