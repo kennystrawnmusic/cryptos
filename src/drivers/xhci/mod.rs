@@ -1526,7 +1526,6 @@ impl XhciImpl {
         slot_state.flatten()
     }
 
-    // "Address device" function that this one is supposed to be modeled after: https://github.com/redox-os/drivers/blob/5400dc12133c59b36b700488d197e57cfe73844a/xhcid/src/xhci/mod.rs#L619
     pub fn address_device<const N: usize>(
         &mut self,
         mut input_ctx: Input<N>,
