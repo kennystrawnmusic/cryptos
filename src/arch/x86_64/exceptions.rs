@@ -11,6 +11,7 @@ use {
         },
         VirtAddr,
     },
+    core::ptr::addr_of,
 };
 
 pub struct Selectors {
@@ -37,7 +38,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -45,7 +46,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -53,7 +54,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -61,7 +62,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -69,7 +70,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -77,7 +78,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
@@ -85,7 +86,7 @@ lazy_static! {
             const LEN: usize = 4096 * 5;
             static mut STACK: [u8; LEN] = [0; LEN];
 
-            let begin = VirtAddr::from_ptr(unsafe { &STACK });
+            let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };

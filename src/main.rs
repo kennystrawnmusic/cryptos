@@ -6,8 +6,6 @@
     assert_matches,
     async_iterator,
     error_in_core,
-    ip_in_core,
-    core_panic,
     unicode_internals,
     abi_x86_interrupt,
     maybe_uninit_slice,
@@ -43,7 +41,8 @@
     format_args_nl,
     log_syntax,
     trace_macros,
-    const_type_id
+    const_type_id,
+    panic_internals
 )]
 #![allow(internal_features)]
 #![allow(incomplete_features)]
