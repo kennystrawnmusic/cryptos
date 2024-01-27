@@ -87,6 +87,7 @@ pub const HEAP_LEN: usize = 32 * 1024 * 1024;
 ///
 /// Also exactly the point of making this a hybrid kernel in the roadmap: hybrid kernels can properly segregate proprietary drivers
 /// while monolithic kernels like Linux can't.
+#[allow(dead_code)] // unfinished
 pub struct PhysBox<T>(NonNull<T>);
 
 impl<T> PhysBox<T> {
