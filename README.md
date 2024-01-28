@@ -4,6 +4,8 @@ Well, folks, most of this kernel's features are at least prototyped and the comp
 
 The reason for the hybrid kernel design is driver segregation by license: the reason why "binary blobs" exist in the Linux kernel is because it's licensed under GPLv2 and Linus Torvalds has made it emphatically clear that he never wants to use GPLv3 because it would break a lot of hardware support due to its monolithic nature. With a strict microkernel, sure that goes away, but then you're left with much slower performance due to process count overhead. Using a hybrid kernel makes it possible to have FOSS drivers in kernel mode and proprietary drivers in user mode, eliminating both of these problems.
 
+Now why GPLv3 as the kernel license, you may ask? Because it includes a built-in protection against what Richard Stallman calls "Tivoization" — or in layman's terms, bootloader locks — by requiring that all bootloader locks also be licensed under its terms. As such, it helps to avoid the problem that Android has with locked bootloaders on smartphones.
+
 ## What works already
 
 * Basic I/O
