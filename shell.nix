@@ -23,12 +23,10 @@ pkgs.mkShell rec {
     pkgs.OVMFFull
     pkgs.qemu
   ]);
-  # Add libvmi, glibc, clang, glib headers to bindgen search path
+  # Add the test packages to the bindgen search path
   BINDGEN_EXTRA_CLANG_ARGS = 
   # Includes with normal include path
   (builtins.map (a: ''-I"${a}/include"'') [
-    pkgs.OVMFFull
-    pkgs.qemu
     pkgs.glibc.dev
   ])
   # Includes with special directory paths
