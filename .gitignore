@@ -6,3 +6,5 @@
 /qemu.log
 /.DS_Store
 /src/.DS_Store
+/.history
+/usb-storage.img
