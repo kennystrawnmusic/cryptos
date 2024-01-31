@@ -41,6 +41,7 @@ fn main() {
         match HostDistro::new() {
             HostDistro::Ubuntu => install_ubuntu_deps(),
             HostDistro::Archlinux => install_arch_deps(),
+            HostDistro::Nixos => {}, // don't need to do anything as shell.nix takes care of this
         }
     }
 
@@ -48,6 +49,26 @@ fn main() {
         match arg.as_str() {
             "--boot" => {
                 let (kdir, out_path) = create_disk_image(FrameBuffer::default());
+
+                // create usb-storage.img if it doesn't already exist
+                if !Path::exists(Path::new("usb-storage.img")) {
+                    let mut usb_storage = Command::new("dd");
+                    usb_storage
+                        .arg("if=/dev/zero")
+                        .arg("of=usb-storage.img")
+                        .arg("bs=1M")
+                        .arg("count=1024");
+
+                    let status = usb_storage.status().unwrap_or_else(|e| {
+                        eprintln!("Error attempting to create usb-storage.img: {:#?}", &e);
+                        exit(1);
+                    });
+
+                    if !status.success() {
+                        eprintln!("Error attempting to create usb-storage.img: {:#?}", &status);
+                        exit(status.code().unwrap());
+                    }
+                }
 
                 if Path::exists(Path::new("OVMF-pure-efi.fd")) {
                     run_qemu(kdir, &out_path);
@@ -141,6 +162,7 @@ fn main() {
 pub enum HostDistro {
     Ubuntu,
     Archlinux,
+    Nixos,
     //TBC
 }
 
@@ -162,17 +184,28 @@ impl HostDistro {
         is_archlinux.stdout(Stdio::null());
         is_archlinux.stderr(Stdio::null());
 
+        let mut is_nixos = Command::new("which");
+        is_nixos.arg("nix-env");
+        is_nixos.stdout(Stdio::null());
+        is_nixos.stderr(Stdio::null());
+
         if let Ok(ubuntu_status) = is_ubuntu.status() {
             if let Ok(()) = ubuntu_status.exit_ok() {
                 Self::Ubuntu
             } else if let Ok(arch_status) = is_archlinux.status() {
                 if let Ok(()) = arch_status.exit_ok() {
                     Self::Archlinux
+                } else if let Ok(nixos_status) = is_nixos.status() {
+                    if let Ok(()) = nixos_status.exit_ok() {
+                        Self::Nixos
+                    } else {
+                        todo!("Unsupported Linux distribution");
+                    }
                 } else {
-                    unreachable!()
+                    todo!("Unsupported Linux distribution");
                 }
             } else {
-                todo!("Unsupported Linux distribution")
+                todo!("Unsupported Linux distribution");
             }
         } else {
             unreachable!()
@@ -450,6 +483,7 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
                     }
                 }
             }
+            HostDistro::Nixos => {} // again, this is what /shell.nix is for
         }
     }
 
