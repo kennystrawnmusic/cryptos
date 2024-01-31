@@ -1,7 +1,17 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import <nixpkgs> rec {
+    system = if (import <nixpkgs>{}).hostPlatform.isDarwin then "x86_64-darwin" else null;
+  }
+}:
 
 pkgs.mkShell rec {
   buildInputs = with pkgs; [
+    (OVMF.overrideAttrs (attrs: rec {
+      preBuild = ''
+      find $TMPDIR -iname "*.makefile" -exec sed -i 's/-Werror//g' {} \;
+      find $TMPDIR -iname "*.template" -exec sed -i 's/-Werror//g' {} \;
+      '';
+    }))
     clang
     llvmPackages.bintools
     rustup
@@ -14,21 +24,25 @@ pkgs.mkShell rec {
     export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
     export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
     if [ ! -f OVMF-pure-efi.fd ]; then
-      cp ${pkgs.OVMFFull.fd}/FV/OVMF.fd OVMF-pure-efi.fd
+      cp ${pkgs.OVMF.fd}/FV/OVMF.fd OVMF-pure-efi.fd
     fi
     '';
   
   # Needed for testing
   RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
-    pkgs.OVMFFull
     pkgs.qemu
   ]);
+
+  # Force OVMF to compile properly on macOS
+  env.NIX_CFLAGS_COMPILE = "-Wno-unneeded-internal-declaration";
+  env.NIX_CXXFLAGS_COMPILE = "-Wno-unneeded-internal-declaration";
+
   # Add the test packages to the bindgen search path
   BINDGEN_EXTRA_CLANG_ARGS = 
   # Includes with normal include path
-  (builtins.map (a: ''-I"${a}/include"'') [
+  (if (import <nixpkgs>{}).hostPlatform.isLinux then builtins.map (a: ''-I"${a}/include"'') [
     pkgs.glibc.dev
-  ])
+  ] else [])
   # Includes with special directory paths
   ++ [
     ''-I"${pkgs.llvmPackages_latest.libclang.lib}/lib/clang/${pkgs.llvmPackages_latest.libclang.version}/include"''
