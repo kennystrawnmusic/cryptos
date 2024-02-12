@@ -207,3 +207,28 @@ macro_rules! printk {
         writer.write_fmt(format_args!($($arg)*)).unwrap();
     });
 }
+
+#[macro_export]
+macro_rules! map_range_inclusive {
+    ($start:expr, $end:expr, $size:ty, $flags:expr) => {
+        let start = $start;
+        let end = $end;
+        let size = core::mem::size_of::<$size>();
+
+        let range = {
+            let first_page = Page::<$size>::containing_address(VirtAddr::new(start as u64));
+            let last_page = Page::<$size>::containing_address(VirtAddr::new(end as u64));
+
+            Page::<$size>::range_inclusive(first_page, last_page)
+        };
+
+        let f = FRAME_ALLOCATOR
+            .write()
+            .allocate_frame()
+            .expect("Out of memory");
+
+        for p in range {
+            map_page!(f.start_address().as_u64(), p.start_address().as_u64(), $size, $flags);
+        }
+    };
+}
