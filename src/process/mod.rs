@@ -176,14 +176,14 @@ impl<'a> Process<'a> {
                     let main_res = (self.main)();
 
                     // Depending on whether the program is fallible or not, handle errors
-                    if main_res.type_id() == TypeId::of::<()>() {
+                    if unsafe { main_res.as_ref() }.type_id() == TypeId::of::<()>() {
                         // Main functions for processes that need to run indefinitely
                         // will use infinite loops within their own main function bodies
                         // so no need to redundantly use infinite loops here
 
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
-                    } else if main_res.type_id() == TypeId::of::<syscall::Result<()>>() {
+                    } else if unsafe { main_res.as_ref() }.type_id() == TypeId::of::<syscall::Result<()>>() {
                         match unsafe { main_res.as_mut().unwrap() }.downcast_mut::<syscall::Result<()>>().unwrap() {
                             Ok(()) => {
                                 self.state = State::Exited(0);
