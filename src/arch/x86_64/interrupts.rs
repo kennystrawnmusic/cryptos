@@ -21,7 +21,7 @@ use x86_64::{
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    map_page,
+    get_phys_offset, map_page,
     process::{signal::Signal, PTABLE, PTABLE_IDX},
 };
 
@@ -48,6 +48,11 @@ pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLeve
     let sel = SegmentSelector(frame.code_segment as u16);
 
     sel.rpl()
+}
+
+// Userspace API will write the requested system call number to this address
+pub fn syscall_num_addr() -> u64 {
+    get_phys_offset() + 0x595ca11a
 }
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
@@ -486,7 +491,16 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
-    todo!("Syscall handler");
+    // Ensure page is properly mapped to system call number address before proceeding
+    map_page!(
+        0x595ca11a,
+        syscall_num_addr(),
+        Size4KiB,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE
+    );
+
+    let _syscall_num = unsafe { *(syscall_num_addr() as *mut u8) };
+    todo!("Match system call number to associated actions");
 }
 
 #[inline(always)]
