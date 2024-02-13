@@ -50,23 +50,35 @@ macro_rules! map_page {
 macro_rules! map_range_inclusive {
     ($phys_start:expr, $phys_end:expr, $virt_start:expr, $virt_end:expr, $size:expr, $flags:expr) => {
         let phys_frame_range = {
-            let start = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys_start as u64));
-            let end = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys_end as u64));
+            let start = x86_64::structures::paging::PhysFrame::<$size>::containing_address(
+                x86_64::PhysAddr::new($phys_start as u64),
+            );
+            let end = x86_64::structures::paging::PhysFrame::<$size>::containing_address(
+                x86_64::PhysAddr::new($phys_end as u64),
+            );
             x86_64::structures::paging::PhysFrame::<$size>::range_inclusive(start, end)
         };
-        
+
         let page_range = {
-            let start = x86_64::structures::paging::Page::<$size>::containing_address(x86_64::VirtAddr::new($virt_start as u64));
-            let end = x86_64::structures::paging::Page::<$size>::containing_address(x86_64::VirtAddr::new($virt_end as u64));
+            let start = x86_64::structures::paging::Page::<$size>::containing_address(
+                x86_64::VirtAddr::new($virt_start as u64),
+            );
+            let end = x86_64::structures::paging::Page::<$size>::containing_address(
+                x86_64::VirtAddr::new($virt_end as u64),
+            );
             x86_64::structures::paging::Page::<$size>::range_inclusive(start, end)
         };
 
         for (p, f) in page_range.zip(phys_frame_range) {
-            map_page!(f.start_address().as_u64(), p.start_address().as_u64(), $size, $flags);
+            map_page!(
+                f.start_address().as_u64(),
+                p.start_address().as_u64(),
+                $size,
+                $flags
+            );
         }
     };
 }
-
 
 /// Macro for unmapping pages
 ///
