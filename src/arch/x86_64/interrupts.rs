@@ -51,7 +51,7 @@ pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLeve
 }
 
 // Userspace API will write the requested system call number to this address
-pub fn syscall_num_addr() -> u64 {
+pub(crate) fn syscall_num_addr() -> u64 {
     get_phys_offset() + 0x595ca11a
 }
 
