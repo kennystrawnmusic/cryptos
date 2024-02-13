@@ -215,7 +215,7 @@ macro_rules! map_range_inclusive {
         let start = $start;
         let end = $end;
 
-        let phys_frame_range = FRAME_ALLOCATOR
+        let phys_frame_range = $crate::cralloc::frames::FRAME_ALLOCATOR
             .allocate_multiple((end - start) as usize / 4096)
             .expect("Out of memory")
             .0;
