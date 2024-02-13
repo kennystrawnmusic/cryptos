@@ -173,17 +173,15 @@ impl<'a> Process<'a> {
         let mut main = || {
             match self.state {
                 State::Runnable => {
-                    let main_box = Box::new(self.main);
-
-                    if main_box().type_id() == TypeId::of::<()>() {
+                    if (self.main)().type_id() == TypeId::of::<()>() {
                         // Main functions for processes that need to run indefinitely
                         // will use infinite loops within their own main function bodies
                         // so no need to redundantly use infinite loops here
 
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
-                    } else if main_box().type_id() == TypeId::of::<syscall::Result<()>>() {
-                        match main_box().downcast_mut::<syscall::Result<()>>().unwrap() {
+                    } else if (self.main)().type_id() == TypeId::of::<syscall::Result<()>>() {
+                        match (self.main)().downcast_mut::<syscall::Result<()>>().unwrap() {
                             Ok(()) => {
                                 self.state = State::Exited(0);
                                 self.set_result(Ok(0));
