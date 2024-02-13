@@ -62,6 +62,7 @@ pub mod scheme;
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
     drm::COMPOSITING_TABLE,
+    interrupts::syscall_num_addr,
 };
 use acpi::{AcpiTables, InterruptModel, PciConfigRegions, PlatformInfo};
 use alloc::{alloc::Global, boxed::Box};
@@ -82,7 +83,7 @@ use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
 use spin::Once;
-use x86_64::structures::paging::PhysFrame;
+use x86_64::structures::paging::{PageTableFlags, PhysFrame, Size4KiB};
 
 pub use common::std_init as std;
 
@@ -253,6 +254,17 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         }
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
+
+    // Map system call number address
+    map_page!(
+        0x595ca11a,
+        syscall_num_addr(),
+        Size4KiB,
+        PageTableFlags::PRESENT
+            | PageTableFlags::WRITABLE
+            | PageTableFlags::NO_CACHE
+            | PageTableFlags::WRITE_THROUGH
+    );
 
     // Use the loop at the end of main as the rendering loop
     loop {

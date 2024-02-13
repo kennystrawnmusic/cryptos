@@ -491,14 +491,6 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
-    // Ensure page is properly mapped to system call number address before proceeding
-    map_page!(
-        0x595ca11a,
-        syscall_num_addr(),
-        Size4KiB,
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE
-    );
-
     let _syscall_num = unsafe { *(syscall_num_addr() as *mut u8) };
     todo!("Match system call number to associated actions");
 }
