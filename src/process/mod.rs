@@ -111,58 +111,10 @@ pub struct Process<'a> {
     systrace: AtomicBool,
 
     res: syscall::Result<usize>,
-    main: fn() -> *mut dyn Any,
+    main: fn() -> &'a mut (dyn Any),
 }
 
 impl Process<'static> {
-    /// Inserts this process into the PTABLE
-    pub fn register(mut self) {
-        self.block(); // make sure this is the case before proceeding
-        self.queue();
-
-        PTABLE
-            .write()
-            .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
-    }
-}
-
-impl<'a> Process<'a> {
-    fn new(data: Option<FileData>, main: fn() -> *mut dyn Any) -> Self {
-        let open_files = data.map(|data| alloc::vec![data]);
-
-        // necessary for cleanup
-        let global_id = PTABLE.read().len() - 1;
-
-        Self {
-            self_reference: Weak::new(),
-            state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: AtomicPid::new(Pid::new(global_id)),
-            tid: AtomicTid::new(Tid::new(global_id)),
-            sid: AtomicSid::new(Sid::new(global_id as u64)),
-            gid: AtomicGid::new(Gid::new(global_id as u64)),
-            parent: RwLock::new(None),
-            sleep: AtomicU64::new(global_id as u64),
-            signal_received: Signal::Success,
-            io_pending: AtomicBool::new(false),
-            executable: OnceCell::uninit(),
-            open_files: Arc::new(RwLock::new(open_files)),
-            pwd: RwLock::new(None),
-            exit_status: OnceCell::<u64>::uninit(),
-            systrace: AtomicBool::new(false),
-            res: Ok(0), // this will change when the process runs
-            main,
-        }
-    }
-
-    /// Creates a new process using and automatically adds it to `PTABLE`
-    pub fn create(exec: ElfFile<'static>) {
-        Process::<'static>::from(exec).register();
-    }
-
-    fn set_result(&mut self, res: syscall::Result<usize>) {
-        self.res = res;
-    }
-
     /// Uses a generator to queue this process
     fn queue(&mut self) {
         // borrow checker
@@ -176,15 +128,15 @@ impl<'a> Process<'a> {
                     let main_res = (self.main)();
 
                     // Depending on whether the program is fallible or not, handle errors
-                    if unsafe { main_res.as_ref() }.type_id() == TypeId::of::<()>() {
+                    if main_res.type_id() == TypeId::of::<()>() {
                         // Main functions for processes that need to run indefinitely
                         // will use infinite loops within their own main function bodies
                         // so no need to redundantly use infinite loops here
 
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
-                    } else if unsafe { main_res.as_ref() }.type_id() == TypeId::of::<syscall::Result<()>>() {
-                        match unsafe { main_res.as_mut().unwrap() }.downcast_mut::<syscall::Result<()>>().unwrap() {
+                    } else if main_res.type_id() == TypeId::of::<syscall::Result<()>>() {
+                        match main_res.downcast_mut::<syscall::Result<()>>().unwrap() {
                             Ok(()) => {
                                 self.state = State::Exited(0);
                                 self.set_result(Ok(0));
@@ -244,6 +196,54 @@ impl<'a> Process<'a> {
         Pin::new(&mut main).resume(());
     }
 
+    /// Inserts this process into the PTABLE
+    pub fn register(mut self) {
+        self.block(); // make sure this is the case before proceeding
+        self.queue();
+
+        PTABLE
+            .write()
+            .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
+    }
+}
+
+impl<'a> Process<'a> {
+    fn new(data: Option<FileData>, main: fn() -> &'a mut (dyn Any)) -> Self {
+        let open_files = data.map(|data| alloc::vec![data]);
+
+        // necessary for cleanup
+        let global_id = PTABLE.read().len() - 1;
+
+        Self {
+            self_reference: Weak::new(),
+            state: State::Blocked, // don't make process Runnable until it's actually ready to be run
+            pid: AtomicPid::new(Pid::new(global_id)),
+            tid: AtomicTid::new(Tid::new(global_id)),
+            sid: AtomicSid::new(Sid::new(global_id as u64)),
+            gid: AtomicGid::new(Gid::new(global_id as u64)),
+            parent: RwLock::new(None),
+            sleep: AtomicU64::new(global_id as u64),
+            signal_received: Signal::Success,
+            io_pending: AtomicBool::new(false),
+            executable: OnceCell::uninit(),
+            open_files: Arc::new(RwLock::new(open_files)),
+            pwd: RwLock::new(None),
+            exit_status: OnceCell::<u64>::uninit(),
+            systrace: AtomicBool::new(false),
+            res: Ok(0), // this will change when the process runs
+            main,
+        }
+    }
+
+    /// Creates a new process using and automatically adds it to `PTABLE`
+    pub fn create(exec: ElfFile<'static>) {
+        Process::<'static>::from(exec).register();
+    }
+
+    fn set_result(&mut self, res: syscall::Result<usize>) {
+        self.res = res;
+    }
+
     fn set_state(&mut self, state: State) {
         self.state = state;
     }
@@ -285,7 +285,7 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
-        let main = unsafe { *(start as *mut fn() -> *mut dyn Any) };
+        let main = unsafe { *(start as *mut fn() -> &'a mut (dyn Any)) };
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
