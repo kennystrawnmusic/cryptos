@@ -1,6 +1,7 @@
 {
   pkgs ? import <nixpkgs> rec {
-    system = if (import <nixpkgs>{}).hostPlatform.isDarwin then "x86_64-darwin" else null;
+    # Force Rosetta 2 on Apple Silicon Macs (for now)
+    system = if (import <nixpkgs>{}).hostPlatform.isDarwin then "x86_64-darwin" else (import <nixpkgs>{}).hostPlatform.system;
   }
 }:
 

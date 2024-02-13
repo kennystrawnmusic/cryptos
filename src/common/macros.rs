@@ -213,7 +213,6 @@ macro_rules! map_range_inclusive {
     ($start:expr, $end:expr, $size:ty, $flags:expr) => {
         let start = $start;
         let end = $end;
-        let size = core::mem::size_of::<$size>();
 
         let range = {
             let first_page = Page::<$size>::containing_address(VirtAddr::new(start as u64));
@@ -228,7 +227,7 @@ macro_rules! map_range_inclusive {
             .expect("Out of memory");
 
         for p in range {
-            map_page!(f.start_address().as_u64(), p.start_address().as_u64(), $size, $flags);
+            $crate::map_page!(f.start_address().as_u64(), p.start_address().as_u64(), $size, $flags);
         }
     };
 }
