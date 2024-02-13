@@ -72,6 +72,11 @@ impl From<(u8, u64)> for State {
     }
 }
 
+trait MainMarker: Any {}
+
+impl MainMarker for fn() -> () {}
+impl MainMarker for fn() -> syscall::Result<()> {}
+
 pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
     RwLock::new(BTreeMap::new());
 
@@ -101,8 +106,8 @@ impl From<fn() -> syscall::Result<()>> for MainLoop {
 }
 
 // Needed for extracting raw main from ELF files
-impl From<*mut dyn Any> for MainLoop {
-    fn from(value: *mut dyn Any) -> Self {
+impl From<*mut dyn MainMarker> for MainLoop {
+    fn from(value: *mut dyn MainMarker) -> Self {
         let type_id = unsafe { (*value).type_id() };
 
         if type_id == TypeId::of::<fn() -> ()>() {
@@ -115,8 +120,8 @@ impl From<*mut dyn Any> for MainLoop {
     }
 }
 
-impl From<Box<dyn Any>> for MainLoop {
-    fn from(value: Box<dyn Any>) -> Self {
+impl From<Box<dyn MainMarker>> for MainLoop {
+    fn from(value: Box<dyn MainMarker>) -> Self {
         Self::from(Box::into_raw(value))
     }
 }
