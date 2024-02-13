@@ -53,6 +53,11 @@ pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLeve
 // Marker trait for satisfying type checking of syscall method return type
 pub trait SyscallRet {}
 
+// Implementations for ensuring acceptable return types
+impl SyscallRet for ! {}
+impl SyscallRet for () {}
+// to be continued
+
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
 pub static INTA_IRQ: AtomicU64 = AtomicU64::new(0);
