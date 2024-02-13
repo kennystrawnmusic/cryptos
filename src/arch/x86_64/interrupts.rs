@@ -50,10 +50,8 @@ pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLeve
     sel.rpl()
 }
 
-// Userspace API will write the requested system call number to this address
-pub(crate) fn syscall_num_addr() -> u64 {
-    get_phys_offset() + 0x595ca11a
-}
+// Marker trait for satisfying type checking of syscall method return type
+pub trait SyscallRet {}
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
@@ -491,7 +489,12 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
-    let syscall_num = unsafe { *(syscall_num_addr() as *mut u8) };
+    // Where the syscall number and function pointer are stored by user-mode input
+    let syscall_num_addr = get_phys_offset() + 0x595ca11a;
+    let syscall_fn_addr = get_phys_offset() + 0x595ca11b;
+
+    let syscall_num = unsafe { *(syscall_num_addr as *mut u8) };
+    let _syscall_fn = unsafe { *(syscall_fn_addr as *mut fn() -> dyn SyscallRet) };
     
     match syscall_num {
         0x0 => todo!("sys_exit"),

@@ -62,7 +62,6 @@ pub mod scheme;
 use crate::{
     acpi_impl::{system_shutdown, KernelAcpi},
     drm::COMPOSITING_TABLE,
-    interrupts::syscall_num_addr,
 };
 use acpi::{AcpiTables, InterruptModel, PciConfigRegions, PlatformInfo};
 use alloc::{alloc::Global, boxed::Box};
@@ -258,7 +257,7 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
     // Map system call number address
     map_page!(
         0x595ca11a,
-        syscall_num_addr(),
+        0x595ca11a + get_phys_offset(),
         Size4KiB,
         PageTableFlags::PRESENT
             | PageTableFlags::WRITABLE
