@@ -52,7 +52,7 @@ macro_rules! map_range_inclusive {
         let phys_frame_range = {
             let start = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys_start as u64));
             let end = x86_64::structures::paging::PhysFrame::<$size>::containing_address(x86_64::PhysAddr::new($phys_end as u64));
-            x86_64::structures::paging::PhysFrame::range_inclusive(start, end)
+            x86_64::structures::paging::PhysFrame::<$size>::range_inclusive(start, end)
         };
         
         let page_range = {
