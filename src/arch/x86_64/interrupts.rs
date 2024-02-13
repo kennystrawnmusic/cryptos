@@ -500,7 +500,7 @@ pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
 
     let syscall_num = unsafe { *(syscall_num_addr as *mut u8) };
     let _syscall_fn = unsafe { *(syscall_fn_addr as *mut fn() -> dyn SyscallRet) };
-    
+
     match syscall_num {
         0x0 => todo!("sys_exit"),
         0x1 => todo!("sys_fork"),

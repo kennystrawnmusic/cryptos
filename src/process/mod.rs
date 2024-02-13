@@ -72,63 +72,20 @@ impl From<(u8, u64)> for State {
     }
 }
 
-trait MainMarker: Any {}
+/// Marker trait for main loop return types
+trait MainRet: Any + Send {}
 
-impl MainMarker for fn() -> () {}
-impl MainMarker for fn() -> syscall::Result<()> {}
+impl MainRet for () {}
+impl MainRet for syscall::Result<()> {}
 
 pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
     RwLock::new(BTreeMap::new());
 
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
-/// Enum of `main()` fn signatures for the kernel to accept
-///
-/// Implements `From` for easy signature parsing
-#[derive(Copy, Clone)]
-enum MainLoop {
-    WithoutResult(fn() -> ()),
-    WithResult(fn() -> syscall::Result<()>),
-    // TODO: FFI
-}
-
-// Necessary for function signature parsing
-impl From<fn() -> ()> for MainLoop {
-    fn from(value: fn() -> ()) -> Self {
-        Self::WithoutResult(value)
-    }
-}
-
-impl From<fn() -> syscall::Result<()>> for MainLoop {
-    fn from(value: fn() -> syscall::Result<()>) -> Self {
-        Self::WithResult(value)
-    }
-}
-
-// Needed for extracting raw main from ELF files
-impl From<*mut dyn MainMarker> for MainLoop {
-    fn from(value: *mut dyn MainMarker) -> Self {
-        let type_id = unsafe { (*value).type_id() };
-
-        if type_id == TypeId::of::<fn() -> ()>() {
-            Self::from(unsafe { *(value as *mut fn() -> ()) })
-        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
-            Self::from(unsafe { *(value as *mut fn() -> syscall::Result<()>) })
-        } else {
-            unreachable!("Rust won't compile if none of the two above signatures match");
-        }
-    }
-}
-
-impl From<Box<dyn MainMarker>> for MainLoop {
-    fn from(value: Box<dyn MainMarker>) -> Self {
-        Self::from(Box::into_raw(value))
-    }
-}
-
 /// Process object
 ///
-/// Uses `core::ops::Generator` behind the scenes for easy preemption
+/// Uses `core::ops::Coroutine` behind the scenes for easy preemption
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
@@ -155,7 +112,7 @@ pub struct Process<'a> {
     systrace: AtomicBool,
 
     res: syscall::Result<usize>,
-    main: MainLoop,
+    main: fn() -> Box<dyn Any>,
 }
 
 impl Process<'static> {
@@ -171,7 +128,7 @@ impl Process<'static> {
 }
 
 impl<'a> Process<'a> {
-    fn new(data: Option<FileData>, main: MainLoop) -> Self {
+    fn new(data: Option<FileData>, main: fn() -> Box<dyn Any>) -> Self {
         let open_files = data.map(|data| alloc::vec![data]);
 
         // necessary for cleanup
@@ -215,28 +172,31 @@ impl<'a> Process<'a> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
-                State::Runnable => match self.main {
-                    MainLoop::WithoutResult(main) => {
-                        // Call the process's main() function
-                        main();
+                State::Runnable => {
+                    let main_box = Box::new(self.main);
 
-                        // Processes that need to constantly run (i.e. daemons) always
-                        // use infinite loops within their own main() bodies anyway,
-                        // so we don't need to redundantly add one here
+                    if main_box().type_id() == TypeId::of::<()>() {
+                        // Main functions for processes that need to run indefinitely
+                        // will use infinite loops within their own main function bodies
+                        // so no need to redundantly use infinite loops here
+
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
+                    } else if main_box().type_id() == TypeId::of::<syscall::Result<()>>() {
+                        match main_box().downcast_mut::<syscall::Result<()>>().unwrap() {
+                            Ok(()) => {
+                                self.state = State::Exited(0);
+                                self.set_result(Ok(0));
+                            }
+                            Err(e) => {
+                                self.state = State::Exited(e.errno as u64);
+
+                                // borrow checker
+                                self.set_result(Err(Error::new(e.errno.clone())));
+                            }
+                        }
                     }
-                    MainLoop::WithResult(main) => match main() {
-                        Ok(()) => {
-                            self.state = State::Exited(0);
-                            self.set_result(Ok(0));
-                        }
-                        Err(e) => {
-                            self.state = State::Exited(e.errno as u64);
-                            self.set_result(Err(e));
-                        }
-                    },
-                },
+                }
 
                 // Yield until changed to Runnable
                 State::Blocked => yield (),
@@ -324,12 +284,7 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
-
-        let addr = start as *mut ();
-        let meta = unsafe { *(start as *mut _) };
-        let constructed = core::ptr::from_raw_parts_mut(addr, meta);
-
-        let main = MainLoop::from(constructed);
+        let main = unsafe { *(start as *mut fn() -> Box<dyn Any>) };
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
