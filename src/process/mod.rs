@@ -9,7 +9,6 @@ use core::{
 
 use crate::common::RwLock;
 use alloc::{
-    boxed::Box,
     collections::BTreeMap,
     sync::{Arc, Weak},
     vec::Vec,
@@ -112,7 +111,7 @@ pub struct Process<'a> {
     systrace: AtomicBool,
 
     res: syscall::Result<usize>,
-    main: fn() -> Box<dyn Any>,
+    main: fn() -> *mut dyn Any,
 }
 
 impl Process<'static> {
@@ -128,7 +127,7 @@ impl Process<'static> {
 }
 
 impl<'a> Process<'a> {
-    fn new(data: Option<FileData>, main: fn() -> Box<dyn Any>) -> Self {
+    fn new(data: Option<FileData>, main: fn() -> *mut dyn Any) -> Self {
         let open_files = data.map(|data| alloc::vec![data]);
 
         // necessary for cleanup
@@ -173,15 +172,19 @@ impl<'a> Process<'a> {
         let mut main = || {
             match self.state {
                 State::Runnable => {
-                    if (self.main)().type_id() == TypeId::of::<()>() {
+                    // Call the process's main loop
+                    let main_res = (self.main)();
+
+                    // Depending on whether the program is fallible or not, handle errors
+                    if main_res.type_id() == TypeId::of::<()>() {
                         // Main functions for processes that need to run indefinitely
                         // will use infinite loops within their own main function bodies
                         // so no need to redundantly use infinite loops here
 
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
-                    } else if (self.main)().type_id() == TypeId::of::<syscall::Result<()>>() {
-                        match (self.main)().downcast_mut::<syscall::Result<()>>().unwrap() {
+                    } else if main_res.type_id() == TypeId::of::<syscall::Result<()>>() {
+                        match unsafe { main_res.as_mut().unwrap() }.downcast_mut::<syscall::Result<()>>().unwrap() {
                             Ok(()) => {
                                 self.state = State::Exited(0);
                                 self.set_result(Ok(0));
@@ -282,7 +285,7 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
-        let main = unsafe { *(start as *mut fn() -> Box<dyn Any>) };
+        let main = unsafe { *(start as *mut fn() -> *mut dyn Any) };
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
