@@ -111,6 +111,7 @@ pub struct Process<'a> {
     systrace: AtomicBool,
 
     res: syscall::Result<usize>,
+    // TODO: figure out why the borrow checker won't let me use just `dyn Any` here
     main: fn() -> &'a mut (dyn Any),
 }
 
