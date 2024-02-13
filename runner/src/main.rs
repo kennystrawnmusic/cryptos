@@ -41,7 +41,7 @@ fn main() {
         match HostDistro::new() {
             HostDistro::Ubuntu => install_ubuntu_deps(),
             HostDistro::Archlinux => install_arch_deps(),
-            HostDistro::Nixos => {}, // don't need to do anything as shell.nix takes care of this
+            HostDistro::Nixos => {} // don't need to do anything as shell.nix takes care of this
         }
     }
 

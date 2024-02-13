@@ -63,12 +63,12 @@ impl KernelFrameAlloc {
 
     pub fn allocate_multiple(
         &mut self,
-        size: usize,
+        count: usize,
     ) -> Option<(PhysFrameRangeInclusive<Size4KiB>, usize)> {
         let begin = self.usable().nth(self.next)?;
-        let end = self.usable().nth(self.next + size)?;
+        let end = self.usable().nth(self.next + count)?;
 
-        self.next += size + 1;
+        self.next += count + 1;
 
         Some((PhysFrame::range_inclusive(begin, end), self.next))
     }

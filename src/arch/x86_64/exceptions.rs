@@ -1,4 +1,5 @@
 use {
+    core::ptr::addr_of,
     lazy_static::lazy_static,
     x86_64::{
         instructions::{
@@ -11,7 +12,6 @@ use {
         },
         VirtAddr,
     },
-    core::ptr::addr_of,
 };
 
 pub struct Selectors {

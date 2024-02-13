@@ -208,26 +208,32 @@ macro_rules! printk {
     });
 }
 
+// Needed for system call interface
 #[macro_export]
 macro_rules! map_range_inclusive {
     ($start:expr, $end:expr, $size:ty, $flags:expr) => {
         let start = $start;
         let end = $end;
 
-        let range = {
+        let phys_frame_range = FRAME_ALLOCATOR
+            .allocate_multiple((end - start) as usize / 4096)
+            .expect("Out of memory")
+            .0;
+
+        let page_range = {
             let first_page = Page::<$size>::containing_address(VirtAddr::new(start as u64));
             let last_page = Page::<$size>::containing_address(VirtAddr::new(end as u64));
 
             Page::<$size>::range_inclusive(first_page, last_page)
         };
 
-        let f = FRAME_ALLOCATOR
-            .write()
-            .allocate_frame()
-            .expect("Out of memory");
-
-        for p in range {
-            $crate::map_page!(f.start_address().as_u64(), p.start_address().as_u64(), $size, $flags);
+        for (p, f) in page_range.zip(phys_frame_range) {
+            map_page!(
+                f.start_address().as_u64(),
+                p.start_address().as_u64(),
+                $size,
+                $flags
+            );
         }
     };
 }

@@ -5,7 +5,10 @@ pub mod cryptk;
 
 use alloc::{boxed::Box, vec::Vec};
 use bootloader_api::info::{FrameBuffer, FrameBufferInfo, PixelFormat};
-use core::simd::{Simd, prelude::{SimdFloat, SimdUint}};
+use core::simd::{
+    prelude::{SimdFloat, SimdUint},
+    Simd,
+};
 use embedded_graphics::{
     pixelcolor::{Bgr888, Gray8, Rgb888},
     prelude::{GrayColor, OriginDimensions, PixelColor, RgbColor, Size},
