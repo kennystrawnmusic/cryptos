@@ -112,14 +112,14 @@ impl<'a> Entry<'a> {
                     parent,
                 };
 
-                let mut_dir = Arc::get_mut(&mut dir).unwrap();
+                let mut_dir = Arc::make_mut(&mut dir);
                 mut_dir.insert(props.clone(), Arc::new(to_insert));
 
-                let ret = dir.get(&props).unwrap();
-                Ok(ret.clone().as_ref().clone())
+                let ret = Arc::make_mut(Arc::make_mut(&mut dir).get_mut(&props).unwrap());
+                Ok(ret.clone())
             }
             EntryKind::Root(mut root) => {
-                if let EntryKind::Directory(ref mut dir) = Arc::get_mut(&mut root).unwrap().dir.kind
+                if let EntryKind::Directory(ref mut dir) = Arc::make_mut(&mut root).dir.kind
                 {
                     let parent = Some(EntryKind::Directory(dir.clone()));
 
@@ -146,7 +146,7 @@ impl<'a> Entry<'a> {
                         parent,
                     };
 
-                    let mut_dir = Arc::get_mut(dir).unwrap();
+                    let mut_dir = Arc::make_mut(dir);
                     mut_dir.insert(props.clone(), Arc::new(to_insert));
 
                     let ret = dir.get(&props).cloned().unwrap();
@@ -197,13 +197,13 @@ impl<'a> Entry<'a> {
                     parent: Some(parent),
                 };
 
-                Arc::get_mut(dir).unwrap().insert(
-                    Arc::get_mut(&mut props_arc).cloned().unwrap(),
+                Arc::make_mut(dir).insert(
+                    Arc::make_mut(&mut props_arc).clone(),
                     Arc::new(to_insert),
                 );
 
                 let ret = dir
-                    .get(Arc::get_mut(&mut props_arc).unwrap())
+                    .get(Arc::make_mut(&mut props_arc))
                     .cloned()
                     .unwrap();
                 Ok(ret.as_ref().clone())
