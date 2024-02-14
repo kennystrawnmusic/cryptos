@@ -4,7 +4,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::hash::{BuildHasher, Hash, Hasher};
 use mr_mime::Mime;
-use syscall::{Error, EACCES, ENOTDIR};
+use syscall::{Error, ENOTDIR};
 use unix_path::{Path, PathBuf};
 
 use crate::common::hash_map::HashMap;
@@ -209,7 +209,54 @@ impl<'a> Entry<'a> {
                 Ok(ret.as_ref().clone())
             }
             EntryKind::File(_) => Err(Error::new(ENOTDIR)), // Not a directory
-            EntryKind::Root(_) => Err(Error::new(EACCES)),  // TODO: give root an exception to this
+            EntryKind::Root(ref mut root) => {
+                // TODO: throw EACCES if a non-root user attempts this
+                if let EntryKind::Directory(ref mut dir) = Arc::make_mut(root).dir.kind {
+                    let parent = EntryKind::Directory(dir.clone());
+
+                    // borrow checker
+                    let duplicate = parent.clone();
+
+                    let props = Properties::new(
+                        name,
+                        parent,
+                        Some(mime),
+                        0o777,                // TODO: users and permissions
+                        String::from("root"), // TODO: users and permissions
+                        timestamp,
+                        timestamp,
+                        String::from("root"), // TODO: users and permissions
+                    );
+
+                    let mut props_arc = Arc::new(props);
+
+                    // borrow checker
+                    let parent = duplicate;
+
+                    let kind = EntryKind::File(data);
+                    let checksum = dir.hasher().hash_one(&kind);
+
+                    let to_insert = Self {
+                        kind,
+                        checksum,
+                        parent: Some(parent),
+                    };
+
+                    Arc::make_mut(dir).insert(
+                        Arc::make_mut(&mut props_arc).clone(),
+                        Arc::new(to_insert),
+                    );
+
+                    let ret = dir
+                        .get(Arc::make_mut(&mut props_arc))
+                        .cloned()
+                        .unwrap();
+                    Ok(ret.as_ref().clone())
+                } else {
+                    unreachable!("root entry is always a directory")
+                }
+            
+            },  // TODO: give root an exception to this
         }
     }
 }
