@@ -9,6 +9,7 @@ use core::{
 
 use crate::common::RwLock;
 use alloc::{
+    boxed::Box,
     collections::BTreeMap,
     sync::{Arc, Weak},
     vec::Vec,
@@ -76,9 +77,53 @@ pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
 
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
+/// Enum of `main()` fn signatures for the kernel to accept
+///
+/// Implements `From` for easy signature parsing
+#[derive(Copy, Clone)]
+enum MainLoop {
+    WithoutResult(fn() -> ()),
+    WithResult(fn() -> syscall::Result<()>),
+    // TODO: FFI
+}
+
+// Necessary for function signature parsing
+impl From<fn() -> ()> for MainLoop {
+    fn from(value: fn() -> ()) -> Self {
+        Self::WithoutResult(value)
+    }
+}
+
+impl From<fn() -> syscall::Result<()>> for MainLoop {
+    fn from(value: fn() -> syscall::Result<()>) -> Self {
+        Self::WithResult(value)
+    }
+}
+
+// Needed for extracting raw main from ELF files
+impl From<*mut dyn Any> for MainLoop {
+    fn from(value: *mut dyn Any) -> Self {
+        let type_id = unsafe { (*value).type_id() };
+
+        if type_id == TypeId::of::<fn() -> ()>() {
+            Self::from(unsafe { *(value as *mut fn() -> ()) })
+        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
+            Self::from(unsafe { *(value as *mut fn() -> syscall::Result<()>) })
+        } else {
+            unreachable!("Rust won't compile if none of the two above signatures match");
+        }
+    }
+}
+
+impl From<Box<dyn Any>> for MainLoop {
+    fn from(value: Box<dyn Any>) -> Self {
+        Self::from(Box::into_raw(value))
+    }
+}
+
 /// Process object
 ///
-/// Uses `core::ops::Coroutine` behind the scenes for easy preemption
+/// Uses `core::ops::Generator` behind the scenes for easy preemption
 #[allow(unused)] // not finished
 pub struct Process<'a> {
     self_reference: Weak<Process<'a>>,
@@ -105,11 +150,58 @@ pub struct Process<'a> {
     systrace: AtomicBool,
 
     res: syscall::Result<usize>,
-    // TODO: figure out why the borrow checker won't let me use just `dyn Any` here
-    main: fn() -> &'a mut (dyn Any),
+    main: MainLoop,
 }
 
 impl Process<'static> {
+    /// Inserts this process into the PTABLE
+    pub fn register(mut self) {
+        self.block(); // make sure this is the case before proceeding
+        self.queue();
+
+        PTABLE
+            .write()
+            .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
+    }
+}
+
+impl<'a> Process<'a> {
+    fn new(data: Option<FileData>, main: MainLoop) -> Self {
+        let open_files = data.map(|data| alloc::vec![data]);
+
+        // necessary for cleanup
+        let global_id = PTABLE.read().len() - 1;
+
+        Self {
+            self_reference: Weak::new(),
+            state: State::Blocked, // don't make process Runnable until it's actually ready to be run
+            pid: AtomicPid::new(Pid::new(global_id)),
+            tid: AtomicTid::new(Tid::new(global_id)),
+            sid: AtomicSid::new(Sid::new(global_id as u64)),
+            gid: AtomicGid::new(Gid::new(global_id as u64)),
+            parent: RwLock::new(None),
+            sleep: AtomicU64::new(global_id as u64),
+            signal_received: Signal::Success,
+            io_pending: AtomicBool::new(false),
+            executable: OnceCell::uninit(),
+            open_files: Arc::new(RwLock::new(open_files)),
+            pwd: RwLock::new(None),
+            exit_status: OnceCell::<u64>::uninit(),
+            systrace: AtomicBool::new(false),
+            res: Ok(0), // this will change when the process runs
+            main,
+        }
+    }
+
+    /// Creates a new process using and automatically adds it to `PTABLE`
+    pub fn create(exec: ElfFile<'static>) {
+        Process::<'static>::from(exec).register();
+    }
+
+    fn set_result(&mut self, res: syscall::Result<usize>) {
+        self.res = res;
+    }
+
     /// Uses a generator to queue this process
     fn queue(&mut self) {
         // borrow checker
@@ -118,33 +210,28 @@ impl Process<'static> {
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
-                State::Runnable => {
-                    // Call the process's main loop
-                    let main_res = (self.main)();
+                State::Runnable => match self.main {
+                    MainLoop::WithoutResult(main) => {
+                        // Call the process's main() function
+                        main();
 
-                    // Depending on whether the program is fallible or not, handle errors
-                    if main_res.type_id() == TypeId::of::<()>() {
-                        // Main functions for processes that need to run indefinitely
-                        // will use infinite loops within their own main function bodies
-                        // so no need to redundantly use infinite loops here
-
+                        // Processes that need to constantly run (i.e. daemons) always
+                        // use infinite loops within their own main() bodies anyway,
+                        // so we don't need to redundantly add one here
                         self.state = State::Exited(0);
                         self.set_result(Ok(0));
-                    } else if main_res.type_id() == TypeId::of::<syscall::Result<()>>() {
-                        match main_res.downcast_mut::<syscall::Result<()>>().unwrap() {
-                            Ok(()) => {
-                                self.state = State::Exited(0);
-                                self.set_result(Ok(0));
-                            }
-                            Err(e) => {
-                                self.state = State::Exited(e.errno as u64);
-
-                                // borrow checker
-                                self.set_result(Err(Error::new(e.errno.clone())));
-                            }
-                        }
                     }
-                }
+                    MainLoop::WithResult(main) => match main() {
+                        Ok(()) => {
+                            self.state = State::Exited(0);
+                            self.set_result(Ok(0));
+                        }
+                        Err(e) => {
+                            self.state = State::Exited(e.errno as u64);
+                            self.set_result(Err(e));
+                        }
+                    },
+                },
 
                 // Yield until changed to Runnable
                 State::Blocked => yield (),
@@ -191,54 +278,6 @@ impl Process<'static> {
         Pin::new(&mut main).resume(());
     }
 
-    /// Inserts this process into the PTABLE
-    pub fn register(mut self) {
-        self.block(); // make sure this is the case before proceeding
-        self.queue();
-
-        PTABLE
-            .write()
-            .insert(PTABLE.read().len() - 1, Arc::new(RwLock::new(self)));
-    }
-}
-
-impl<'a> Process<'a> {
-    fn new(data: Option<FileData>, main: fn() -> &'a mut (dyn Any)) -> Self {
-        let open_files = data.map(|data| alloc::vec![data]);
-
-        // necessary for cleanup
-        let global_id = PTABLE.read().len() - 1;
-
-        Self {
-            self_reference: Weak::new(),
-            state: State::Blocked, // don't make process Runnable until it's actually ready to be run
-            pid: AtomicPid::new(Pid::new(global_id)),
-            tid: AtomicTid::new(Tid::new(global_id)),
-            sid: AtomicSid::new(Sid::new(global_id as u64)),
-            gid: AtomicGid::new(Gid::new(global_id as u64)),
-            parent: RwLock::new(None),
-            sleep: AtomicU64::new(global_id as u64),
-            signal_received: Signal::Success,
-            io_pending: AtomicBool::new(false),
-            executable: OnceCell::uninit(),
-            open_files: Arc::new(RwLock::new(open_files)),
-            pwd: RwLock::new(None),
-            exit_status: OnceCell::<u64>::uninit(),
-            systrace: AtomicBool::new(false),
-            res: Ok(0), // this will change when the process runs
-            main,
-        }
-    }
-
-    /// Creates a new process using and automatically adds it to `PTABLE`
-    pub fn create(exec: ElfFile<'static>) {
-        Process::<'static>::from(exec).register();
-    }
-
-    fn set_result(&mut self, res: syscall::Result<usize>) {
-        self.res = res;
-    }
-
     fn set_state(&mut self, state: State) {
         self.state = state;
     }
@@ -280,7 +319,12 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
-        let main = unsafe { *(start as *mut fn() -> &'a mut (dyn Any)) };
+
+        let addr = start as *mut ();
+        let meta = unsafe { *(start as *mut _) };
+        let constructed = core::ptr::from_raw_parts_mut(addr, meta);
+
+        let main = MainLoop::from(constructed);
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
