@@ -71,12 +71,6 @@ impl From<(u8, u64)> for State {
     }
 }
 
-/// Marker trait for main loop return types
-trait MainRet: Any + Send {}
-
-impl MainRet for () {}
-impl MainRet for syscall::Result<()> {}
-
 pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
     RwLock::new(BTreeMap::new());
 
