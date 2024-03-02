@@ -25,9 +25,9 @@ checksum = "aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234"
 
 [[package]]
 name = "ahash"
-version = "0.8.6"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91429305e9f0a25f6205c5b8e0d2db09e0708a7a6df0f42212bb56c32c8ac97a"
+checksum = "d713b3834d76b85304d4d525563c1276e2e30dc97cc67bfb4585a4a29fc2c89f"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -319,9 +319,9 @@ dependencies = [
 
 [[package]]
 name = "bootloader"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80006b1b91523db2339c10ec07ef0deabe098488d02e4763c9459e001b96e98c"
+checksum = "870f24755a97b8a8b436b243465eb7d4e1aa191369eeab062172eedd74493bcb"
 dependencies = [
  "anyhow",
  "async-process",
@@ -338,18 +338,18 @@ dependencies = [
 
 [[package]]
 name = "bootloader-boot-config"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63dcfafa400652958ccd9fa047149b09dc7b89df5d2666f66041bfeb81c574d1"
+checksum = "4946b6c83b3e9bd91864531025a9719ed0d8c6e7c5db13f694152b5df7deea15"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "bootloader-x86_64-common"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "703779590b815fd3f10d3d2be511755ce738c412a3c97abdcf98965ca0c7eceb"
+checksum = "501ac7a9e71145dce9aee3513f80a62a4becf07339b226f2a7dfc6f5f53e4311"
 dependencies = [
  "bootloader-boot-config",
  "bootloader_api",
@@ -368,9 +368,9 @@ dependencies = [
 
 [[package]]
 name = "bootloader_api"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f11d1b6f220515550211f3c3b70b2ac027e56f2bee96d341494a76f162d4209"
+checksum = "a35ba5100c2431e20b924c8103c2cf8adb919ed9880f625e8770c3cb9d1b06aa"
 
 [[package]]
 name = "buddy_system_allocator"
@@ -914,8 +914,7 @@ dependencies = [
 [[package]]
 name = "hashbrown"
 version = "0.14.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
+source = "git+https://github.com/rust-lang/hashbrown#274c7bbd79398881e0225c0133e423ce60d7a8f1"
 dependencies = [
  "ahash",
  "allocator-api2",
@@ -2047,18 +2046,18 @@ checksum = "2fe21bcc34ca7fe6dd56cc2cb1261ea59d6b93620215aefb5ea6032265527784"
 
 [[package]]
 name = "zerocopy"
-version = "0.7.26"
+version = "0.7.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e97e415490559a91254a2979b4829267a57d2fcd741a98eee8b722fb57289aa0"
+checksum = "74d4d3961e53fa4c9a25a8637fc2bfaf2595b3d3ae34875568a5cf64787716be"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.26"
+version = "0.7.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd7e48ccf166952882ca8bd778a43502c64f33bf94c12ebe2a7f08e5a0f6689f"
+checksum = "9ce1b18ccd8e73a9321186f97e46f9f04b778851177567b1975109d26a08d2a6"
 dependencies = [
  "proc-macro2",
  "quote",

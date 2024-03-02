@@ -1,8 +1,7 @@
-use super::*;
-
 use alloc::sync::Arc;
 use spin::RwLock;
-use xhci::context::{DeviceHandler, EndpointHandler, SlotHandler};
+use xhci::context::{Device, DeviceHandler, EndpointHandler, SlotHandler};
+use super::XhciImpl;
 
 /// Wrapper for handling both 32 and 64-byte device cases
 #[allow(clippy::large_enum_variant)]
