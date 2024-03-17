@@ -2,6 +2,17 @@
     "version": "2.0.0",
     "tasks": [
       {
+        "label": "Nix Shell",
+        "type": "shell",
+        "command": [
+          "nix-shell"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+      },
+      {
         "label": "Build Kernel",
         "type": "shell",
         "command": [
