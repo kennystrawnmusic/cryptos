@@ -13,13 +13,15 @@ use crate::ahci::util::sync::Mutex;
 use crate::get_phys_offset;
 
 unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
-    let (pml4_frame, _) = Cr3::read();
+    unsafe {
+        let (pml4_frame, _) = Cr3::read();
 
-    let phys = pml4_frame.start_address();
-    let virt = offset + phys.as_u64();
-    let ptpt = virt.as_mut_ptr::<PageTable>();
+        let phys = pml4_frame.start_address();
+        let virt = offset + phys.as_u64();
+        let ptpt = virt.as_mut_ptr::<PageTable>();
 
-    &mut *ptpt // Safety: returns mutable reference to raw pointer
+        &mut *ptpt // Safety: returns mutable reference to raw pointer
+    }
 }
 
 pub fn safe_active_pml4(offset: VirtAddr) -> Mutex<PageTable> {
@@ -32,8 +34,10 @@ pub fn safe_active_pml4(offset: VirtAddr) -> Mutex<PageTable> {
 ///
 /// As this function calls the `OffsetPageTable`'s constructor, the same safety rules for that apply here.
 pub unsafe fn map_memory() -> OffsetPageTable<'static> {
-    let pml4 = active_pml4(VirtAddr::new(get_phys_offset()));
-    OffsetPageTable::new(pml4, VirtAddr::new(get_phys_offset()))
+    unsafe {
+        let pml4 = active_pml4(VirtAddr::new(get_phys_offset()));
+        OffsetPageTable::new(pml4, VirtAddr::new(get_phys_offset()))
+    }
 }
 
 /// The frame allocator

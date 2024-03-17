@@ -280,84 +280,96 @@ bitflags! {
 /// Uses inline assembly
 #[inline]
 pub unsafe fn outb(port: u16, value: u8) {
-    asm!(
-       "out dx, al",
-       in("dx") port,
-       in("al") value,
-       options(preserves_flags, nomem, nostack)
-    );
+    unsafe {
+        asm!(
+           "out dx, al",
+           in("dx") port,
+           in("al") value,
+           options(preserves_flags, nomem, nostack)
+        );
+    }
 }
 
 /// ### Safety
 /// Uses inline assembly
 #[inline]
 pub unsafe fn inb(port: u16) -> u8 {
-    let ret: u8;
+    unsafe {
+        let ret: u8;
 
-    asm!(
-        "in al, dx",
-        in("dx") port,
-        out("al") ret,
-        options(preserves_flags, nomem, nostack)
-    );
+        asm!(
+            "in al, dx",
+            in("dx") port,
+            out("al") ret,
+            options(preserves_flags, nomem, nostack)
+        );
 
-    ret
+        ret
+    }
 }
 
 /// ### Safety
 /// Uses inline assembly
 #[inline]
 pub unsafe fn outw(port: u16, value: u16) {
-    asm!(
-        "out dx, ax",
-        in("dx") port,
-        in("ax") value,
-        options(preserves_flags, nomem, nostack)
-    );
+    unsafe {
+        asm!(
+            "out dx, ax",
+            in("dx") port,
+            in("ax") value,
+            options(preserves_flags, nomem, nostack)
+        );
+    }
 }
 
 /// ### Safety
 /// Uses inline assembly
 #[inline]
 pub unsafe fn outl(port: u16, value: u32) {
-    asm!(
-        "out dx, eax",
-        in("dx") port,
-        in("eax") value,
-        options(preserves_flags, nomem, nostack)
-    );
+    unsafe {
+        asm!(
+            "out dx, eax",
+            in("dx") port,
+            in("eax") value,
+            options(preserves_flags, nomem, nostack)
+        );
+    }
 }
 
 /// ### Safety
 /// Uses inline assembly
 #[inline]
 pub unsafe fn inl(port: u16) -> u32 {
-    let ret: u32;
+    unsafe {
+        let ret: u32;
 
-    asm!(
-        "in eax, dx",
-        in("dx") port,
-        out("eax") ret,
-        options(nomem, nostack, preserves_flags)
-    );
+        asm!(
+            "in eax, dx",
+            in("dx") port,
+            out("eax") ret,
+            options(nomem, nostack, preserves_flags)
+        );
 
-    ret
+        ret
+    }
 }
 
 /// ### Safety
 /// Uses inline assembly
 #[inline]
 pub unsafe fn inw(port: u16) -> u16 {
-    let ret: u16;
+    unsafe {
+        let ret: u16;
 
-    asm!(
-        "in ax, dx",
-        out("ax") ret,
-        in("dx") port,
-        options(nomem, nostack, preserves_flags)
-    );
+        asm!(
+            "in ax, dx",
+            out("ax") ret,
+            in("dx") port,
+            options(nomem, nostack, preserves_flags)
+        );
 
-    ret
+        ret
+    }
 }
 
 // const PCI_CONFIG_ADDRESS_PORT: u16 = 0xCF8;

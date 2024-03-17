@@ -45,7 +45,7 @@ pub fn init() {
 
 pub fn current_privilege_level(frame: InterruptStackFrameValue) -> PrivilegeLevel {
     // TODO: from what end is the SegmentSelector padded with zeros? Ask @phil-opp for advice on this
-    let sel = SegmentSelector(frame.code_segment as u16);
+    let sel = SegmentSelector(frame.code_segment.0);
 
     sel.rpl()
 }
@@ -98,13 +98,13 @@ lazy_static! {
             .set_handler_fn(bound_range_exceeded);
         idt.invalid_opcode.set_handler_fn(invalid_op);
         idt.device_not_available.set_handler_fn(navail);
-        idt[IrqIndex::Timer as usize].set_handler_fn(timer);
-        idt[IrqIndex::LapicErr as usize].set_handler_fn(lapic_err);
-        idt[IrqIndex::Spurious as usize].set_handler_fn(spurious);
-        idt[INTA_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_inta);
-        idt[INTB_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intb);
-        idt[INTC_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intc);
-        idt[INTD_IRQ.load(Ordering::SeqCst) as usize].set_handler_fn(pin_intd);
+        idt[IrqIndex::Timer as u8].set_handler_fn(timer);
+        idt[IrqIndex::LapicErr as u8].set_handler_fn(lapic_err);
+        idt[IrqIndex::Spurious as u8].set_handler_fn(spurious);
+        idt[INTA_IRQ.load(Ordering::SeqCst) as u8].set_handler_fn(pin_inta);
+        idt[INTB_IRQ.load(Ordering::SeqCst) as u8].set_handler_fn(pin_intb);
+        idt[INTC_IRQ.load(Ordering::SeqCst) as u8].set_handler_fn(pin_intc);
+        idt[INTD_IRQ.load(Ordering::SeqCst) as u8].set_handler_fn(pin_intd);
         idt[0x80].set_handler_fn(syscall);
 
         // Vector 100 = IPI_WAKE handler as task scheduler
@@ -269,28 +269,30 @@ extern "x86-interrupt" fn double_fault(frame: InterruptStackFrame, _code: u64) -
 extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFaultErrorCode) {
     if code.is_empty() {
         // Create and map the nonexistent page and try again
-        let virt = Page::<Size4KiB>::containing_address(Cr2::read())
-            .start_address()
-            .as_u64();
+        if let Ok(cr2) = Cr2::read() {
+            let virt = Page::<Size4KiB>::containing_address(cr2)
+                .start_address()
+                .as_u64();
 
-        let phys = Cr2::read().as_u64();
+            let phys = cr2.as_u64();
 
-        map_page!(
-            phys,
-            virt,
-            Size4KiB,
-            PageTableFlags::PRESENT
-                | PageTableFlags::WRITABLE
-                | PageTableFlags::NO_CACHE
-                | PageTableFlags::WRITE_THROUGH
-        );
+            map_page!(
+                phys,
+                virt,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
 
-        unsafe { frame.iretq() }
+            unsafe { frame.iretq() }
+        };
     } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl() {
         // kernel mode
         panic!(
             "Page fault: Attempt to access address {:#x} returned a {:#?} error\n Backtrace: {:#?}",
-            Cr2::read(),
+            Cr2::read().unwrap(),
             code,
             frame
         );
@@ -789,6 +791,6 @@ pub fn irqalloc() -> u8 {
 
 /// Indexes a new handler at a new IDT entry created by `irqalloc()` fn
 pub fn register_handler(irq: u8, handler: extern "x86-interrupt" fn(InterruptStackFrame)) {
-    IDT.write()[irq as usize].set_handler_fn(handler);
+    IDT.write()[irq as u8].set_handler_fn(handler);
     init();
 }

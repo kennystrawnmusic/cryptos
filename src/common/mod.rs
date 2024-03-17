@@ -245,7 +245,9 @@ impl Printk {
     /// # Safety
     /// This function is unsafe for the same reason why force-unlocking any other lock is unsafe
     pub unsafe fn force_unlock(&self) {
-        self.0.force_write_unlock();
+        unsafe {
+            self.0.force_write_unlock();
+        }
     }
 
     pub fn is_locked(&self) -> bool {

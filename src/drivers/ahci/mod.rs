@@ -670,7 +670,7 @@ impl HbaPort {
         // before reading it.
         let clb_mapped = VirtAddr::new(self.clb.get().as_u64() + get_phys_offset());
         // Get the address of the command header at `index`.
-        let clb_addr = clb_mapped + core::mem::size_of::<HbaCmdHeader>() * index;
+        let clb_addr = clb_mapped + (core::mem::size_of::<HbaCmdHeader>() as u64) * (index as u64);
 
         // Cast it as [`HbaCmdHeader`] and return a mutable reference to it.
         unsafe { &mut *(clb_addr.as_mut_ptr::<HbaCmdHeader>()) }

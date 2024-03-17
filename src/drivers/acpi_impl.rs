@@ -194,29 +194,31 @@ impl AcpiHandler for KernelAcpi {
         physical_address: usize,
         size: usize,
     ) -> PhysicalMapping<Self, T> {
-        let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
-            physical_address as u64 + get_phys_offset(),
-        ));
-        let virtual_address = test.start_address().as_u64();
+        unsafe {
+            let test = Page::<Size4KiB>::containing_address(VirtAddr::new(
+                physical_address as u64 + get_phys_offset(),
+            ));
+            let virtual_address = test.start_address().as_u64();
 
-        // now that we handle the PageAlreadyMapped and ParentEntryHugePage errors properly, i.e. without panicking
-        map_page!(
-            physical_address,
-            virtual_address,
-            Size4KiB,
-            PageTableFlags::PRESENT
-                | PageTableFlags::WRITABLE
-                | PageTableFlags::NO_CACHE
-                | PageTableFlags::WRITE_THROUGH
-        );
+            // now that we handle the PageAlreadyMapped and ParentEntryHugePage errors properly, i.e. without panicking
+            map_page!(
+                physical_address,
+                virtual_address,
+                Size4KiB,
+                PageTableFlags::PRESENT
+                    | PageTableFlags::WRITABLE
+                    | PageTableFlags::NO_CACHE
+                    | PageTableFlags::WRITE_THROUGH
+            );
 
-        PhysicalMapping::new(
-            physical_address,
-            NonNull::new(virtual_address as *mut T).unwrap(), //page must exist
-            size,
-            page_align(size as u64, virtual_address),
-            Self,
-        )
+            PhysicalMapping::new(
+                physical_address,
+                NonNull::new(virtual_address as *mut T).unwrap(), //page must exist
+                size,
+                page_align(size as u64, virtual_address),
+                Self,
+            )
+        }
     }
 
     fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {

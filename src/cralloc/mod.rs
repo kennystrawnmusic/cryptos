@@ -44,7 +44,7 @@ pub static ALLOC: LazyHeap = LazyHeap::new(|| {
 
     let range = {
         let begin = VirtAddr::new(BEGIN_HEAP as u64);
-        let end = begin + HEAP_LEN - 1u64;
+        let end = begin + (HEAP_LEN as u64) - 1u64;
         let first_page = Page::containing_address(begin);
         let last_page = Page::containing_address(end);
         Page::<Size4KiB>::range_inclusive(first_page, last_page)
@@ -146,10 +146,10 @@ impl LazyHeap {
 
 unsafe impl GlobalAlloc for LazyHeap {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        self.0.alloc(layout)
+        unsafe { self.0.alloc(layout) }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        self.0.dealloc(ptr, layout)
+        unsafe { self.0.dealloc(ptr, layout) }
     }
 }

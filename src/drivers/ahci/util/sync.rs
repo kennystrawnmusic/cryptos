@@ -108,7 +108,7 @@ impl<T> Mutex<T> {
     /// can be useful in some instances for exposing the lock to FFI that doesn't know how to deal
     /// with RAII.
     pub unsafe fn force_unlock(&self) {
-        self.inner.force_unlock()
+        unsafe { self.inner.force_unlock() }
     }
 }
 

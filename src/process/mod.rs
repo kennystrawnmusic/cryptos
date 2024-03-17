@@ -319,11 +319,9 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
-        
-        let start_ptr = core::ptr::from_raw_parts_mut(
-            start as *mut (), 
-            unsafe { *(start as *mut _) }
-        );
+
+        let start_ptr =
+            core::ptr::from_raw_parts_mut(start as *mut (), unsafe { *(start as *mut _) });
 
         let main = MainLoop::from(start_ptr);
 

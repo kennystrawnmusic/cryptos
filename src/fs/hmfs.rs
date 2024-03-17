@@ -119,8 +119,7 @@ impl<'a> Entry<'a> {
                 Ok(ret.clone())
             }
             EntryKind::Root(mut root) => {
-                if let EntryKind::Directory(ref mut dir) = Arc::make_mut(&mut root).dir.kind
-                {
+                if let EntryKind::Directory(ref mut dir) = Arc::make_mut(&mut root).dir.kind {
                     let parent = Some(EntryKind::Directory(dir.clone()));
 
                     let new_map_inner = new_map_shorthand();
@@ -197,15 +196,10 @@ impl<'a> Entry<'a> {
                     parent: Some(parent),
                 };
 
-                Arc::make_mut(dir).insert(
-                    Arc::make_mut(&mut props_arc).clone(),
-                    Arc::new(to_insert),
-                );
+                Arc::make_mut(dir)
+                    .insert(Arc::make_mut(&mut props_arc).clone(), Arc::new(to_insert));
 
-                let ret = dir
-                    .get(Arc::make_mut(&mut props_arc))
-                    .cloned()
-                    .unwrap();
+                let ret = dir.get(Arc::make_mut(&mut props_arc)).cloned().unwrap();
                 Ok(ret.as_ref().clone())
             }
             EntryKind::File(_) => Err(Error::new(ENOTDIR)), // Not a directory
@@ -242,21 +236,15 @@ impl<'a> Entry<'a> {
                         parent: Some(parent),
                     };
 
-                    Arc::make_mut(dir).insert(
-                        Arc::make_mut(&mut props_arc).clone(),
-                        Arc::new(to_insert),
-                    );
+                    Arc::make_mut(dir)
+                        .insert(Arc::make_mut(&mut props_arc).clone(), Arc::new(to_insert));
 
-                    let ret = dir
-                        .get(Arc::make_mut(&mut props_arc))
-                        .cloned()
-                        .unwrap();
+                    let ret = dir.get(Arc::make_mut(&mut props_arc)).cloned().unwrap();
                     Ok(ret.as_ref().clone())
                 } else {
                     unreachable!("root entry is always a directory")
                 }
-            
-            },  // TODO: give root an exception to this
+            } // TODO: give root an exception to this
         }
     }
 }

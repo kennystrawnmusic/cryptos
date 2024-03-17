@@ -48,6 +48,7 @@ pub use core::default;
 pub use core::f32;
 pub use core::f64;
 
+#[allow(ambiguous_glob_reexports)]
 pub mod ffi {
     extern crate alloc as inner_alloc;
     pub use core::ffi::*;

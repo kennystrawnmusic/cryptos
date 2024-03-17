@@ -35,56 +35,56 @@ lazy_static! {
     pub static ref TSS: TaskStateSegment = {
         let mut tss = TaskStateSegment::new();
         tss.interrupt_stack_table[DOUBLE_FAULT_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[PAGE_FAULT_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[INVALID_TSS_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[DIV_ERR_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[SIGBUS_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[SIGSEGV_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
             begin + LEN
         };
         tss.interrupt_stack_table[GPF_STACK_INDEX as usize] = {
-            const LEN: usize = 4096 * 5;
-            static mut STACK: [u8; LEN] = [0; LEN];
+            const LEN: u64 = 4096 * 5;
+            static mut STACK: [u8; LEN as usize] = [0; LEN as usize];
 
             let begin = VirtAddr::from_ptr(unsafe { addr_of!(STACK) });
 
@@ -94,12 +94,12 @@ lazy_static! {
     };
     pub static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new();
-        let code = gdt.add_entry(Descriptor::kernel_code_segment());
-        let ds = gdt.add_entry(Descriptor::kernel_data_segment());
-        let es = gdt.add_entry(Descriptor::kernel_data_segment());
-        let fs = gdt.add_entry(Descriptor::kernel_data_segment());
-        let gs = gdt.add_entry(Descriptor::kernel_data_segment());
-        let tss = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        let code = gdt.append(Descriptor::kernel_code_segment());
+        let ds = gdt.append(Descriptor::kernel_data_segment());
+        let es = gdt.append(Descriptor::kernel_data_segment());
+        let fs = gdt.append(Descriptor::kernel_data_segment());
+        let gs = gdt.append(Descriptor::kernel_data_segment());
+        let tss = gdt.append(Descriptor::tss_segment(&TSS));
         (
             gdt,
             Selectors {
