@@ -66,7 +66,7 @@ macro_rules! primitive_impl_syscall_ret {
     };
 }
 
-primitive_impl_syscall_ret!(u8, u16, u32, u64, i8, i16, i32, i64);
+primitive_impl_syscall_ret!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
 
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
