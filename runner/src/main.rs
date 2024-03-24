@@ -78,6 +78,37 @@ fn main() {
                     run_qemu(kdir, &out_path);
                 }
             }
+            "--debug" => {
+                let (kdir, out_path) = create_disk_image(FrameBuffer::default());
+
+                // create usb-storage.img if it doesn't already exist
+                if !Path::exists(Path::new("usb-storage.img")) {
+                    let mut usb_storage = Command::new("dd");
+                    usb_storage
+                        .arg("if=/dev/zero")
+                        .arg("of=usb-storage.img")
+                        .arg("bs=1M")
+                        .arg("count=1024");
+
+                    let status = usb_storage.status().unwrap_or_else(|e| {
+                        eprintln!("Error attempting to create usb-storage.img: {:#?}", &e);
+                        exit(1);
+                    });
+
+                    if !status.success() {
+                        eprintln!("Error attempting to create usb-storage.img: {:#?}", &status);
+                        exit(status.code().unwrap());
+                    }
+                }
+
+                if Path::exists(Path::new("OVMF-pure-efi.fd")) {
+                    debug_qemu(kdir, &out_path);
+                } else {
+                    println!("OVMF not found; downloading first");
+                    download_ovmf();
+                    debug_qemu(kdir, &out_path);
+                }
+            }
             "--write" => {
                 if cfg!(target_os = "windows") {
                     eprintln!("This feature is only supported on Unix-like operating systems");
@@ -149,7 +180,7 @@ fn main() {
                 }
             }
             _ => {
-                eprintln!("Unknown command line argument specified. Acceptable options are `--boot` and `--write`");
+                eprintln!("Unknown command line argument specified. Acceptable options are `--boot`, `--debug`, and `--write`");
                 exit(1)
             }
         }
@@ -517,6 +548,71 @@ fn run_qemu(kdir: &Path, out_path: &Path) {
         .arg("int")
         .arg("-nic")
         .arg("none");
+
+    uefi_cmd.current_dir(kdir);
+
+    let uefi_status = uefi_cmd.status().unwrap();
+
+    if !uefi_status.success() {
+        println!("Failed to run QEMU: {:#?}", &uefi_status.code().unwrap());
+        exit(uefi_status.code().unwrap());
+    }
+}
+
+fn debug_qemu(kdir: &Path, out_path: &Path) {
+    // Workaround to get this to work from the Snap version of VS Code
+    if cfg!(target_os = "linux") {
+        match HostDistro::new() {
+            HostDistro::Ubuntu => {
+                if let Some(is_snap) = is_snap() {
+                    if is_snap {
+                        set_var("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libpthread.so.0");
+                    }
+                }
+            }
+            HostDistro::Archlinux => {
+                if let Some(is_snap) = is_snap() {
+                    if is_snap {
+                        set_var("LD_PRELOAD", "/usr/lib/libpthread.so.0");
+                    }
+                }
+            }
+            HostDistro::Nixos => {} // again, this is what /shell.nix is for
+        }
+    }
+
+    let mut uefi_cmd = Command::new("qemu-system-x86_64");
+
+    uefi_cmd
+        .arg("-drive")
+        .arg(format!(
+            "id=disk,format=raw,file={},if=none",
+            &out_path.display()
+        ))
+        .arg("-device")
+        .arg("ahci,id=ahci")
+        .arg("-device")
+        .arg("ide-hd,drive=disk,bus=ahci.0")
+        .arg("-device")
+        .arg("qemu-xhci")
+        .arg("-drive")
+        .arg("if=none,id=stick,format=raw,file=usb-storage.img")
+        .arg("-device")
+        .arg("nec-usb-xhci,id=xhci")
+        .arg("-device")
+        .arg("usb-storage,bus=xhci.0,drive=stick")
+        .arg("-bios")
+        .arg("OVMF-pure-efi.fd")
+        .arg("-machine")
+        .arg("q35")
+        .arg("-m")
+        .arg("4G")
+        .arg("-d")
+        .arg("int")
+        .arg("-nic")
+        .arg("none")
+        .arg("-d")
+        .arg("int");
 
     uefi_cmd.current_dir(kdir);
 
