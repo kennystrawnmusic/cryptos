@@ -58,6 +58,16 @@ impl SyscallRet for ! {}
 impl SyscallRet for () {}
 // to be continued
 
+macro_rules! primitive_impl_syscall_ret {
+    ($($t:ty),*) => {
+        $(
+            impl SyscallRet for $t {}
+        )*
+    };
+}
+
+primitive_impl_syscall_ret!(u8, u16, u32, u64, i8, i16, i32, i64);
+
 pub const QEMU_STATUS_FAIL: u32 = 0x11;
 
 pub static INTA_IRQ: AtomicU64 = AtomicU64::new(0);
