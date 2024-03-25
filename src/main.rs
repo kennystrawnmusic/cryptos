@@ -82,7 +82,7 @@ use drivers::acpi_impl::UserAcpi;
 use log::{debug, error, info};
 use raw_cpuid::CpuId;
 use spin::Once;
-use x86_64::structures::paging::{PageTableFlags, PhysFrame, Size4KiB};
+use x86_64::structures::paging::PhysFrame;
 
 pub use common::std_init as std;
 
@@ -253,18 +253,6 @@ pub fn maink(boot_info: &'static mut BootInfo) -> ! {
         }
         Err(e) => error!("Failed to parse the ACPI tables: {:?}", e),
     }
-
-    // Map system call number address
-    map_page!(
-        0x595ca11a,
-        0x595ca11a + get_phys_offset(),
-        Size4KiB,
-        PageTableFlags::PRESENT
-            | PageTableFlags::WRITABLE
-            | PageTableFlags::NO_CACHE
-            | PageTableFlags::WRITE_THROUGH
-    );
-
     // Use the loop at the end of main as the rendering loop
     loop {
         if !(COMPOSITING_TABLE.read().is_empty()) {
