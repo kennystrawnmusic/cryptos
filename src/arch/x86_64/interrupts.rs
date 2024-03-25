@@ -1,4 +1,4 @@
-use core::sync::atomic::AtomicU32;
+use core::{sync::atomic::AtomicU32,arch::asm};
 
 use log::warn;
 use raw_cpuid::{CpuId, Hypervisor};
@@ -6,9 +6,7 @@ use spin::RwLock;
 use x86_64::{
     instructions::interrupts,
     registers::{
-        read_rip,
-        rflags::{self, RFlags},
-        segmentation::{Segment, CS},
+        model_specific::{LStar, SFMask}, read_rip, rflags::{self, RFlags}, segmentation::{Segment, CS}
     },
     structures::{
         gdt::SegmentSelector,
@@ -20,8 +18,7 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::{get_active_lapic, get_lapic_ids},
-    get_phys_offset, map_page,
+    apic_impl::{get_active_lapic, get_lapic_ids}, map_page,
     process::{signal::Signal, PTABLE, PTABLE_IDX},
 };
 
@@ -121,6 +118,7 @@ lazy_static! {
         // performance is the obvious reason why I'm doing this
         idt[132].set_handler_fn(task_sched);
         idt[139].set_handler_fn(pci);
+        idt[0x80].set_handler_fn(syscall);
         idt[0x82].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
         RwLock::new(idt)
@@ -506,12 +504,20 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
-    // Where the syscall number and function pointer are stored by user-mode input
-    let syscall_num_addr = get_phys_offset() + 0x595ca11a;
-    let syscall_fn_addr = get_phys_offset() + 0x595ca11b;
+    let syscall_rip = LStar::read();
+    let _syscall_instruction = unsafe { *(syscall_rip.as_u64() as *mut fn() -> dyn SyscallRet) };
 
-    let syscall_num = unsafe { *(syscall_num_addr as *mut u8) };
-    let _syscall_fn = unsafe { *(syscall_fn_addr as *mut fn() -> dyn SyscallRet) };
+    let _syscall_flags = SFMask::read();
+
+    // Intend to read this from user input, so unused assignment is intentional
+    #[allow(unused_assignments)]
+    let mut syscall_num = 0;
+
+    unsafe {
+        asm!("mov {0:r}, rax", out(reg) syscall_num);
+    }
+
+    // TODO: get syscall arguments from rdi, rsi, rdx, r10, r8, r9
 
     match syscall_num {
         0x0 => todo!("sys_exit"),
@@ -770,6 +776,7 @@ pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
         0xfd => todo!("sys_set_thread_area"),
         0xfe => todo!("sys_get_thread_area"),
         0xff => todo!("sys_set_tid_address"),
+        _ => unimplemented!()
     }
 }
 
