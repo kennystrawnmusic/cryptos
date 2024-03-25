@@ -116,7 +116,7 @@ lazy_static! {
 
         // Vector 100 = IPI_WAKE handler as task scheduler
         // performance is the obvious reason why I'm doing this
-        idt[132].set_handler_fn(task_sched);
+        idt[100].set_handler_fn(task_sched);
         idt[139].set_handler_fn(pci);
         idt[0x80].set_handler_fn(syscall);
         idt[0x82].set_handler_fn(spurious);
