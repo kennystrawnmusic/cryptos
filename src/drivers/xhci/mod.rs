@@ -1393,7 +1393,7 @@ impl XhciImpl {
     pub fn exec_cmd<F: FnOnce(&mut CommandKind<'_>, bool)>(
         &mut self,
         slot: u8,
-        f: F,
+        initializer: F,
     ) -> (EventKind, CommandKind) {
         // borrow checker
         let cmd_ring = unsafe { &mut *(self.cmd_ring as *mut [CommandKind<'_>]) };
@@ -1416,7 +1416,7 @@ impl XhciImpl {
         };
 
         let trb = &mut cmd_ring[idx];
-        f(unsafe { &mut *cmd_ptr }, cycle);
+        initializer(unsafe { &mut *cmd_ptr }, cycle);
 
         // Ring doorbell to initiate command execution
         if let Some(db) = self.doorbell_mut() {
