@@ -1294,7 +1294,7 @@ impl XhciImpl {
             });
 
             // Debug
-            self.probe::<16>();
+            // self.probe::<16>();
         }
     }
 
