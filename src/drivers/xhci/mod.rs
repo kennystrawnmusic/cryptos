@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
+// TODO: rewrite this entire driver because all the enums I'm defining are causing problems
 use alloc::{sync::Arc, vec::Vec};
 use bit_field::BitField;
 use conquer_once::spin::OnceCell;
@@ -56,6 +58,7 @@ pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 pub trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
+            // TODO: figure out why QEMU is giving 0 when I attempt a device probe
             0 => TrbType::Normal,
             1 => TrbType::Normal,
             2 => TrbType::SetupStage,
@@ -1102,6 +1105,7 @@ impl XhciImpl {
                 cmd.set_host_controller_reset();
             });
 
+            // Read in the max number of slots, ports, and interrupts
             let max_slots = self
                 .capabilities()
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_device_slots());
@@ -1115,6 +1119,7 @@ impl XhciImpl {
                 .map(|cap| cap.hcsparams1.read_volatile().number_of_interrupts())
                 .expect("No interrupt vectors available");
 
+            // Read the configuration information capability
             let config_info = self.capabilities().map(|cap| {
                 cap.hccparams2
                     .read_volatile()
@@ -1368,32 +1373,38 @@ impl XhciImpl {
 
     pub fn next_in_cmd_ring(&mut self) -> (usize, CommandKind<'_>) {
         let mut cmd_ring_iter = self.cmd_ring.iter().cloned().enumerate();
-        cmd_ring_iter
-            .nth(CMD_RING_IDX.fetch_add(1, Ordering::SeqCst))
+        let out = cmd_ring_iter
+            .nth(CMD_RING_IDX.load(Ordering::SeqCst))
             .unwrap_or_else(move || {
                 CMD_RING_IDX.store(0, Ordering::SeqCst);
                 cmd_ring_iter
-                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
+                    .nth(CMD_RING_IDX.load(Ordering::SeqCst))
                     .unwrap()
-            })
+            });
+
+        CMD_RING_IDX.fetch_add(1, Ordering::SeqCst);
+        out
     }
 
     pub fn next_in_event_ring(&mut self) -> (usize, EventKind<'_>) {
         let mut event_ring_iter = self.event_ring_dequeue.iter().cloned().enumerate();
-        event_ring_iter
-            .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
+        let out = event_ring_iter
+            .nth(EVENT_RING_IDX.load(Ordering::SeqCst))
             .unwrap_or_else(move || {
                 EVENT_RING_IDX.store(0, Ordering::SeqCst);
                 event_ring_iter
-                    .nth(EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst))
+                    .nth(EVENT_RING_IDX.load(Ordering::SeqCst))
                     .unwrap()
-            })
+            });
+
+        EVENT_RING_IDX.fetch_add(1, Ordering::SeqCst);
+        out
     }
 
     pub fn exec_cmd<F: FnOnce(&mut CommandKind<'_>, bool)>(
         &mut self,
         slot: u8,
-        initializer: F,
+        to_execute: F,
     ) -> (EventKind, CommandKind) {
         // borrow checker
         let cmd_ring = unsafe { &mut *(self.cmd_ring as *mut [CommandKind<'_>]) };
@@ -1416,7 +1427,7 @@ impl XhciImpl {
         };
 
         let trb = &mut cmd_ring[idx];
-        initializer(unsafe { &mut *cmd_ptr }, cycle);
+        to_execute(unsafe { &mut *cmd_ptr }, cycle);
 
         // Ring doorbell to initiate command execution
         if let Some(db) = self.doorbell_mut() {
