@@ -146,7 +146,7 @@ extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn spurious(_frame: InterruptStackFrame) {
-    debug!("Received spurious interrupt");
+    warn!("Received spurious interrupt");
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
@@ -469,7 +469,7 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
-    debug!("Received PCI interrupt: {:#?}", &frame);
+    info!("Received PCI interrupt: {:#?}", &frame);
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
