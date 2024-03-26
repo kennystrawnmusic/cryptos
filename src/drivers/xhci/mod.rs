@@ -56,6 +56,7 @@ pub(crate) static MAPPER: RwLock<XhciMapper> = RwLock::new(XhciMapper);
 pub trait TrbAnalyzer: AsRef<[u32]> {
     fn get_type(&self) -> TrbType {
         match self.as_ref()[3].get_bits(10..=15) {
+            0 => TrbType::Normal,
             1 => TrbType::Normal,
             2 => TrbType::SetupStage,
             3 => TrbType::DataStage,
@@ -1294,7 +1295,7 @@ impl XhciImpl {
             });
 
             // Debug
-            // self.probe::<16>();
+            self.probe::<16>();
         }
     }
 
@@ -1429,7 +1430,7 @@ impl XhciImpl {
             let (_, evt) = self.next_command_completion_request(cycle, slot);
             if let EventKind::CommandCompletion(evt) = evt {
                 let inner = trb.as_inner();
-                if evt.command_trb_pointer() == addr_of!(inner) as u64 {
+                if evt.command_trb_pointer() == inner.get_type() as u64 {
                     true
                 } else {
                     log::warn!(
