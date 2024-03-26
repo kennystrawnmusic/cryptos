@@ -1282,7 +1282,7 @@ impl XhciImpl {
             // Reset ports
             self.port_register_set_mut().map(|prs| {
                 for (i, mut port) in prs.into_iter().enumerate() {
-                    log::info!("Resetting port {}", i);
+                    log::debug!("Resetting port {}", i);
                     if port.portsc.port_enabled_disabled() {
                         port.portsc.set_port_reset();
                         while port.portsc.port_reset() {
@@ -1290,7 +1290,7 @@ impl XhciImpl {
                         }
                     }
                 }
-                log::info!("Ports successfully reset");
+                log::info!("XHCI: Ports successfully reset");
             });
 
             // Debug

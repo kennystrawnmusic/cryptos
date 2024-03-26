@@ -119,7 +119,8 @@ lazy_static! {
         idt[100].set_handler_fn(task_sched);
         idt[139].set_handler_fn(pci);
         idt[0x80].set_handler_fn(syscall);
-        idt[0x82].set_handler_fn(spurious);
+        idt[0x82].set_handler_fn(pci);
+        idt[0xff].set_handler_fn(spurious);
         idt[151].set_handler_fn(ahci);
         RwLock::new(idt)
     };
@@ -146,7 +147,7 @@ extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
 }
 
 extern "x86-interrupt" fn spurious(_frame: InterruptStackFrame) {
-    warn!("Received spurious interrupt");
+    debug!("Received spurious interrupt");
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
