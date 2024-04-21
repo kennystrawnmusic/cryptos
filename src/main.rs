@@ -27,7 +27,8 @@
     generic_arg_infer,
     box_into_inner,
     unsized_locals,
-    associated_type_bounds,
+    // only unstable on nightlies older than 1.79
+    // associated_type_bounds,
     ptr_metadata,
     array_chunks,
     slice_index_methods,
