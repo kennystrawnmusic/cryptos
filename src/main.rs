@@ -27,8 +27,7 @@
     generic_arg_infer,
     box_into_inner,
     unsized_locals,
-    // only unstable on nightlies older than 1.79
-    // associated_type_bounds,
+    cfg_version,
     ptr_metadata,
     array_chunks,
     slice_index_methods,
@@ -45,6 +44,9 @@
     const_type_id,
     panic_internals
 )]
+
+#![cfg_attr(not(version("1.79")), feature(associated_type_bounds))]
+
 #![allow(internal_features)]
 #![allow(incomplete_features)]
 #![allow(clippy::option_map_unit_fn)]
