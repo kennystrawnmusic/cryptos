@@ -44,9 +44,7 @@
     const_type_id,
     panic_internals
 )]
-
 #![cfg_attr(not(version("1.79")), feature(associated_type_bounds))]
-
 #![allow(internal_features)]
 #![allow(incomplete_features)]
 #![allow(clippy::option_map_unit_fn)]

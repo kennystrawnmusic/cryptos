@@ -1,4 +1,4 @@
-use core::{sync::atomic::AtomicU32,arch::asm};
+use core::{arch::asm, sync::atomic::AtomicU32};
 
 use log::warn;
 use raw_cpuid::{CpuId, Hypervisor};
@@ -6,7 +6,10 @@ use spin::RwLock;
 use x86_64::{
     instructions::interrupts,
     registers::{
-        model_specific::{LStar, SFMask}, read_rip, rflags::{self, RFlags}, segmentation::{Segment, CS}
+        model_specific::{LStar, SFMask},
+        read_rip,
+        rflags::{self, RFlags},
+        segmentation::{Segment, CS},
     },
     structures::{
         gdt::SegmentSelector,
@@ -18,7 +21,8 @@ use x86_64::{
 
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortIS},
-    apic_impl::{get_active_lapic, get_lapic_ids}, map_page,
+    apic_impl::{get_active_lapic, get_lapic_ids},
+    map_page,
     process::{signal::Signal, PTABLE, PTABLE_IDX},
 };
 
@@ -777,7 +781,7 @@ pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
         0xfd => todo!("sys_set_thread_area"),
         0xfe => todo!("sys_get_thread_area"),
         0xff => todo!("sys_set_tid_address"),
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }
 
