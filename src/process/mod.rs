@@ -9,7 +9,6 @@ use core::{
 
 use crate::common::RwLock;
 use alloc::{
-    boxed::Box,
     collections::BTreeMap,
     sync::{Arc, Weak},
     vec::Vec,
@@ -32,6 +31,32 @@ int_like!(Tid, AtomicTid, usize, AtomicUsize);
 int_like!(Pid, AtomicPid, usize, AtomicUsize);
 int_like!(Sid, AtomicSid, u64, AtomicU64);
 int_like!(Gid, AtomicGid, u64, AtomicU64);
+
+// Wrapper around Result that allows cloning
+pub struct CloneResult(syscall::Result<()>);
+
+impl CloneResult {
+    pub fn new(res: syscall::Result<()>) -> Self {
+        Self(res)
+    }
+}
+
+impl Clone for CloneResult {
+    fn clone(&self) -> Self {
+        Self(match &self.0 {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::new(e.errno)),
+        })
+    }
+}
+
+// Refactoring the MainLoop type to be a function returning this marker type as opposed to the enum it is currently
+pub trait MainLoopRet: Any {}
+
+impl MainLoopRet for () {}
+impl MainLoopRet for syscall::Result<usize> {}
+
+pub type MainLoop = fn() -> dyn MainLoopRet;
 
 /// State that the context is left in
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -77,50 +102,6 @@ pub(crate) static PTABLE: RwLock<BTreeMap<usize, Arc<RwLock<Process>>>> =
 
 pub(crate) static PTABLE_IDX: AtomicUsize = AtomicUsize::new(0);
 
-/// Enum of `main()` fn signatures for the kernel to accept
-///
-/// Implements `From` for easy signature parsing
-#[derive(Copy, Clone)]
-enum MainLoop {
-    WithoutResult(fn() -> ()),
-    WithResult(fn() -> syscall::Result<()>),
-    // TODO: FFI
-}
-
-// Necessary for function signature parsing
-impl From<fn() -> ()> for MainLoop {
-    fn from(value: fn() -> ()) -> Self {
-        Self::WithoutResult(value)
-    }
-}
-
-impl From<fn() -> syscall::Result<()>> for MainLoop {
-    fn from(value: fn() -> syscall::Result<()>) -> Self {
-        Self::WithResult(value)
-    }
-}
-
-// Needed for extracting raw main from ELF files
-impl From<*mut dyn Any> for MainLoop {
-    fn from(value: *mut dyn Any) -> Self {
-        let type_id = unsafe { (*value).type_id() };
-
-        if type_id == TypeId::of::<fn() -> ()>() {
-            Self::from(unsafe { *(value as *mut fn() -> ()) })
-        } else if type_id == TypeId::of::<fn() -> syscall::Result<()>>() {
-            Self::from(unsafe { *(value as *mut fn() -> syscall::Result<()>) })
-        } else {
-            unreachable!("Rust won't compile if none of the two above signatures match");
-        }
-    }
-}
-
-impl From<Box<dyn Any>> for MainLoop {
-    fn from(value: Box<dyn Any>) -> Self {
-        Self::from(Box::into_raw(value))
-    }
-}
-
 /// Process object
 ///
 /// Uses `core::ops::Generator` behind the scenes for easy preemption
@@ -149,7 +130,8 @@ pub struct Process<'a> {
     exit_status: OnceCell<u64>,
     systrace: AtomicBool,
 
-    res: syscall::Result<usize>,
+    res: Option<syscall::Result<usize>>,
+    main_sig: TypeId,
     main: MainLoop,
 }
 
@@ -168,6 +150,7 @@ impl Process<'static> {
 impl<'a> Process<'a> {
     fn new(data: Option<FileData>, main: MainLoop) -> Self {
         let open_files = data.map(|data| alloc::vec![data]);
+        let main_id = main.type_id();
 
         // necessary for cleanup
         let global_id = PTABLE.read().len() - 1;
@@ -188,7 +171,8 @@ impl<'a> Process<'a> {
             pwd: RwLock::new(None),
             exit_status: OnceCell::<u64>::uninit(),
             systrace: AtomicBool::new(false),
-            res: Ok(0), // this will change when the process runs
+            res: None, // this will change when the process runs
+            main_sig: main_id,
             main,
         }
     }
@@ -199,39 +183,36 @@ impl<'a> Process<'a> {
     }
 
     fn set_result(&mut self, res: syscall::Result<usize>) {
-        self.res = res;
+        self.res = Some(res);
     }
 
     /// Uses a generator to queue this process
     fn queue(&mut self) {
         // borrow checker
-        let self_ptr = self as *mut _;
+        let self_ptr = self as *mut Self;
 
         // Generators make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
-                State::Runnable => match self.main {
-                    MainLoop::WithoutResult(main) => {
-                        // Call the process's main() function
-                        main();
+                State::Runnable => {
+                    // Run the main loop
+                    let my_type_id = self.main_sig.clone();
+                    let ptr_to_main = unsafe { (*self_ptr).main as *mut MainLoop };
 
-                        // Processes that need to constantly run (i.e. daemons) always
-                        // use infinite loops within their own main() bodies anyway,
-                        // so we don't need to redundantly add one here
-                        self.state = State::Exited(0);
-                        self.set_result(Ok(0));
+                    if my_type_id == TypeId::of::<fn() -> ()>() {
+                        let main = unsafe {
+                            core::mem::transmute::<*mut MainLoop, fn() -> ()>(ptr_to_main)
+                        };
+                        main();
+                    } else {
+                        let main = unsafe {
+                            core::mem::transmute::<*mut MainLoop, fn() -> syscall::Result<usize>>(
+                                ptr_to_main,
+                            )
+                        };
+                        self.set_result(main());
                     }
-                    MainLoop::WithResult(main) => match main() {
-                        Ok(()) => {
-                            self.state = State::Exited(0);
-                            self.set_result(Ok(0));
-                        }
-                        Err(e) => {
-                            self.state = State::Exited(e.errno as u64);
-                            self.set_result(Err(e));
-                        }
-                    },
-                },
+                }
 
                 // Yield until changed to Runnable
                 State::Blocked => yield (),
@@ -323,7 +304,7 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
         let start_ptr =
             core::ptr::from_raw_parts_mut(start as *mut (), unsafe { *(start as *mut _) });
 
-        let main = MainLoop::from(start_ptr);
+        let main = unsafe { *start_ptr };
 
         let out = Self::new(None, main);
         out.executable.get_or_init(move || value);
