@@ -241,7 +241,11 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
 
         if !flags.contains(EferFlags::SYSTEM_CALL_EXTENSIONS) {
             flags.insert(EferFlags::SYSTEM_CALL_EXTENSIONS);
-            unsafe { Efer::write(flags) };
+
+            unsafe {
+                Efer::write(flags);
+                frame.iretq();
+            };
         } else {
             panic!(
                 "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
