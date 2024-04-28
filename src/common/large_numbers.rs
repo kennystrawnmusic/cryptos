@@ -9,11 +9,32 @@ impl u256 {
         Self([a, b])
     }
 
+    pub fn to_be_bytes(&self) -> [u8;32] {
+        let mut out = [0; 32];
+        out[..16].copy_from_slice(&self.0[1].to_be_bytes());
+        out[16..].copy_from_slice(&self.0[0].to_be_bytes());
+        out
+    }
+
     pub fn to_le_bytes(&self) -> [u8; 32] {
         let mut out = [0; 32];
         out[..16].copy_from_slice(&self.0[0].to_le_bytes());
         out[16..].copy_from_slice(&self.0[1].to_le_bytes());
         out
+    }
+
+    pub fn from_be_bytes(bytes: [u8; 32]) -> Self {
+        let mut out = [0; 2];
+        out[1] = u128::from_be_bytes(bytes[..16].try_into().unwrap());
+        out[0] = u128::from_be_bytes(bytes[16..].try_into().unwrap());
+        Self(out)
+    }
+
+    pub fn from_le_bytes(bytes: [u8; 32]) -> Self {
+        let mut out = [0; 2];
+        out[0] = u128::from_le_bytes(bytes[..16].try_into().unwrap());
+        out[1] = u128::from_le_bytes(bytes[16..].try_into().unwrap());
+        Self(out)
     }
 
     pub fn overflowing_add(&self, rhs: Self) -> (Self, bool) {
@@ -427,13 +448,18 @@ impl From<u256> for isize {
 
 impl From<u256> for f64 {
     fn from(value: u256) -> Self {
-        value.0[0] as f64
+        let mut out = [0; 8];
+        out[..4].copy_from_slice(&value.0[0].to_be_bytes());
+        out[4..].copy_from_slice(&value.0[1].to_be_bytes());
+        f64::from_be_bytes(out)
     }
 }
 
 impl From<u256> for f32 {
     fn from(value: u256) -> Self {
-        value.0[0] as f32
+        let mut out = [0; 4];
+        out.copy_from_slice(&value.0[0].to_be_bytes());
+        f32::from_be_bytes(out)
     }
 }
 
@@ -957,6 +983,109 @@ impl u512 {
     pub const fn new(a: u256, b: u256) -> Self {
         Self([a, b])
     }
+
+    pub fn to_be_bytes(&self) -> [u8; 64] {
+        let mut out = [0; 64];
+        out[..32].copy_from_slice(&self.0[0].to_be_bytes());
+        out[32..].copy_from_slice(&self.0[1].to_be_bytes());
+        out
+    }
+
+    pub fn to_le_bytes(&self) -> [u8; 64] {
+        let mut out = [0; 64];
+        out[..32].copy_from_slice(&self.0[0].to_le_bytes());
+        out[32..].copy_from_slice(&self.0[1].to_le_bytes());
+        out
+    }
+
+    pub fn from_be_bytes(bytes: [u8; 64]) -> Self {
+        let mut a = [0; 32];
+        let mut b = [0; 32];
+        a.copy_from_slice(&bytes[..32]);
+        b.copy_from_slice(&bytes[32..]);
+        Self([u256::from_be_bytes(a), u256::from_be_bytes(b)])
+    }
+
+    pub fn from_le_bytes(bytes: [u8; 64]) -> Self {
+        let mut a = [0; 32];
+        let mut b = [0; 32];
+        a.copy_from_slice(&bytes[..32]);
+        b.copy_from_slice(&bytes[32..]);
+        Self([u256::from_le_bytes(a), u256::from_le_bytes(b)])
+    }
+
+    pub fn overflowing_add(&self, rhs: Self) -> (Self, bool) {
+        let mut out = [u256::from(0); 2];
+        let mut carry = u256::from(0);
+
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            let (sum, overflow) = self.0[i].overflowing_add(rhs.0[i]);
+            let (mut sum, overflow2) = sum.overflowing_add(carry);
+            carry = if overflow || overflow2 { u256::from(1) } else { u256::from(0) };
+            _item = &mut sum;
+        }
+
+        (Self(out), carry != 0)
+    }
+
+    pub fn overflowing_sub(&self, rhs: Self) -> (Self, bool) {
+        let mut out = [u256::from(0); 2];
+        let mut carry = u256::from(0);
+
+        for (i, mut _item) in out.iter_mut().enumerate() {
+            let (sum, overflow) = self.0[i].overflowing_sub(rhs.0[i]);
+            let (mut sum, overflow2) = sum.overflowing_sub(carry);
+            carry = if overflow || overflow2 { u256::from(1) } else { u256::from(0) };
+            _item = &mut sum;
+        }
+
+        (Self(out), carry != 0)
+    }
+
+    pub fn overflowing_mul(&self, rhs: Self) -> (Self, bool) {
+        let mut out = [u256::from(0); 2];
+
+        for i in 0..2 {
+            let mut carry = u256::from(0);
+            for j in 0..2 {
+                let (sum, overflow) = self.0[i].overflowing_mul(rhs.0[j]);
+                let (sum, overflow2) = sum.overflowing_add(out[i + j]);
+                let (sum, overflow3) = sum.overflowing_add(carry);
+                carry = if overflow || overflow2 || overflow3 {
+                    u256::from(1)
+                } else {
+                    u256::from(0)
+                };
+                out[i + j] = sum;
+            }
+        }
+
+        (Self(out), false)
+    }
+
+    pub fn overflowing_div(&self, rhs: Self) -> (Self, bool) {
+        let mut out = [u256::from(0); 2];
+        let mut remainder = *self;
+
+        for i in (0..2).rev() {
+            let mut carry = u256::from(0);
+            for j in (0..2).rev() {
+                let (sum, overflow) =
+                    remainder.0[j].overflowing_add(u256::from(Self::from(carry) << 128));
+                let (sum, overflow2) = sum.overflowing_mul(rhs.0[i]);
+                let (sum, overflow3) = sum.overflowing_add(out[i + j]);
+                carry = if overflow || overflow2 || overflow3 {
+                    u256::from(1)
+                } else {
+                    u256::from(0)
+                };
+                out[i + j] = sum;
+            }
+            remainder.0[i] = carry;
+        }
+
+        (remainder, false)
+    }
 }
 
 impl Clone for u512 {
@@ -1053,13 +1182,13 @@ impl From<u512> for isize {
 
 impl From<u512> for f64 {
     fn from(value: u512) -> Self {
-        value.0[0].into()
+        f64::from(value.0[0])
     }
 }
 
 impl From<u512> for f32 {
     fn from(value: u512) -> Self {
-        value.0[0].into()
+        f32::from(value.0[0])
     }
 }
 
@@ -1715,6 +1844,20 @@ impl core::ops::ShrAssign<u128> for u512 {
     }
 }
 
+impl core::ops::Mul<f64> for u512 {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        self * Self::from(rhs)
+    }
+}
+
+impl core::ops::MulAssign<f64> for u512 {
+    fn mul_assign(&mut self, rhs: f64) {
+        *self = *self * rhs;
+    }
+}
+
 impl core::cmp::PartialEq<u512> for u512 {
     fn eq(&self, other: &Self) -> bool {
         self.0[0] == other.0[0] && self.0[1] == other.0[1]
@@ -1943,5 +2086,18 @@ impl core::cmp::Ord for u512 {
         } else {
             core::cmp::Ordering::Equal
         }
+    }
+}
+
+impl AsMut<[u8]> for u512 {
+    fn as_mut(&mut self) -> &mut [u8] {
+        let ptr = self as *const u512 as *mut u8;
+        unsafe { core::slice::from_raw_parts_mut(ptr, 64) }
+    }
+}
+
+impl Default for u512 {
+    fn default() -> Self {
+        Self([u256::from(0); 2])
     }
 }

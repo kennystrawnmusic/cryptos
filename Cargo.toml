@@ -40,6 +40,7 @@ nalgebra = { version = "0.32.1", default-features = false }
 noto-sans-mono-bitmap = "0.2.0"
 num-traits = { version = "0.2.17", default-features = false }
 pcics = "0.3.1"
+rand_core = { version = "0.6.4", features = ["alloc"] }
 raw-cpuid = "11.0.1"
 redox_syscall = "0.5.0"
 sha3 = { version = "0.10.6", default-features = false }

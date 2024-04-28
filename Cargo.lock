@@ -558,6 +558,7 @@ dependencies = [
  "noto-sans-mono-bitmap",
  "num-traits",
  "pcics",
+ "rand_core",
  "raw-cpuid 11.0.1",
  "redox_syscall 0.5.0",
  "sha3",
