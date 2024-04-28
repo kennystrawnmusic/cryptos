@@ -235,26 +235,23 @@ extern "x86-interrupt" fn bound_range_exceeded(frame: InterruptStackFrame) {
 
 extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64()) as *const u32) };
+    let mut flags = Efer::read();
 
-    if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
-        let mut flags = Efer::read();
+    if !flags.contains(EferFlags::SYSTEM_CALL_EXTENSIONS) {
+        // Enable syscall extensions and try again
 
-        if !flags.contains(EferFlags::SYSTEM_CALL_EXTENSIONS) {
-            // Enable syscall extensions and try again
+        flags.insert(EferFlags::SYSTEM_CALL_EXTENSIONS);
 
-            flags.insert(EferFlags::SYSTEM_CALL_EXTENSIONS);
-
-            unsafe {
-                Efer::write(flags);
-                frame.iretq();
-            };
-        } else {
-            panic!(
-                "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
-                offender.to_be_bytes(),
-                frame
-            );
-        }
+        unsafe {
+            Efer::write(flags);
+            frame.iretq();
+        };
+    } else if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
+        panic!(
+            "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
+            offender.to_be_bytes(),
+            frame
+        );
     } else {
         (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
