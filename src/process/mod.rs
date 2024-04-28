@@ -306,7 +306,7 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
 
         let main = unsafe { *start_ptr };
 
-        let out = Self::new(None, main);
+        let out: Process<'a> = Self::new(None, main);
         out.executable.get_or_init(move || value);
         out
     }
