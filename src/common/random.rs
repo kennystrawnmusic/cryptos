@@ -30,6 +30,8 @@ impl RngCore for TrigRng {
         
         let mut full_seed = u512::new(seed_256_a, seed_256_b);
 
+        // Need to use intrinsics here because libcore doesn't have the stabilized versions yet
+
         let a = unsafe { cosf64(f64::from(full_seed))};
         let b = unsafe { sinf64(f64::from(full_seed))};
 
