@@ -14,8 +14,8 @@ pub mod atomic_cell;
 pub mod hash_map;
 pub mod large_numbers;
 pub mod macros;
-pub mod std_init;
 pub mod random;
+pub mod std_init;
 
 use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 

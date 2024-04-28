@@ -6,6 +6,7 @@ use spin::RwLock;
 use x86_64::{
     instructions::interrupts,
     registers::{
+        control::{Efer, EferFlags},
         model_specific::{LStar, SFMask},
         read_rip,
         rflags::{self, RFlags},
@@ -236,11 +237,20 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
     let offender = unsafe { *((frame.instruction_pointer.as_u64()) as *const u32) };
 
     if let PrivilegeLevel::Ring0 = current_privilege_level(*frame) {
-        panic!(
-            "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
-            offender.to_be_bytes(),
-            frame
-        );
+        let mut flags = Efer::read();
+
+        if !flags.contains(EferFlags::SYSTEM_CALL_EXTENSIONS) {
+            // if fault is caused by attempt to use syscall instruction while syscall extensions are disabled
+
+            flags.insert(EferFlags::SYSTEM_CALL_EXTENSIONS);
+            unsafe { Efer::write(flags) };
+        } else {
+            panic!(
+                "Invalid opcode\nOffending instruction: {:#x?}\nStack frame: {:#?}",
+                offender.to_be_bytes(),
+                frame
+            );
+        }
     } else {
         (PTABLE.read())[&PTABLE_IDX.load(Ordering::SeqCst)]
             .write()
@@ -512,19 +522,18 @@ pub extern "x86-interrupt" fn syscall(_: InterruptStackFrame) {
     let syscall_rip = LStar::read();
     let _syscall_instruction = unsafe { *(syscall_rip.as_u64() as *mut fn() -> dyn SyscallRet) };
 
-    let _syscall_flags = SFMask::read();
+    let _syscall_rflags = SFMask::read();
+    let _syscall_cs = CS::get_reg();
 
-    // Intend to read this from user input, so unused assignment is intentional
-    #[allow(unused_assignments)]
-    let mut syscall_num = 0;
+    let mut syscall_iret: u64;
 
     unsafe {
-        asm!("mov {0:r}, rax", out(reg) syscall_num);
+        asm!("mov {0:r}, rcx", out(reg) syscall_iret);
     }
 
     // TODO: get syscall arguments from rdi, rsi, rdx, r10, r8, r9
 
-    match syscall_num {
+    match syscall_iret {
         0x0 => todo!("sys_exit"),
         0x1 => todo!("sys_fork"),
         0x2 => todo!("sys_read"),

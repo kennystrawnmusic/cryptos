@@ -9,7 +9,7 @@ impl u256 {
         Self([a, b])
     }
 
-    pub fn to_be_bytes(&self) -> [u8;32] {
+    pub fn to_be_bytes(&self) -> [u8; 32] {
         let mut out = [0; 32];
         out[..16].copy_from_slice(&self.0[1].to_be_bytes());
         out[16..].copy_from_slice(&self.0[0].to_be_bytes());
@@ -1021,7 +1021,11 @@ impl u512 {
         for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_add(rhs.0[i]);
             let (mut sum, overflow2) = sum.overflowing_add(carry);
-            carry = if overflow || overflow2 { u256::from(1) } else { u256::from(0) };
+            carry = if overflow || overflow2 {
+                u256::from(1)
+            } else {
+                u256::from(0)
+            };
             _item = &mut sum;
         }
 
@@ -1035,7 +1039,11 @@ impl u512 {
         for (i, mut _item) in out.iter_mut().enumerate() {
             let (sum, overflow) = self.0[i].overflowing_sub(rhs.0[i]);
             let (mut sum, overflow2) = sum.overflowing_sub(carry);
-            carry = if overflow || overflow2 { u256::from(1) } else { u256::from(0) };
+            carry = if overflow || overflow2 {
+                u256::from(1)
+            } else {
+                u256::from(0)
+            };
             _item = &mut sum;
         }
 
