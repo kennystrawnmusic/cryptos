@@ -240,8 +240,6 @@ extern "x86-interrupt" fn invalid_op(frame: InterruptStackFrame) {
         let mut flags = Efer::read();
 
         if !flags.contains(EferFlags::SYSTEM_CALL_EXTENSIONS) {
-            // if fault is caused by attempt to use syscall instruction while syscall extensions are disabled
-
             flags.insert(EferFlags::SYSTEM_CALL_EXTENSIONS);
             unsafe { Efer::write(flags) };
         } else {
