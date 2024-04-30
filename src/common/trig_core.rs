@@ -1,5 +1,7 @@
 use core::intrinsics::{cosf32, cosf64, sinf32, sinf64};
 
+/// Trait to re-implement trigonometric methods for primitives in `#![no_std]` environments.
+
 pub trait TrigCore64: Sized + Clone
 where
     f64: From<Self>,
