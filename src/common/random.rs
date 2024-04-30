@@ -1,3 +1,4 @@
+use crate::common::trig_core::TrigCore64;
 use super::large_numbers::{u256, u512};
 use core::intrinsics::{cosf64, sinf64};
 use num_traits::float::FloatCore;
@@ -32,8 +33,8 @@ impl RngCore for TrigRng {
 
         // Need to use intrinsics here because libcore doesn't have the stabilized versions yet
 
-        let a = unsafe { cosf64(f64::from(full_seed)) };
-        let b = unsafe { sinf64(f64::from(full_seed)) };
+        let a = f64::from(full_seed).cos();
+        let b = f64::from(full_seed).sin();
 
         full_seed *= (a + b).abs();
 
@@ -91,8 +92,8 @@ impl RngCore for TrigRng {
 
         let mut full_seed = u512::new(seed_256_a, seed_256_b);
 
-        let a = unsafe { cosf64(f64::from(full_seed)) };
-        let b = unsafe { sinf64(f64::from(full_seed)) };
+        let a = f64::from(full_seed).cos();
+        let b = f64::from(full_seed).sin();
 
         full_seed *= (a + b).abs();
 

@@ -16,6 +16,7 @@ pub mod large_numbers;
 pub mod macros;
 pub mod random;
 pub mod std_init;
+pub mod trig_core;
 
 use crate::{get_phys_offset, map_page, unmap_page, FRAME_ALLOCATOR, PRINTK};
 
