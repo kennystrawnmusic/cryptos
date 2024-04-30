@@ -31,8 +31,6 @@ impl RngCore for TrigRng {
 
         let mut full_seed = u512::new(seed_256_a, seed_256_b);
 
-        // Need to use intrinsics here because libcore doesn't have the stabilized versions yet
-
         let a = f64::from(full_seed).cos();
         let b = f64::from(full_seed).sin();
 
