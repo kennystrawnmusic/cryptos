@@ -301,7 +301,7 @@ impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
 
-        let start_ptr = start as *mut fn() -> dyn MainLoopRet;
+        let start_ptr = start as *mut MainLoop;
 
         let main = unsafe { *start_ptr };
 
