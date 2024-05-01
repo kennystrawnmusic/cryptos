@@ -663,9 +663,6 @@ pub(crate) struct HbaPort {
     devslp: VolatileCell<u32>,
     _reserved_1: [u32; 10],
     vendor: [u32; 4],
-    serial_ident: &'static str,
-    model_ident: &'static str,
-    firmware_ident: &'static str,
 }
 
 #[repr(C)]
@@ -692,21 +689,27 @@ impl HbaPort {
         let mut firmware_info = String::new();
 
         if self.stop_cmd().is_ok() {
-            for i in 20..40 {
-                let mut serial = buffer[i] as char;
-                let mut model = buffer[i + 40] as char;
-                let mut firmware = buffer[i + 48] as char;
-
-                if serial != '\0' {
-                    serial_info.push(serial);
+            for word in 10..20 {
+                let buffer_idx = buffer[word];
+                let buffer_char = (buffer_idx as u8) as char;
+                if buffer_char != '\0' {
+                    serial_info.push(buffer_char);
                 }
+            }
 
-                if model != '\0' {
-                    model_info.push(model);
+            for word in 27..47 {
+                let buffer_idx = buffer[word];
+                let buffer_char = (buffer_idx as u8) as char;
+                if buffer_char != '\0' {
+                    model_info.push(buffer_char);
                 }
+            }
 
-                if firmware != '\0' {
-                    firmware_info.push(firmware);
+            for word in 23..26 {
+                let buffer_idx = buffer[word];
+                let buffer_char = (buffer_idx as u8) as char;
+                if buffer_char != '\0' {
+                    firmware_info.push(buffer_char);
                 }
             }
 
@@ -717,13 +720,13 @@ impl HbaPort {
 
             let lba_bits = if sectors == 0 {
                 sectors = (buffer[60] as u64) | (buffer[61] as u64);
-                28
+                28u64
             } else {
-                48
+                48u64
             };
 
             info!(
-                "AHCI Device Info: Serial: {}, Model: {}, Firmware: {}, LBA Size: {}",
+                "AHCI Device Info: Serial: {}, Model: {}, Firmware: {}, LBA Size: {} bits",
                 serial_info, model_info, firmware_info, lba_bits
             );
             Some(sectors * 512)
@@ -1008,6 +1011,10 @@ impl AhciPortProtected {
         unsafe { &mut *(self.address.as_mut_ptr::<HbaPort>()) }
     }
 
+    pub(crate) fn identify(&mut self) -> Option<u64> {
+        self.hba_port().identify()
+    }
+
     fn run_request(&mut self, request: Arc<DmaRequest>, mut offset: usize) -> usize {
         let mut remaining = request.count - offset;
 
@@ -1092,6 +1099,9 @@ impl AhciPort {
         }
 
         result
+    }
+    pub(crate) fn identify(&self) -> Option<u64> {
+        self.inner.write().identify()
     }
 }
 

@@ -591,6 +591,7 @@ dependencies = [
  "x86_64 0.15.0",
  "xhci",
  "xmas-elf 0.9.1",
+ "zerocopy 0.4.1",
 ]
 
 [[package]]

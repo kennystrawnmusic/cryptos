@@ -59,6 +59,7 @@ x2apic = "0.4.1"
 x86_64 = "0.15.0"
 xhci = "0.9.1"
 xmas-elf = "^0.9.0"
+zerocopy = { version = "0.4.0" }
 
 [profile.dev]
 panic = "abort"

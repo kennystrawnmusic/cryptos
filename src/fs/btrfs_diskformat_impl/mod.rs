@@ -1,55 +1,75 @@
+use core::sync::atomic::{AtomicU64, Ordering};
+
+use crate::{ahci::AhciPort, drivers::ahci::get_ahci};
 use alloc::boxed::Box;
 use btrfs_diskformat::{constants::PRIMARY_SUPERBLOCK_ADDR, *};
-use crate::{ahci::{AhciPort, AtaCommand, DmaRequest, HbaMemory, HbaPort}, drivers::ahci::get_ahci};
+use zerocopy::{U32, U64};
 
 // Define your driver struct
 struct BtrfsDriver {
-    // Add your driver-specific fields here
+    dev_id: AtomicU64,
 }
 
 impl BtrfsDriver {
-    // Implement your driver-specific methods here
-    // For example:
-    pub fn read_superblock(&self, device: &mut DevItem) -> Result<SuperBlock> {
+    // code won't be dead for long
+    #[allow(dead_code)]
+    pub fn read_superblock(&self, _device: &mut DevItem) -> syscall::Result<SuperBlock> {
         // Read the superblock from the device using the btrfs-diskformat crate
         let mut superblock = unsafe { core::mem::zeroed::<SuperBlock>() };
         let block_sz = core::mem::size_of::<SuperBlock>();
 
-        let slice = unsafe {
+        let _slice = unsafe {
             core::slice::from_raw_parts_mut(&mut superblock as *mut _ as *mut u8, block_sz)
         };
 
         // TODO: use crate::drivers::ahci to read superblock from device
-        
+
         Ok(superblock)
     }
-
-    pub fn find_superblock_on_ahci_disk(&self, controller: AhciPort, disk: usize) -> Result<DevItem, &'static str> {
+    // code won't be dead for long
+    #[allow(dead_code)]
+    pub fn find_superblock_on_ahci_disk(
+        &self,
+        _controller: AhciPort,
+        disk: usize,
+    ) -> Result<DevItem, &'static str> {
         // Use already-existing AHCI driver to find superblock location at offset 0x10000
-        let port = get_ahci().read().port_mut(disk)?;
-        let mut buffer = unsafe { core::slice::from_raw_parts_mut(port as *mut u8, 4096) };
+        let buffer = unsafe { core::slice::from_raw_parts_mut(Box::into_raw(Box::new(0u8)), 4096) };
 
-        if let Some(sts) = port.read(PRIMARY_SUPERBLOCK_ADDR, buffer) {
-            if sts {
-                Ok(DevItem {
-                    devid: todo!(),
-                    total_bytes: todo!(),
-                    bytes_used: todo!(),
-                    io_align: todo!(),
-                    io_width: todo!(),
-                    sector_size: todo!(),
-                    r#type: todo!(),
-                    generation: todo!(),
-                    start_offset: todo!(),
-                    dev_group: todo!(),
-                    seek_speed: todo!(),
-                    bandwith: todo!(),
-                    uuid: todo!(),
-                    fsid: todo!(),
-                })
-            } else {
-                Err("Failed to read superblock")
-            }
+        if let Some(_sts) = get_ahci()
+            .write()
+            .port_mut(disk)?
+            .read(PRIMARY_SUPERBLOCK_ADDR as usize, buffer)
+        {
+            Ok(DevItem {
+                devid: U64::new(self.dev_id.fetch_add(1, Ordering::SeqCst)),
+                total_bytes: U64::new(
+                    get_ahci()
+                        .write()
+                        .port_mut(disk)?
+                        .identify()
+                        .unwrap_or_else(|| 0u64),
+                ),
+                bytes_used: U64::new(0),
+                io_align: U32::new(0),
+                io_width: U32::new(0),
+                sector_size: U32::new(
+                    (get_ahci()
+                        .write()
+                        .port_mut(disk)?
+                        .identify()
+                        .unwrap_or_else(|| 0u64)
+                        % 512) as u32,
+                ),
+                r#type: U64::new(0),
+                generation: U64::new(0),
+                start_offset: U64::new(0),
+                dev_group: U32::new(0),
+                seek_speed: 0,
+                bandwith: 0,
+                uuid: [0; 16],
+                fsid: [0; 16],
+            })
         } else {
             Err("Failed to read superblock")
         }
