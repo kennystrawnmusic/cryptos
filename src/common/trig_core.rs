@@ -1,6 +1,6 @@
 use core::intrinsics::{cosf32, cosf64, sinf32, sinf64};
 
-/// Trait to re-implement trigonometric methods for primitives in `#![no_std]` environments.
+/// Trait to re-implement trigonometric methods for 64-bit primitives in `#![no_std]` environments.
 
 pub trait TrigCore64: Sized + Clone
 where
@@ -25,6 +25,8 @@ where
         self.cos() / self.sin()
     }
 }
+
+/// Trait to re-implement trigonometric methods for 32-bit primitives in `#![no_std]` environments.
 
 pub trait TrigCore32: Sized + Clone
 where
