@@ -851,7 +851,20 @@ impl HbaPort {
                 self.fbs.read_volatile(),
             );
 
-            error!("AHCI: port error (is={:#x}, ie={:#x}, cmd={:#x}, tfd={:#x}, ssts={:#x}, sctl={:#x}, serr={:#x}, sact={:#x}, ci={:#x}, sntf={:#x}, fbs={:#x})", interrupt_status, interrupt_enable, command, task_file_data, sata_status.0, sata_control, sata_error, sata_active, command_issue, sata_notification, fis_based_switching);
+            error!("AHCI: port error (is={:#x}, ie={:#x}, cmd={:#x}, tfd={:#x}, ssts={:#x}, sctl={:#x}, serr={:#x}, sact={:#x}, ci={:#x}, sntf={:#x}, fbs={:#x})",
+                 interrupt_status,
+                 interrupt_enable,
+                 command,
+                 task_file_data,
+                 sata_status.0,
+                 sata_control,
+                 sata_error,
+                 sata_active,
+                 command_issue,
+                 sata_notification,
+                 fis_based_switching
+            );
+
             Err(syscall::Error::new(syscall::EIO))
         } else {
             Ok(())
