@@ -2,6 +2,7 @@
 
 use core::{
     any::{Any, TypeId},
+    ffi::c_int,
     ops::Coroutine,
     pin::Pin,
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
@@ -55,6 +56,7 @@ pub trait MainLoopRet: Any {}
 
 impl MainLoopRet for () {}
 impl MainLoopRet for syscall::Result<usize> {}
+impl MainLoopRet for c_int {}
 
 /// Type alias for process's entry point
 pub type MainLoop = fn() -> dyn MainLoopRet;
@@ -205,13 +207,21 @@ impl<'a> Process<'a> {
                             core::mem::transmute::<*mut MainLoop, fn() -> ()>(ptr_to_main)
                         };
                         main();
-                    } else {
+                    } else if my_type_id == TypeId::of::<fn() -> syscall::Result<usize>>() {
                         let main = unsafe {
                             core::mem::transmute::<*mut MainLoop, fn() -> syscall::Result<usize>>(
                                 ptr_to_main,
                             )
                         };
                         self.set_result(main());
+                    } else {
+                        let main = unsafe {
+                            core::mem::transmute::<*mut MainLoop, fn() -> c_int>(ptr_to_main)
+                        };
+                        match main() {
+                            0 => self.set_result(Ok(0)),
+                            e => self.set_result(Err(Error::new(e))),
+                        }
                     }
                 }
 
