@@ -279,6 +279,7 @@ impl HbaCmdHeaderFlags {
 #[derive(Debug)]
 enum DmaCommand {
     Read,
+    Identify,
 }
 
 #[derive(Debug)]
@@ -377,6 +378,7 @@ impl DmaRequest {
                     AtaCommand::ReadDma
                 }
             }
+            DmaCommand::Identify => AtaCommand::IdentifyDevice,
         }
     }
 
