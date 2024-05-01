@@ -176,7 +176,7 @@ impl<'a> Process<'a> {
         // borrow checker
         let self_ptr = self as *mut Self;
 
-        // Generators make the process of implementing full preemptive multitasking fairly straightforward
+        // Coroutines make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = || {
             match self.state {
                 State::Runnable => {
@@ -249,7 +249,7 @@ impl<'a> Process<'a> {
             }
         };
 
-        // Errors already handled inside the generator
+        // Errors already handled inside the coroutine
         Pin::new(&mut main).resume(());
     }
 
