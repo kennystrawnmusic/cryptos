@@ -188,19 +188,19 @@ impl<'a> Process<'a> {
                     if my_type_id == TypeId::of::<fn() -> ()>() {
                         let main = unsafe {
                             // TypeId checks the type for us to make sure that we're not causing UB here
-                            core::mem::transmute::<*mut MainLoop, fn() -> ()>(ptr_to_main)
+                            core::mem::transmute::<MainLoop, fn() -> ()>(*ptr_to_main)
                         };
                         main();
                     } else if my_type_id == TypeId::of::<fn() -> syscall::Result<usize>>() {
                         let main = unsafe {
-                            core::mem::transmute::<*mut MainLoop, fn() -> syscall::Result<usize>>(
-                                ptr_to_main,
+                            core::mem::transmute::<MainLoop, fn() -> syscall::Result<usize>>(
+                                *ptr_to_main,
                             )
                         };
                         self.set_result(main());
                     } else {
                         let main = unsafe {
-                            core::mem::transmute::<*mut MainLoop, fn() -> c_int>(ptr_to_main)
+                            core::mem::transmute::<MainLoop, fn() -> c_int>(*ptr_to_main)
                         };
                         match main() {
                             0 => self.set_result(Ok(0)),
