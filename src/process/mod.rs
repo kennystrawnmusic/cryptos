@@ -296,16 +296,18 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let value_addr = &value as *const ElfFile<'a> as u64;
-        let start = value.header.pt2.entry_point();
+
+        let start_phys = value.header.pt2.entry_point();
+        let start_virt = value_addr + start_phys;
 
         map_page!(
-            value_addr,
-            start,
+            start_phys,
+            start_virt,
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE
         );
 
-        let start_ptr = start as *mut MainLoop;
+        let start_ptr = start_virt as *mut MainLoop;
 
         let main = unsafe { *start_ptr };
 
