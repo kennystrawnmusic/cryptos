@@ -6,7 +6,10 @@
 use core::sync::atomic::Ordering;
 
 use acpi::AcpiTables;
+use alloc::string::String;
+use bitflags::Flags;
 use conquer_once::spin::OnceCell;
+use embedded_graphics::primitives::Ellipse;
 use pcics::header::{HeaderType, InterruptPin};
 use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use x86_64::{
@@ -205,6 +208,11 @@ bitflags::bitflags! {
         const CPDS = 1 << 31; // Cold Port Detect Status
     }
 }
+
+const INTERRUPT_STATUS_ERROR: u64 = HbaPortIS::HBDS.bits() as u64
+    | HbaPortIS::HBFS.bits() as u64
+    | HbaPortIS::TFES.bits() as u64
+    | HbaPortIS::CPDS.bits() as u64;
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
@@ -655,6 +663,9 @@ pub(crate) struct HbaPort {
     devslp: VolatileCell<u32>,
     _reserved_1: [u32; 10],
     vendor: [u32; 4],
+    serial_ident: &'static str,
+    model_ident: &'static str,
+    firmware_ident: &'static str,
 }
 
 #[repr(C)]
@@ -667,6 +678,60 @@ struct HbaCmdHeader {
 }
 
 impl HbaPort {
+    // Reference design: https://gitlab.redox-os.org/redox-os/drivers/-/blob/master/storage/ahcid/src/ahci/hba.rs?ref_type=heads#L146
+    pub(crate) fn identify(&mut self) -> Option<u64> {
+        let mut buffer = [0u8; 512];
+        let request = DmaRequest::new(0, 1);
+
+        self.run_command(request.as_command(), 0, 1, 0, &request.buffer);
+
+        request.copy_into(&mut buffer);
+
+        let mut serial_info = String::new();
+        let mut model_info = String::new();
+        let mut firmware_info = String::new();
+
+        if self.stop_cmd().is_ok() {
+            for i in 20..40 {
+                let mut serial = buffer[i] as char;
+                let mut model = buffer[i + 40] as char;
+                let mut firmware = buffer[i + 48] as char;
+
+                if serial != '\0' {
+                    serial_info.push(serial);
+                }
+
+                if model != '\0' {
+                    model_info.push(model);
+                }
+
+                if firmware != '\0' {
+                    firmware_info.push(firmware);
+                }
+            }
+
+            let mut sectors = (buffer[100] as u64)
+                | ((buffer[101] as u64) << 16)
+                | ((buffer[102] as u64) << 32)
+                | ((buffer[103] as u64) << 48);
+
+            let lba_bits = if sectors == 0 {
+                sectors = (buffer[60] as u64) | (buffer[61] as u64);
+                28
+            } else {
+                48
+            };
+
+            info!(
+                "AHCI Device Info: Serial: {}, Model: {}, Firmware: {}, LBA Size: {}",
+                serial_info, model_info, firmware_info, lba_bits
+            );
+            Some(sectors * 512)
+        } else {
+            None
+        }
+    }
+
     fn cmd_header_at(&mut self, index: usize) -> &mut HbaCmdHeader {
         // Since the CLB holds the physical address, we make the address mapped
         // before reading it.
@@ -749,7 +814,7 @@ impl HbaPort {
         self.cmd.set(value);
     }
 
-    fn stop_cmd(&mut self) {
+    fn stop_cmd(&mut self) -> syscall::Result<()> {
         let mut cmd = self.cmd.get();
         cmd.remove(HbaPortCmd::FRE | HbaPortCmd::ST);
 
@@ -757,6 +822,39 @@ impl HbaPort {
 
         while self.cmd.get().intersects(HbaPortCmd::FR | HbaPortCmd::CR) {
             core::hint::spin_loop();
+        }
+
+        if self.is.read_volatile().bits() as u64 & INTERRUPT_STATUS_ERROR != 0 {
+            let (
+                interrupt_status,
+                interrupt_enable,
+                command,
+                task_file_data,
+                sata_status,
+                sata_control,
+                sata_error,
+                sata_active,
+                command_issue,
+                sata_notification,
+                fis_based_switching,
+            ) = (
+                self.is.read_volatile(),
+                self.ie.read_volatile(),
+                self.cmd.read_volatile(),
+                self.tfd.read_volatile(),
+                self.ssts.read_volatile(),
+                self.sctl.read_volatile(),
+                self.serr.read_volatile(),
+                self.sact.read_volatile(),
+                self.ci.read_volatile(),
+                self.sntf.read_volatile(),
+                self.fbs.read_volatile(),
+            );
+
+            error!("AHCI: port error (is={:#x}, ie={:#x}, cmd={:#x}, tfd={:#x}, ssts={:#x}, sctl={:#x}, serr={:#x}, sact={:#x}, ci={:#x}, sntf={:#x}, fbs={:#x})", interrupt_status, interrupt_enable, command, task_file_data, sata_status.0, sata_control, sata_error, sata_active, command_issue, sata_notification, fis_based_switching);
+            Err(syscall::Error::new(syscall::EIO))
+        } else {
+            Ok(())
         }
     }
 
