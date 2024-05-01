@@ -177,7 +177,8 @@ impl<'a> Process<'a> {
         let self_ptr = self as *mut Self;
 
         // Coroutines make the process of implementing full preemptive multitasking fairly straightforward
-        let mut main = || {
+        let mut main = #[coroutine]
+        || {
             match self.state {
                 State::Runnable => {
                     // Run the main loop
