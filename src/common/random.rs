@@ -1,5 +1,5 @@
-use crate::common::trig_core::TrigCore64;
 use super::large_numbers::{u256, u512};
+use crate::common::trig_core::TrigCore64;
 use num_traits::float::FloatCore;
 use rand_core::{RngCore, SeedableRng};
 
