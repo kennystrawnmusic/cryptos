@@ -186,9 +186,7 @@ impl<'a> Process<'a> {
 
                     if my_type_id == TypeId::of::<fn() -> ()>() {
                         let main = unsafe {
-                            // we're only OK to use transmute here because the TypeId
-                            // guarantees that we're transmuting to the correct type
-                            
+                            // TypeId checks the type for us to make sure that we're not causing UB here
                             core::mem::transmute::<*mut MainLoop, fn() -> ()>(ptr_to_main)
                         };
                         main();
