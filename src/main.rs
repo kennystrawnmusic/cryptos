@@ -42,7 +42,8 @@
     log_syntax,
     trace_macros,
     const_type_id,
-    panic_internals
+    panic_internals,
+    stmt_expr_attributes
 )]
 #![cfg_attr(not(version("1.79")), feature(associated_type_bounds))]
 #![allow(internal_features)]
