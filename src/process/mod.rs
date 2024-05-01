@@ -33,24 +33,6 @@ int_like!(Pid, AtomicPid, usize, AtomicUsize);
 int_like!(Sid, AtomicSid, u64, AtomicU64);
 int_like!(Gid, AtomicGid, u64, AtomicU64);
 
-// Wrapper around Result that allows cloning
-pub struct CloneResult(syscall::Result<()>);
-
-impl CloneResult {
-    pub fn new(res: syscall::Result<()>) -> Self {
-        Self(res)
-    }
-}
-
-impl Clone for CloneResult {
-    fn clone(&self) -> Self {
-        Self(match &self.0 {
-            Ok(_) => Ok(()),
-            Err(e) => Err(Error::new(e.errno)),
-        })
-    }
-}
-
 /// Marker trait for tracking return type of main() function of given process
 pub trait MainLoopRet: Any {}
 
