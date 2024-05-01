@@ -779,7 +779,7 @@ impl HbaPort {
         }
     }
 
-    fn run_command(
+    pub(crate) fn run_command(
         &mut self,
         command: AtaCommand,
         sector: usize,
@@ -987,6 +987,44 @@ impl AhciProtected {
     #[inline]
     pub(crate) fn hba_mem<'a>(&self) -> &'a mut HbaMemory {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
+    }
+
+    pub(crate) fn port_mut<'a>(
+        &'a mut self,
+        port: usize,
+    ) -> Result<&'a mut AhciPort, &'static str> {
+        let mut ret;
+        if port < 32 {
+            if let Some(port) = self.ports.get_mut(port) {
+                if let Some(port_unwrapped) = port {
+                    if let Some(port) = Arc::get_mut(port_unwrapped) {
+                        ret = Ok(port);
+                    } else {
+                        ret = Err("AHCI: port still in use")
+                    }
+                } else {
+                    ret = Err("AHCI: port not found")
+                }
+            } else {
+                ret = Err("AHCI: port not found")
+            }
+        } else {
+            ret = Err("AHCI: port out of range")
+        }
+        ret
+    }
+
+    pub(crate) fn wait_until_port_available<'a>(
+        &'a mut self,
+        port: usize,
+    ) -> Result<&'a mut AhciPort, &'static str> {
+        let mut ret = self.port_mut(port);
+
+        while ret.as_ref().is_err_and(|e| e == &"AHCI: port still in use") {
+            core::hint::spin_loop();
+        }
+
+        ret
     }
 
     fn start_hba(&mut self) {

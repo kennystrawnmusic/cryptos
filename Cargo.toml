@@ -24,6 +24,7 @@ bitflags = "2.4.0"
 bitvec = { version = "1.0.1", default-features = false, features = ["alloc", "atomic"] }
 bootloader-x86_64-common = "^0.11.7"
 bootloader_api = "^0.11.7"
+btrfs-diskformat = "0.4.0"
 byteorder = { version = "1.4.3", default-features = false }
 conquer-once = { version = "^0.4.0", default-features = false }
 embedded-graphics = { version = "0.8.1", features = ["nalgebra_support"] }
@@ -37,7 +38,7 @@ log = { version = "0.4.17", default-features = false }
 minipng = { version = "0.1.1", features = ["adler"] }
 mr-mime = { version = "0.1.1", default-features = false, features = ["alloc"] }
 nalgebra = { version = "0.32.1", default-features = false }
-noto-sans-mono-bitmap = "0.2.0"
+noto-sans-mono-bitmap = "0.3.0"
 num-traits = { version = "0.2.17", default-features = false }
 pcics = "0.3.1"
 rand_core = { version = "0.6.4", features = ["alloc"] }
