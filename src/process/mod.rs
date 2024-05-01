@@ -8,7 +8,7 @@ use core::{
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };
 
-use crate::{common::RwLock, get_phys_offset, map_page};
+use crate::{common::RwLock, map_page};
 use alloc::{
     collections::BTreeMap,
     sync::{Arc, Weak},
@@ -295,11 +295,12 @@ unsafe impl<'a> Sync for Process<'a> {}
 
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
+        let value_addr = &value as *const ElfFile<'a> as u64;
         let start = value.header.pt2.entry_point();
 
         map_page!(
+            value_addr,
             start,
-            start + get_phys_offset(),
             Size4KiB,
             PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE
         );
