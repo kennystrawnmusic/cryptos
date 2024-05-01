@@ -8,7 +8,7 @@ use core::{
     sync::atomic::{AtomicBool, AtomicU64, AtomicUsize},
 };
 
-use crate::common::RwLock;
+use crate::{common::RwLock, get_phys_offset, map_page};
 use alloc::{
     collections::BTreeMap,
     sync::{Arc, Weak},
@@ -16,6 +16,7 @@ use alloc::{
 };
 use conquer_once::spin::OnceCell;
 use syscall::{Error, EBADF};
+use x86_64::structures::paging::{PageTableFlags, Size4KiB};
 use xmas_elf::ElfFile;
 
 use crate::{
@@ -295,6 +296,13 @@ unsafe impl<'a> Sync for Process<'a> {}
 impl<'a> From<ElfFile<'a>> for Process<'a> {
     fn from(value: ElfFile<'a>) -> Self {
         let start = value.header.pt2.entry_point();
+
+        map_page!(
+            start,
+            start + get_phys_offset(),
+            Size4KiB,
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE
+        );
 
         let start_ptr = start as *mut MainLoop;
 
