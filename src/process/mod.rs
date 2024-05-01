@@ -50,12 +50,13 @@ impl Clone for CloneResult {
     }
 }
 
-// Refactoring the MainLoop type to be a function returning this marker type as opposed to the enum it is currently
+/// Marker trait for tracking return type of main() function of given process
 pub trait MainLoopRet: Any {}
 
 impl MainLoopRet for () {}
 impl MainLoopRet for syscall::Result<usize> {}
 
+/// Type alias for process's entry point
 pub type MainLoop = fn() -> dyn MainLoopRet;
 
 /// State that the context is left in
