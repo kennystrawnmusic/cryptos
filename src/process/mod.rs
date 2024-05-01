@@ -174,7 +174,7 @@ impl<'a> Process<'a> {
     /// Uses a generator to queue this process
     fn queue(&mut self) {
         // borrow checker
-        let self_ptr = self as *mut Self;
+        let me = self as *mut Self;
 
         // Coroutines make the process of implementing full preemptive multitasking fairly straightforward
         let mut main = #[coroutine]
@@ -183,7 +183,7 @@ impl<'a> Process<'a> {
                 State::Runnable => {
                     // Run the main loop
                     let my_type_id = self.main_sig.clone();
-                    let ptr_to_main = unsafe { (*self_ptr).main as *mut MainLoop };
+                    let ptr_to_main = unsafe { (*me).main as *mut MainLoop };
 
                     if my_type_id == TypeId::of::<fn() -> ()>() {
                         let main = unsafe {
@@ -235,7 +235,7 @@ impl<'a> Process<'a> {
 
                         // borrow checker
                         let signal = self.signal_received;
-                        self.set_result(match signal.handle(unsafe { &mut *self_ptr }) {
+                        self.set_result(match signal.handle(unsafe { &mut *me }) {
                             Ok(()) => Ok(0),
                             Err(e) => Err(e),
                         });
