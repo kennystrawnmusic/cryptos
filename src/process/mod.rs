@@ -171,7 +171,7 @@ impl<'a> Process<'a> {
         self.res = Some(res);
     }
 
-    /// Uses a generator to queue this process
+    /// Uses a coroutine to queue this process
     fn queue(&mut self) {
         // borrow checker
         let me = self as *mut Self;
