@@ -147,6 +147,7 @@ pub enum IrqIndex {
 }
 
 extern "x86-interrupt" fn timer(_frame: InterruptStackFrame) {
+    // TODO: use as RNG entropy
     TICK_COUNT.fetch_add(1, Ordering::Relaxed);
     unsafe { get_active_lapic().end_of_interrupt() };
 }
