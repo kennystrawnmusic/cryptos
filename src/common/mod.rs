@@ -253,7 +253,7 @@ impl Printk {
     }
 
     pub fn is_locked(&self) -> bool {
-        self.0.try_read().is_none()
+        self.0.try_write().is_none()
     }
 }
 
