@@ -118,160 +118,160 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
 
 bitflags::bitflags! {
     struct HbaEnclosureCtrl: u32 {
-        const STS_MR =      1 << 0;  // Message Received
-        const CTL_TM =      1 << 8;  // Transmit Message
-        const CTL_RST =     1 << 9;  // Reset
-        const SUPP_LED =    1 << 16; // LED Message Types
-        const SUPP_SAFTE =  1 << 17; // SAF-TE Enclosure Management Messages
-        const SUPP_SES2 =   1 << 18; // SES-2 Enclosure Management Messages
-        const SUPP_SGPIO =  1 << 19; // SGPIO Enclosure Management Messages
-        const ATTR_SMB =    1 << 24; // Single Message Buffer
-        const ATTR_XMT =    1 << 25; // Transmit Only
-        const ATTR_ALHD =   1 << 26; // Activity LED Hardware Driven
-        const ATTR_PM =     1 << 27; // Port Multiplier Support
+        const MSG_RECIEVED        =      1 << 0;  // Message Received
+        const MSG_TRANSMIT        =      1 << 8;  // Transmit Message
+        const RESET               =     1 << 9;  // Reset
+        const LED_MSG_TY          =    1 << 16; // LED Message Types
+        const SAF_TE_MANAGEMENT   =  1 << 17; // SAF-TE Enclosure Management Messages
+        const SUPP_SES2           =   1 << 18; // SES-2 Enclosure Management Messages
+        const SUPP_SGPIO          =  1 << 19; // SGPIO Enclosure Management Messages
+        const SINGLE_MSG_BUFFER   =    1 << 24; // Single Message Buffer
+        const TRANSMIT_ONLY       =    1 << 25; // Transmit Only
+        const LED_HARDWARE_DRIVEN =   1 << 26; // Activity LED Hardware Driven
+        const SUPPORTS_PMUX       =     1 << 27; // Port Multiplier Support
     }
 }
 
 bitflags::bitflags! {
     struct HbaCapabilities2: u32 {
-        const BOH   = 1 << 0; // BIOS/OS Handoff
-        const NVMP  = 1 << 1; // NVMHCI Present
-        const APST  = 1 << 2; // Automatic Partial to Slumber Transitions
-        const SDS   = 1 << 3; // Supports Device Sleep
-        const SADM  = 1 << 4; // Supports Aggressive Device Sleep management
-        const DESO  = 1 << 5; // DevSleep Entrance from Slumber Only
+        const BIOS_OS_HANDOFF                        = 1 << 0; // BIOS/OS Handoff
+        const NVMHCI_PRESENT                         = 1 << 1; // NVMHCI Present
+        const PARTIAL_TO_SLUMBER_AUTO                = 1 << 2; // Automatic Partial to Slumber Transitions
+        const DEV_SLEEP_SUPPORTED                    = 1 << 3; // Supports Device Sleep
+        const SLEEP_MANAGEMENT_AGGRESSIVE_SUPPORTED  = 1 << 4; // Supports Aggressive Device Sleep management
+        const ENTRANCE_FROM_SLUMBER_ONLY             = 1 << 5; // DevSleep Entrance from Slumber Only
     }
 }
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaBohc: u32 {
-        const BOS =     1 << 0; // BIOS Owned Semaphore
-        const OOS =     1 << 1; // OS Owned Semaphore
-        const SOOE =    1 << 2; // SMI on OS Ownership Change Enable
-        const OOC =     1 << 3; // OS Ownership Change
-        const BB =      1 << 4; // BIOS Busy
+        const SEMA_BIOS_OWNED             =     1 << 0; // BIOS Owned Semaphore
+        const SEMA_OS_OWNED               =     1 << 1; // OS Owned Semaphore
+        const SMI_OWNERSHIP_CHANGE_ENABLE =    1 << 2; // SMI on OS Ownership Change Enable
+        const OS_OWNERSHIP_CHANGE         =     1 << 3; // OS Ownership Change
+        const BIOS_BUSY                   =      1 << 4; // BIOS Busy
     }
 }
 
 bitflags::bitflags! {
     struct HbaCapabilities: u32 {
-        const SXS           = 1 << 5;  // Supports External SATA
-        const EMS           = 1 << 6;  // Enclosure Management Supported
-        const CCCS          = 1 << 7;  // Command Completion Coalescing Supported
-        const PSC           = 1 << 13; // Partial State Capable
-        const SSC           = 1 << 14; // Slumber State Capable
-        const PMD           = 1 << 15; // PIO Multiple DRQ Block
-        const FBSS          = 1 << 16; // FIS-based Switching Supported
-        const SPM           = 1 << 17; // Supports Port Multiplier
-        const SAM           = 1 << 18; // Supports AHCI mode only
-        const SCLO          = 1 << 24; // Supports Command List Override
-        const SAL           = 1 << 25; // Supports Activity LED
-        const SALP          = 1 << 26; // Supports Aggressive Link Power Mgmt
-        const SSS           = 1 << 27; // Supports Staggered Spin-up
-        const SMPS          = 1 << 28; // Supports Mechanical Presence Switch
-        const SSNTF         = 1 << 29; // Supports SNotification Register
-        const SNCQ          = 1 << 30; // Supports Native Command Queuing
-        const S64A          = 1 << 31; // Supports 64-bit Addressing
+        const EXTERNAL_SATA             = 1 << 5;  // Supports External SATA
+        const ENCLOSURE_MANAGEMENT      = 1 << 6;  // Enclosure Management Supported
+        const CMD_COMPLETION_COALESCING = 1 << 7;  // Command Completion Coalescing Supported
+        const PARTIAL_STATE             = 1 << 13; // Partial State Capable
+        const SLUMBER_STATE             = 1 << 14; // Slumber State Capable
+        const PIO_MULTI_DEV_REQUEST     = 1 << 15; // PIO Multiple DRQ Block
+        const FIS_BASED_SWITCHING       = 1 << 16; // FIS-based Switching Supported
+        const PMUX                      = 1 << 17; // Supports Port Multiplier
+        const AHCI_ONLY                 = 1 << 18; // Supports AHCI mode only
+        const CMD_LIST_OVERRIDE         = 1 << 24; // Supports Command List Override
+        const ACTIVITY_LED              = 1 << 25; // Supports Activity LED
+        const PM_AGGRESSIVE_LINK        = 1 << 26; // Supports Aggressive Link Power Mgmt
+        const STAGGERED_SPIN            = 1 << 27; // Supports Staggered Spin-up
+        const MECH_PRESENCE_SWITCH      = 1 << 28; // Supports Mechanical Presence Switch
+        const REG_S_NOTIF               = 1 << 29; // Supports SNotification Register
+        const NATIVE_CMD_QUEUE          = 1 << 30; // Supports Native Command Queuing
+        const ADDR_64                   = 1 << 31; // Supports 64-bit Addressing
     }
 }
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaHostCont: u32 {
-        const HR =   1 << 0;  // HBA Reset
-        const IE =   1 << 1;  // Interrupt Enable
-        const MRSM = 1 << 2;  // MSI Revert to Single Message
-        const AE =   1 << 31; // AHCI Enable
+        const HBA_RESET            =   1 << 0;  // HBA Reset
+        const INTERRUPT_ENABLE     =   1 << 1;  // Interrupt Enable
+        const MSI_REVERT_TO_SINGLE = 1 << 2;  // MSI Revert to Single Message
+        const AHCI_ENABLE          =   1 << 31; // AHCI Enable
     }
 }
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     pub struct HbaPortIS: u32 {
-        const DHRS = 1 << 0; // Device to Host Register FIS Interrupt
-        const PSS = 1 << 1; // PIO Setup FIS Interrupt
-        const DSS = 1 << 2; // DMA Setup FIS Interrupt
-        const SDBS = 1 << 3; // Set Device Bits Interrupt
-        const UFS = 1 << 4; // Unknown FIS Interrupt
-        const DPS = 1 << 5; // Descriptor Processed
-        const PCS = 1 << 6; // Port Connect Change Status
-        const DMPS = 1 << 7; // Device Mechanical Presence Status
-        const PRCS = 1 << 22; // PhyRdy Change Status
-        const IPMS = 1 << 23; // Incorrect Port Multiplier Status
-        const OFS = 1 << 24; // Overflow Status
-        const INFS = 1 << 26; // Interface Not-fatal Error Status
-        const IFS = 1 << 27; // Interface Fatal Error Status
-        const HBDS = 1 << 28; // Host Bus Data Error Status
-        const HBFS = 1 << 29; // Host Bus Fatal Error Status
-        const TFES = 1 << 30; // Task File Error Status
-        const CPDS = 1 << 31; // Cold Port Detect Status
+        const REG_FIS_D2H         = 1 << 0; // Device to Host Register FIS Interrupt
+        const PIO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
+        const DMA_SETUP           = 1 << 2; // DMA Setup FIS Interrupt
+        const SET_DEV_BITS        = 1 << 3; // Set Device Bits Interrupt
+        const FIS_UNKNOWN         = 1 << 4; // Unknown FIS Interrupt
+        const DESC_PROCESSED      = 1 << 5; // Descriptor Processed
+        const PORT_CONNECT_CHANGE = 1 << 6; // Port Connect Change Status
+        const DEV_MECH_PRESENT    = 1 << 7; // Device Mechanical Presence Status
+        const PHY_RDY_CHANGE      = 1 << 22; // PhyRdy Change Status
+        const INCORRECT_PMUX      = 1 << 23; // Incorrect Port Multiplier Status
+        const OVERFLOW            = 1 << 24; // Overflow Status
+        const INTERFACE_NON_FATAL = 1 << 26; // Interface Not-fatal Error Status
+        const INTERFACE_FATAL     = 1 << 27; // Interface Fatal Error Status
+        const HOST_BUS_DATA_ERR   = 1 << 28; // Host Bus Data Error Status
+        const HOST_BUS_FATAL_ERR  = 1 << 29; // Host Bus Fatal Error Status
+        const TASK_FILE_ERR       = 1 << 30; // Task File Error Status
+        const COLD_PORT_DETECT    = 1 << 31; // Cold Port Detect Status
     }
 }
 
-const INTERRUPT_STATUS_ERROR: u64 = HbaPortIS::HBDS.bits() as u64
-    | HbaPortIS::HBFS.bits() as u64
-    | HbaPortIS::TFES.bits() as u64
-    | HbaPortIS::CPDS.bits() as u64;
+const INTERRUPT_STATUS_ERROR: u64 = HbaPortIS::HOST_BUS_DATA_ERR.bits() as u64
+    | HbaPortIS::HOST_BUS_FATAL_ERR.bits() as u64
+    | HbaPortIS::TASK_FILE_ERR.bits() as u64
+    | HbaPortIS::COLD_PORT_DETECT.bits() as u64;
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaPortIE: u32 {
-        const DHRE = 1 << 0; // Device to Host Register FIS Interrupt
-        const PSE = 1 << 1; // PIO Setup FIS Interrupt
-        const DSE = 1 << 2; // DMA Setup FIS Interrupt
-        const SDBE = 1 << 3; // Set Device Bits Interrupt
-        const UFE = 1 << 4; // Unknown FIS Interrupt
-        const DPE = 1 << 5; // Descriptor Processed
-        const PCE = 1 << 6; // Port Connect Change Status
-        const DMPE = 1 << 7; // Device Mechanical Presence Status
-        const PRCE = 1 << 22; // PhyRdy Change Status
-        const IPME = 1 << 23; // Incorrect Port Multiplier Status
-        const OFE= 1 << 24; // Overflow Status
-        const INFE = 1 << 26; // Interface Not-fatal Error Status
-        const IFE = 1 << 27; // Interface Fatal Error Status
-        const HBDE = 1 << 28; // Host Bus Data Error Status
-        const HBFE = 1 << 29; // Host Bus Fatal Error Status
-        const TFEE = 1 << 30; // Task File Error Status
-        const CPDE = 1 << 31; // Cold Port Detect Status
+        const REG_FIS_D2H         = 1 << 0; // Device to Host Register FIS Interrupt
+        const PIO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
+        const DMA_SETUP           = 1 << 2; // DMA Setup FIS Interrupt
+        const SET_DEV_BITS        = 1 << 3; // Set Device Bits Interrupt
+        const FIS_UNKNOWN         = 1 << 4; // Unknown FIS Interrupt
+        const DESC_PROCESSED      = 1 << 5; // Descriptor Processed
+        const PORT_CONNECT_CHANGE = 1 << 6; // Port Connect Change Status
+        const DEV_MECH_PRESENT    = 1 << 7; // Device Mechanical Presence Status
+        const PHY_RDY_CHANGE      = 1 << 22; // PhyRdy Change Status
+        const INCORRECT_PMUX      = 1 << 23; // Incorrect Port Multiplier Status
+        const OVERFLOW            = 1 << 24; // Overflow Status
+        const INTERFACE_NON_FATAL = 1 << 26; // Interface Not-fatal Error Status
+        const INTERFACE_FATAL     = 1 << 27; // Interface Fatal Error Status
+        const HOST_BUS_DATA_ERR   = 1 << 28; // Host Bus Data Error Status
+        const HOST_BUS_FATAL_ERRR = 1 << 29; // Host Bus Fatal Error Status
+        const TASK_FILE_ERR       = 1 << 30; // Task File Error Status
+        const COLD_PORT_DETECT    = 1 << 31; // Cold Port Detect Status
     }
 }
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaPortCmd: u32 {
-        const ST = 1 << 0; // Start
-        const SUD = 1 << 1; // Spin-Up Device
-        const POD = 1 << 2; // Power On Device
-        const CLO = 1 << 3; // Command List Override
-        const FRE = 1 << 4; // FIS Receive Enable
-        const MPSS = 1 << 13; // Mechanical Presence Switch State
-        const FR = 1 << 14; // FIS Receive Running
-        const CR = 1 << 15; // Command List Running
-        const CPS = 1 << 16; // Cold Presence State
-        const PMA = 1 << 17; // Port Multiplier Attached
-        const HPCP = 1 << 18; // Hot Plug Capable Port
-        const MSPC = 1 << 19; // Mechanical Presence Switch Attached to Port
-        const CPD = 1 << 20; // Cold Presence Detection
-        const ESP = 1 << 21; // External SATA Port
-        const FBSCP = 1 << 22; // FIS-based Switching Capable Port
-        const APSTE = 1 << 23; // Automatic Partial to Slumber Transition Enabled
-        const ATAPI = 1 << 24; // Device is ATAPI
-        const DLAE = 1 << 25; // Drive LED on ATAPI Enable
-        const ALPE = 1 << 26; // Aggressive Link Power Management Enable
-        const ASP = 1 << 27; // Aggressive Slumber / Partial
+        const START                         = 1 << 0; // Start
+        const SPIN_UP                       = 1 << 1; // Spin-Up Device
+        const POWER_ON                      = 1 << 2; // Power On Device
+        const CMDLIST_OVERRIDE              = 1 << 3; // Command List Override
+        const RECEIVE_ENABLE                = 1 << 4; // FIS Receive Enable
+        const MECH_PRESENCE_SWITCH_STATE    = 1 << 13; // Mechanical Presence Switch State
+        const FIS_RUNNING                   = 1 << 14; // FIS Receive Running
+        const CMDLIST_RUNNING               = 1 << 15; // Command List Running
+        const COLD_PRESENCE_STATE           = 1 << 16; // Cold Presence State
+        const PMUX_ATTACHED                 = 1 << 17; // Port Multiplier Attached
+        const HOST_PLUG_CAPABLE             = 1 << 18; // Hot Plug Capable Port
+        const MECH_PRESENCE_SWITCH_ATTACHED = 1 << 19; // Mechanical Presence Switch Attached to Port
+        const COLD_PRESENCE_DETECT          = 1 << 20; // Cold Presence Detection
+        const EXTERNAL_PORT                 = 1 << 21; // External SATA Port
+        const FIS_SWITCH_CAPABLE            = 1 << 22; // FIS-based Switching Capable Port
+        const AUTO_SLUMBER_TRANS_ENABLE     = 1 << 23; // Automatic Partial to Slumber Transition Enabled
+        const ATAPI                         = 1 << 24; // Device is ATAPI
+        const DRIVE_LED_ATAPI_ENABLE        = 1 << 25; // Drive LED on ATAPI Enable
+        const AGGRESSIVE_LNKPWR_ENABLE      = 1 << 26; // Aggressive Link Power Management Enable
+        const AGGRESSIVE_SLUMBER            = 1 << 27; // Aggressive Slumber / Partial
     }
 }
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaCmdHeaderFlags: u16 {
-        const A = 1 << 5; // ATAPI
-        const W = 1 << 6; // Write
-        const P = 1 << 7; // Prefetchable
-        const R = 1 << 8; // Reset
-        const B = 1 << 9; // Bist
-        const C = 1 << 10; // Clear Busy upon R_OK
+        const ATAPI = 1 << 5; // ATAPI
+        const WRITE = 1 << 6; // Write
+        const PREFETCHABLE = 1 << 7; // Prefetchable
+        const RESET = 1 << 8; // Reset
+        const BIST = 1 << 9; // Bist
+        const CLEAR_BUSY = 1 << 10; // Clear Busy upon R_OK
     }
 }
 
@@ -802,28 +802,32 @@ impl HbaPort {
         self.sctl.set(sctl | 7 << 8);
 
         // Power on and spin up
-        self.cmd.set(HbaPortCmd::POD | HbaPortCmd::SUD);
+        self.cmd.set(HbaPortCmd::POWER_ON | HbaPortCmd::SPIN_UP);
 
         // Start the command engine
         self.start_cmd();
     }
 
     fn start_cmd(&mut self) {
-        while self.cmd.get().contains(HbaPortCmd::CR) {
+        while self.cmd.get().contains(HbaPortCmd::CMDLIST_RUNNING) {
             core::hint::spin_loop();
         }
 
-        let value = self.cmd.get() | (HbaPortCmd::FRE | HbaPortCmd::ST);
+        let value = self.cmd.get() | (HbaPortCmd::RECEIVE_ENABLE | HbaPortCmd::START);
         self.cmd.set(value);
     }
 
     fn stop_cmd(&mut self) -> syscall::Result<()> {
         let mut cmd = self.cmd.get();
-        cmd.remove(HbaPortCmd::FRE | HbaPortCmd::ST);
+        cmd.remove(HbaPortCmd::RECEIVE_ENABLE | HbaPortCmd::START);
 
         self.cmd.set(cmd);
 
-        while self.cmd.get().intersects(HbaPortCmd::FR | HbaPortCmd::CR) {
+        while self
+            .cmd
+            .get()
+            .intersects(HbaPortCmd::FIS_RUNNING | HbaPortCmd::CMDLIST_RUNNING)
+        {
             core::hint::spin_loop();
         }
 
@@ -920,12 +924,12 @@ impl HbaPort {
         let mut flags = header.flags.get();
 
         if command == AtaCommand::WriteDmaExt || command == AtaCommand::WriteDma {
-            flags.insert(HbaCmdHeaderFlags::W); // If its a write command add the write flag.
+            flags.insert(HbaCmdHeaderFlags::WRITE); // If its a write command add the write flag.
         } else {
-            flags.remove(HbaCmdHeaderFlags::W); // If its a read command remove the write flag.
+            flags.remove(HbaCmdHeaderFlags::WRITE); // If its a read command remove the write flag.
         }
 
-        flags.insert(HbaCmdHeaderFlags::P | HbaCmdHeaderFlags::C);
+        flags.insert(HbaCmdHeaderFlags::PREFETCHABLE | HbaCmdHeaderFlags::CLEAR_BUSY);
         flags.set_command_fis_size(core::mem::size_of::<FisRegH2D>() / 4);
 
         header.flags.set(flags); // Update command header flags.
@@ -979,7 +983,7 @@ impl HbaPort {
 
         // Wait for the command to complete.
         while self.ci.get() & (1 << slot) == 1 {
-            if self.is.get().contains(HbaPortIS::TFES) {
+            if self.is.get().contains(HbaPortIS::TASK_FILE_ERR) {
                 warn!("AHCI: disk error (serr={:#x})", self.serr.get());
                 break;
             }
@@ -1167,11 +1171,13 @@ impl AhciProtected {
         let mut hba = self.hba_mem();
 
         // Take back control from the firmware
-        hba.bios_handoff_ctrl_sts.set(HbaBohc::OOC | HbaBohc::OOS);
+        hba.bios_handoff_ctrl_sts
+            .set(HbaBohc::OS_OWNERSHIP_CHANGE | HbaBohc::SEMA_OS_OWNED);
 
         // Enable interrupts
         let current_flags = hba.global_host_control.get();
-        hba.global_host_control.set(current_flags | HbaHostCont::IE);
+        hba.global_host_control
+            .set(current_flags | HbaHostCont::INTERRUPT_ENABLE);
 
         let version = hba.version.get();
         let major_version = version >> 16 & 0xffff;

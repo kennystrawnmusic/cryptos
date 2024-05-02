@@ -500,13 +500,13 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
         let port_status = port.inner.write().hba_port().is.get();
 
         // Check error bit and debug if set
-        if port_status.contains(HbaPortIS::HBDS) {
+        if port_status.contains(HbaPortIS::HOST_BUS_DATA_ERR) {
             warn!("AHCI: Host bus data error");
-        } else if port_status.contains(HbaPortIS::HBFS) {
+        } else if port_status.contains(HbaPortIS::HOST_BUS_FATAL_ERR) {
             warn!("AHCI: Host bus file error");
-        } else if port_status.contains(HbaPortIS::TFES) {
+        } else if port_status.contains(HbaPortIS::TASK_FILE_ERR) {
             warn!("AHCI: Task file error");
-        } else if port_status.contains(HbaPortIS::CPDS) {
+        } else if port_status.contains(HbaPortIS::COLD_PORT_DETECT) {
             warn!("AHCI: Cold port detected");
         }
 
