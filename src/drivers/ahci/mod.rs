@@ -118,17 +118,17 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
 
 bitflags::bitflags! {
     struct HbaEnclosureCtrl: u32 {
-        const MSG_RECIEVED        =      1 << 0;  // Message Received
-        const MSG_TRANSMIT        =      1 << 8;  // Transmit Message
-        const RESET               =     1 << 9;  // Reset
-        const LED_MSG_TY          =    1 << 16; // LED Message Types
+        const MSG_RECIEVED        =  1 << 0;  // Message Received
+        const MSG_TRANSMIT        =  1 << 8;  // Transmit Message
+        const RESET               =  1 << 9;  // Reset
+        const LED_MSG_TY          =  1 << 16; // LED Message Types
         const SAF_TE_MANAGEMENT   =  1 << 17; // SAF-TE Enclosure Management Messages
-        const SUPP_SES2           =   1 << 18; // SES-2 Enclosure Management Messages
+        const SUPP_SES2           =  1 << 18; // SES-2 Enclosure Management Messages
         const SUPP_SGPIO          =  1 << 19; // SGPIO Enclosure Management Messages
-        const SINGLE_MSG_BUFFER   =    1 << 24; // Single Message Buffer
-        const TRANSMIT_ONLY       =    1 << 25; // Transmit Only
-        const LED_HARDWARE_DRIVEN =   1 << 26; // Activity LED Hardware Driven
-        const SUPPORTS_PMUX       =     1 << 27; // Port Multiplier Support
+        const SINGLE_MSG_BUFFER   =  1 << 24; // Single Message Buffer
+        const TRANSMIT_ONLY       =  1 << 25; // Transmit Only
+        const LED_HARDWARE_DRIVEN =  1 << 26; // Activity LED Hardware Driven
+        const SUPPORTS_PMUX       =  1 << 27; // Port Multiplier Support
     }
 }
 
@@ -146,11 +146,11 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaBohc: u32 {
-        const SEMA_BIOS_OWNED             =     1 << 0; // BIOS Owned Semaphore
-        const SEMA_OS_OWNED               =     1 << 1; // OS Owned Semaphore
-        const SMI_OWNERSHIP_CHANGE_ENABLE =    1 << 2; // SMI on OS Ownership Change Enable
-        const OS_OWNERSHIP_CHANGE         =     1 << 3; // OS Ownership Change
-        const BIOS_BUSY                   =      1 << 4; // BIOS Busy
+        const SEMA_BIOS_OWNED             =  1 << 0; // BIOS Owned Semaphore
+        const SEMA_OS_OWNED               =  1 << 1; // OS Owned Semaphore
+        const SMI_OWNERSHIP_CHANGE_ENABLE =  1 << 2; // SMI on OS Ownership Change Enable
+        const OS_OWNERSHIP_CHANGE         =  1 << 3; // OS Ownership Change
+        const BIOS_BUSY                   =  1 << 4; // BIOS Busy
     }
 }
 
@@ -179,10 +179,10 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaHostCont: u32 {
-        const HBA_RESET            =   1 << 0;  // HBA Reset
-        const INTERRUPT_ENABLE     =   1 << 1;  // Interrupt Enable
-        const MSI_REVERT_TO_SINGLE = 1 << 2;  // MSI Revert to Single Message
-        const AHCI_ENABLE          =   1 << 31; // AHCI Enable
+        const HBA_RESET            =  1 << 0;  // HBA Reset
+        const INTERRUPT_ENABLE     =  1 << 1;  // Interrupt Enable
+        const MSI_REVERT_TO_SINGLE =  1 << 2;  // MSI Revert to Single Message
+        const AHCI_ENABLE          =  1 << 31; // AHCI Enable
     }
 }
 
