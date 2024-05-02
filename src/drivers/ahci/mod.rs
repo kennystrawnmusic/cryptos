@@ -266,12 +266,12 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaCmdHeaderFlags: u16 {
-        const ATAPI = 1 << 5; // ATAPI
-        const WRITE = 1 << 6; // Write
+        const ATAPI        = 1 << 5; // ATAPI
+        const WRITE        = 1 << 6; // Write
         const PREFETCHABLE = 1 << 7; // Prefetchable
-        const RESET = 1 << 8; // Reset
-        const BIST = 1 << 9; // Bist
-        const CLEAR_BUSY = 1 << 10; // Clear Busy upon R_OK
+        const RESET        = 1 << 8; // Reset
+        const BIST         = 1 << 9; // Bist
+        const CLEAR_BUSY   = 1 << 10; // Clear Busy upon R_OK
     }
 }
 
