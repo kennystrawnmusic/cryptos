@@ -189,23 +189,23 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     pub struct HbaPortIS: u32 {
-        const REG_FIS_D2H         = 1 << 0; // Device to Host Register FIS Interrupt
-        const PIO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
-        const DMA_SETUP           = 1 << 2; // DMA Setup FIS Interrupt
-        const SET_DEV_BITS        = 1 << 3; // Set Device Bits Interrupt
-        const FIS_UNKNOWN         = 1 << 4; // Unknown FIS Interrupt
-        const DESC_PROCESSED      = 1 << 5; // Descriptor Processed
-        const PORT_CONNECT_CHANGE = 1 << 6; // Port Connect Change Status
-        const DEV_MECH_PRESENT    = 1 << 7; // Device Mechanical Presence Status
-        const PHY_RDY_CHANGE      = 1 << 22; // PhyRdy Change Status
-        const INCORRECT_PMUX      = 1 << 23; // Incorrect Port Multiplier Status
-        const OVERFLOW            = 1 << 24; // Overflow Status
-        const INTERFACE_NON_FATAL = 1 << 26; // Interface Not-fatal Error Status
-        const INTERFACE_FATAL     = 1 << 27; // Interface Fatal Error Status
-        const HOST_BUS_DATA_ERR   = 1 << 28; // Host Bus Data Error Status
-        const HOST_BUS_FATAL_ERR  = 1 << 29; // Host Bus Fatal Error Status
-        const TASK_FILE_ERR       = 1 << 30; // Task File Error Status
-        const COLD_PORT_DETECT    = 1 << 31; // Cold Port Detect Status
+        const REG_FIS_D2H             = 1 << 0; // Device to Host Register FIS Interrupt
+        const PORT_IO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
+        const DIRECT_MEM_ACCESS_SETUP = 1 << 2; // DMA Setup FIS Interrupt
+        const SET_DEV_BITS            = 1 << 3; // Set Device Bits Interrupt
+        const FIS_UNKNOWN             = 1 << 4; // Unknown FIS Interrupt
+        const DESC_PROCESSED          = 1 << 5; // Descriptor Processed
+        const PORT_CONNECT_CHANGE     = 1 << 6; // Port Connect Change Status
+        const DEV_MECH_PRESENT        = 1 << 7; // Device Mechanical Presence Status
+        const PHY_RDY_CHANGE          = 1 << 22; // PhyRdy Change Status
+        const INCORRECT_PMUX          = 1 << 23; // Incorrect Port Multiplier Status
+        const OVERFLOW                = 1 << 24; // Overflow Status
+        const INTERFACE_NON_FATAL     = 1 << 26; // Interface Not-fatal Error Status
+        const INTERFACE_FATAL         = 1 << 27; // Interface Fatal Error Status
+        const HOST_BUS_DATA_ERR       = 1 << 28; // Host Bus Data Error Status
+        const HOST_BUS_FATAL_ERR      = 1 << 29; // Host Bus Fatal Error Status
+        const TASK_FILE_ERR           = 1 << 30; // Task File Error Status
+        const COLD_PORT_DETECT        = 1 << 31; // Cold Port Detect Status
     }
 }
 
