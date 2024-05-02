@@ -479,20 +479,20 @@ struct FisRegH2D {
     fis_type: VolatileCell<FisType>,
     flags: VolatileCell<u8>,
     command: VolatileCell<AtaCommand>,
-    featurel: VolatileCell<u8>,
+    feature_low: VolatileCell<u8>,
 
-    lba0: VolatileCell<u8>,
-    lba1: VolatileCell<u8>,
-    lba2: VolatileCell<u8>,
+    lba_0: VolatileCell<u8>,
+    lba_1: VolatileCell<u8>,
+    lba_2: VolatileCell<u8>,
     device: VolatileCell<u8>,
 
-    lba3: VolatileCell<u8>,
-    lba4: VolatileCell<u8>,
-    lba5: VolatileCell<u8>,
-    featureh: VolatileCell<u8>,
+    lba_3: VolatileCell<u8>,
+    lba_4: VolatileCell<u8>,
+    lba_5: VolatileCell<u8>,
+    feature_high: VolatileCell<u8>,
 
     count: VolatileCell<u16>,
-    icc: VolatileCell<u8>,
+    isoch_cmd_completion: VolatileCell<u8>,
     control: VolatileCell<u8>,
 
     _reserved: [u8; 4],
@@ -502,7 +502,7 @@ struct FisRegH2D {
 #[allow(dead_code)] //future-proof
 struct FisRegD2H {
     fis_type: VolatileCell<FisType>,
-    pm: VolatileCell<u8>,
+    pmux: VolatileCell<u8>,
     pub status: VolatileCell<u8>,
     pub err: VolatileCell<u8>,
     pub lba0: VolatileCell<u8>,
@@ -522,12 +522,12 @@ impl FisRegH2D {
     fn set_lba(&mut self, lba: usize) {
         debug_assert!(lba < 1 << 48, "LBA is limited to 48 bits");
 
-        self.lba0.set(lba as _);
-        self.lba1.set((lba >> 8) as _);
-        self.lba2.set((lba >> 16) as _);
-        self.lba3.set((lba >> 24) as _);
-        self.lba4.set((lba >> 32) as _);
-        self.lba5.set((lba >> 40) as _);
+        self.lba_0.set(lba as _);
+        self.lba_1.set((lba >> 8) as _);
+        self.lba_2.set((lba >> 16) as _);
+        self.lba_3.set((lba >> 24) as _);
+        self.lba_4.set((lba >> 32) as _);
+        self.lba_5.set((lba >> 40) as _);
     }
 
     fn set_command(&mut self, yes: bool) {
@@ -540,8 +540,8 @@ impl FisRegH2D {
 
 #[repr(C)]
 struct HbaCmdTbl {
-    cfis: [u8; 64],
-    acmd: [u8; 16],
+    cmd_fis: [u8; 64],
+    atapi_cmd: [u8; 16],
     _reserved: [u8; 48],
 
     prdt_entry: [HbaPrdtEntry; 1],
@@ -549,7 +549,7 @@ struct HbaCmdTbl {
 
 impl HbaCmdTbl {
     fn cfis_as_h2d_mut(&mut self) -> &mut FisRegH2D {
-        unsafe { &mut *(self.cfis.as_mut_ptr() as *mut FisRegH2D) }
+        unsafe { &mut *(self.cmd_fis.as_mut_ptr() as *mut FisRegH2D) }
     }
 
     fn prdt_entry_mut(&mut self, i: usize) -> &mut HbaPrdtEntry {
@@ -559,7 +559,7 @@ impl HbaCmdTbl {
 
 #[repr(C)]
 struct HbaPrdtEntry {
-    dba: VolatileCell<PhysAddr>,
+    data_base: VolatileCell<PhysAddr>,
     _reserved: u32,
     flags: VolatileCell<u32>,
 }
@@ -645,21 +645,21 @@ impl HbaSataStatus {
 
 #[repr(C)]
 pub(crate) struct HbaPort {
-    clb: VolatileCell<PhysAddr>,
-    fb: VolatileCell<PhysAddr>,
-    pub is: VolatileCell<HbaPortIS>,
-    ie: VolatileCell<HbaPortIE>,
-    cmd: VolatileCell<HbaPortCmd>,
+    cmd_list_base: VolatileCell<PhysAddr>,
+    fis_base: VolatileCell<PhysAddr>,
+    pub(crate) interrupt_status: VolatileCell<HbaPortIS>,
+    interrupt_enable: VolatileCell<HbaPortIE>,
+    command: VolatileCell<HbaPortCmd>,
     _reserved: u32,
-    tfd: VolatileCell<u32>,
-    sig: VolatileCell<u32>,
-    ssts: VolatileCell<HbaSataStatus>,
-    sctl: VolatileCell<u32>,
-    serr: VolatileCell<u32>,
-    sact: VolatileCell<u32>,
-    ci: VolatileCell<u32>,
-    sntf: VolatileCell<u32>,
-    fbs: VolatileCell<u32>,
+    task_file_data: VolatileCell<u32>,
+    signature: VolatileCell<u32>,
+    sata_status: VolatileCell<HbaSataStatus>,
+    sata_ctrl: VolatileCell<u32>,
+    sata_error: VolatileCell<u32>,
+    sata_active: VolatileCell<u32>,
+    cmd_issue: VolatileCell<u32>,
+    sata_alert: VolatileCell<u32>,
+    fis_based_switch: VolatileCell<u32>,
     devslp: VolatileCell<u32>,
     _reserved_1: [u32; 10],
     vendor: [u32; 4],
@@ -668,9 +668,9 @@ pub(crate) struct HbaPort {
 #[repr(C)]
 struct HbaCmdHeader {
     flags: VolatileCell<HbaCmdHeaderFlags>,
-    prdtl: VolatileCell<u16>,
-    prdbc: VolatileCell<u32>,
-    ctb: VolatileCell<PhysAddr>,
+    prdt_len: VolatileCell<u16>,
+    phys_region_byte_count: VolatileCell<u32>,
+    cmd_table_base: VolatileCell<PhysAddr>,
     _reserved: [u32; 4],
 }
 
@@ -738,7 +738,7 @@ impl HbaPort {
     fn cmd_header_at(&mut self, index: usize) -> &mut HbaCmdHeader {
         // Since the CLB holds the physical address, we make the address mapped
         // before reading it.
-        let clb_mapped = VirtAddr::new(self.clb.get().as_u64() + get_phys_offset());
+        let clb_mapped = VirtAddr::new(self.cmd_list_base.get().as_u64() + get_phys_offset());
         // Get the address of the command header at `index`.
         let clb_addr = clb_mapped + (core::mem::size_of::<HbaCmdHeader>() as u64) * (index as u64);
 
@@ -775,63 +775,63 @@ impl HbaPort {
 
             // 8 prdt entries per command table
             // 256 bytes per command table, 64 + 16 + 48 + 16 * 8
-            command_header.prdtl.set(8);
-            command_header.prdbc.set(0);
-            command_header.ctb.set(PhysAddr::new(
+            command_header.prdt_len.set(8);
+            command_header.phys_region_byte_count.set(0);
+            command_header.cmd_table_base.set(PhysAddr::new(
                 (frame_addr.as_u64() as usize + 256 * i) as u64,
             ));
         }
 
         // Read and write back command list base
-        let clb = self.clb.get();
-        self.clb.set(clb);
+        let clb = self.cmd_list_base.get();
+        self.cmd_list_base.set(clb);
 
         // Read and write back FIS Base
-        let fb = self.fb.get();
-        self.fb.set(fb);
+        let fb = self.fis_base.get();
+        self.fis_base.set(fb);
 
         // Read and write back interrupt status
-        let is = self.is.get();
-        self.is.set(is);
+        let is = self.interrupt_status.get();
+        self.interrupt_status.set(is);
 
         // Enable interrupts
-        self.ie.set(HbaPortIE::all());
+        self.interrupt_enable.set(HbaPortIE::all());
 
         // Disable power management (for now)
-        let sctl = self.sctl.get();
-        self.sctl.set(sctl | 7 << 8);
+        let sctl = self.sata_ctrl.get();
+        self.sata_ctrl.set(sctl | 7 << 8);
 
         // Power on and spin up
-        self.cmd.set(HbaPortCmd::POWER_ON | HbaPortCmd::SPIN_UP);
+        self.command.set(HbaPortCmd::POWER_ON | HbaPortCmd::SPIN_UP);
 
         // Start the command engine
         self.start_cmd();
     }
 
     fn start_cmd(&mut self) {
-        while self.cmd.get().contains(HbaPortCmd::CMDLIST_RUNNING) {
+        while self.command.get().contains(HbaPortCmd::CMDLIST_RUNNING) {
             core::hint::spin_loop();
         }
 
-        let value = self.cmd.get() | (HbaPortCmd::RECEIVE_ENABLE | HbaPortCmd::START);
-        self.cmd.set(value);
+        let value = self.command.get() | (HbaPortCmd::RECEIVE_ENABLE | HbaPortCmd::START);
+        self.command.set(value);
     }
 
     fn stop_cmd(&mut self) -> syscall::Result<()> {
-        let mut cmd = self.cmd.get();
+        let mut cmd = self.command.get();
         cmd.remove(HbaPortCmd::RECEIVE_ENABLE | HbaPortCmd::START);
 
-        self.cmd.set(cmd);
+        self.command.set(cmd);
 
         while self
-            .cmd
+            .command
             .get()
             .intersects(HbaPortCmd::FIS_RUNNING | HbaPortCmd::CMDLIST_RUNNING)
         {
             core::hint::spin_loop();
         }
 
-        if self.is.read_volatile().bits() as u64 & INTERRUPT_STATUS_ERROR != 0 {
+        if self.interrupt_status.read_volatile().bits() as u64 & INTERRUPT_STATUS_ERROR != 0 {
             let (
                 interrupt_status,
                 interrupt_enable,
@@ -845,17 +845,17 @@ impl HbaPort {
                 sata_notification,
                 fis_based_switching,
             ) = (
-                self.is.read_volatile(),
-                self.ie.read_volatile(),
-                self.cmd.read_volatile(),
-                self.tfd.read_volatile(),
-                self.ssts.read_volatile(),
-                self.sctl.read_volatile(),
-                self.serr.read_volatile(),
-                self.sact.read_volatile(),
-                self.ci.read_volatile(),
-                self.sntf.read_volatile(),
-                self.fbs.read_volatile(),
+                self.interrupt_status.read_volatile(),
+                self.interrupt_enable.read_volatile(),
+                self.command.read_volatile(),
+                self.task_file_data.read_volatile(),
+                self.sata_status.read_volatile(),
+                self.sata_ctrl.read_volatile(),
+                self.sata_error.read_volatile(),
+                self.sata_active.read_volatile(),
+                self.cmd_issue.read_volatile(),
+                self.sata_alert.read_volatile(),
+                self.fis_based_switch.read_volatile(),
             );
 
             error!(
@@ -892,7 +892,7 @@ impl HbaPort {
     }
 
     fn probe(&mut self, port: usize) -> bool {
-        let status = self.ssts.get();
+        let status = self.sata_status.get();
 
         let ipm = status.interface_power_management();
         let dd = status.device_detection();
@@ -935,15 +935,16 @@ impl HbaPort {
         header.flags.set(flags); // Update command header flags.
 
         let length = ((count - 1) >> 4) + 1;
-        header.prdtl.set(length as _); // Update the number of PRD entries.
+        header.prdt_len.set(length as _); // Update the number of PRD entries.
 
-        let command_table_addr = VirtAddr::new(get_phys_offset() + header.ctb.get().as_u64());
+        let command_table_addr =
+            VirtAddr::new(get_phys_offset() + header.cmd_table_base.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
         for (pri, dma) in buffer.iter().enumerate().take(length) {
             let prdt = command_table.prdt_entry_mut(pri);
 
-            prdt.dba.set(buffer[pri].start);
+            prdt.data_base.set(buffer[pri].start);
             prdt.set_data_byte_count(buffer[pri].data_size - 1);
             prdt.set_interrupt_on_completion(pri == length - 1);
         }
@@ -951,9 +952,9 @@ impl HbaPort {
         let fis = command_table.cfis_as_h2d_mut();
 
         fis.control.set(0x00);
-        fis.icc.set(0x00);
-        fis.featurel.set(0x00);
-        fis.featureh.set(0x00);
+        fis.isoch_cmd_completion.set(0x00);
+        fis.feature_low.set(0x00);
+        fis.feature_high.set(0x00);
         fis._reserved.fill(0x00);
 
         fis.fis_type.set(FisType::RegH2D);
@@ -965,13 +966,13 @@ impl HbaPort {
         fis.set_command(true);
 
         // Issue the command!
-        self.ci.set(1 << slot);
+        self.cmd_issue.set(1 << slot);
 
         let mut spin = 100;
 
         // Make sure the port is not busy.
         // Also, thanks Clippy for helping me find an upstream Aero bug!
-        while (self.tfd.get() == 0x80 || self.tfd.get() == 0x08) && spin > 0 {
+        while (self.task_file_data.get() == 0x80 || self.task_file_data.get() == 0x08) && spin > 0 {
             core::hint::spin_loop();
             spin -= 1;
         }
@@ -982,9 +983,13 @@ impl HbaPort {
         }
 
         // Wait for the command to complete.
-        while self.ci.get() & (1 << slot) == 1 {
-            if self.is.get().contains(HbaPortIS::TASK_FILE_ERR) {
-                warn!("AHCI: disk error (serr={:#x})", self.serr.get());
+        while self.cmd_issue.get() & (1 << slot) == 1 {
+            if self
+                .interrupt_status
+                .get()
+                .contains(HbaPortIS::TASK_FILE_ERR)
+            {
+                warn!("AHCI: disk error (serr={:#x})", self.sata_error.get());
                 break;
             }
         }

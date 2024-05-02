@@ -497,7 +497,7 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
 
     // Read and write back port interrupt status
     for port in get_ahci().write().ports.as_mut().iter_mut().flatten() {
-        let port_status = port.inner.write().hba_port().is.get();
+        let port_status = port.inner.write().hba_port().interrupt_status.get();
 
         // Check error bit and debug if set
         if port_status.contains(HbaPortIS::HOST_BUS_DATA_ERR) {
@@ -510,7 +510,11 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
             warn!("AHCI: Cold port detected");
         }
 
-        port.inner.write().hba_port().is.set(port_status);
+        port.inner
+            .write()
+            .hba_port()
+            .interrupt_status
+            .set(port_status);
     }
 
     unsafe { get_active_lapic().end_of_interrupt() };
