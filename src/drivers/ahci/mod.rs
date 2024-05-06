@@ -29,7 +29,7 @@ use crate::common::sync::MutexGuard;
 pub mod util;
 
 use {
-    crate::{common::Mutex, pci_impl::*, FRAME_ALLOCATOR},
+    crate::{common::sync::Mutex, pci_impl::*, FRAME_ALLOCATOR},
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
     log::*,
