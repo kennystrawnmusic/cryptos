@@ -24,17 +24,17 @@ use crate::{
     get_phys_offset, map_page, MAPPER,
 };
 
-use self::util::sync::MutexGuard;
+use crate::common::sync::MutexGuard;
 
 pub mod util;
 
 use {
-    crate::{pci_impl::*, FRAME_ALLOCATOR},
+    crate::{common::Mutex, pci_impl::*, FRAME_ALLOCATOR},
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
     log::*,
     spin::Once,
-    util::{sync::Mutex, CeilDiv, VolatileCell},
+    util::{CeilDiv, VolatileCell},
     x86_64::{
         structures::paging::{
             mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size2MiB,

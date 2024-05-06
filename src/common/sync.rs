@@ -2,11 +2,7 @@
 // Partial copy of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/utils/sync.rs
 // Refactored to work standalone without dependency on a foreign kernel
 
-use {
-    crate::arch::x86_64::interrupts,
-    alloc::{sync::Arc, vec::Vec},
-    spin::relax::RelaxStrategy,
-};
+use {crate::arch::x86_64::interrupts, spin::relax::RelaxStrategy};
 
 // Note: port the BlockQueue later, but not now — can wait until we have a working userland
 

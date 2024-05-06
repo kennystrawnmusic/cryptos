@@ -9,7 +9,7 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
-use crate::ahci::util::sync::Mutex;
+use crate::common::sync::Mutex;
 use crate::get_phys_offset;
 
 unsafe fn active_pml4(offset: VirtAddr) -> &'static mut PageTable {
