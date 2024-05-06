@@ -189,14 +189,14 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     pub struct HbaPortInterruptStatus: u32 {
-        const REG_FIS_D2H             = 1 << 0; // Device to Host Register FIS Interrupt
-        const PORT_IO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
-        const DIRECT_MEM_ACCESS_SETUP = 1 << 2; // DMA Setup FIS Interrupt
-        const SET_DEV_BITS            = 1 << 3; // Set Device Bits Interrupt
-        const FIS_UNKNOWN             = 1 << 4; // Unknown FIS Interrupt
-        const DESC_PROCESSED          = 1 << 5; // Descriptor Processed
-        const PORT_CONNECT_CHANGE     = 1 << 6; // Port Connect Change Status
-        const DEV_MECH_PRESENT        = 1 << 7; // Device Mechanical Presence Status
+        const REG_FIS_D2H             = 1 << 0;  // Device to Host Register FIS Interrupt
+        const PORT_IO_SETUP           = 1 << 1;  // PIO Setup FIS Interrupt
+        const DIRECT_MEM_ACCESS_SETUP = 1 << 2;  // DMA Setup FIS Interrupt
+        const SET_DEV_BITS            = 1 << 3;  // Set Device Bits Interrupt
+        const FIS_UNKNOWN             = 1 << 4;  // Unknown FIS Interrupt
+        const DESC_PROCESSED          = 1 << 5;  // Descriptor Processed
+        const PORT_CONNECT_CHANGE     = 1 << 6;  // Port Connect Change Status
+        const DEV_MECH_PRESENT        = 1 << 7;  // Device Mechanical Presence Status
         const PHY_RDY_CHANGE          = 1 << 22; // PhyRdy Change Status
         const INCORRECT_PMUX          = 1 << 23; // Incorrect Port Multiplier Status
         const OVERFLOW                = 1 << 24; // Overflow Status
@@ -217,14 +217,14 @@ const INTERRUPT_STATUS_ERROR: u64 = HbaPortInterruptStatus::HOST_BUS_DATA_ERR.bi
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaPortInterruptEnable: u32 {
-        const REG_FIS_D2H             = 1 << 0; // Device to Host Register FIS Interrupt
-        const PORT_IO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
-        const DIRECT_MEM_ACCESS_SETUP = 1 << 2; // DMA Setup FIS Interrupt
-        const SET_DEV_BITS            = 1 << 3; // Set Device Bits Interrupt
-        const FIS_UNKNOWN             = 1 << 4; // Unknown FIS Interrupt
-        const DESC_PROCESSED          = 1 << 5; // Descriptor Processed
-        const PORT_CONNECT_CHANGE     = 1 << 6; // Port Connect Change Status
-        const DEV_MECH_PRESENT        = 1 << 7; // Device Mechanical Presence Status
+        const REG_FIS_D2H             = 1 << 0;  // Device to Host Register FIS Interrupt
+        const PORT_IO_SETUP           = 1 << 1;  // PIO Setup FIS Interrupt
+        const DIRECT_MEM_ACCESS_SETUP = 1 << 2;  // DMA Setup FIS Interrupt
+        const SET_DEV_BITS            = 1 << 3;  // Set Device Bits Interrupt
+        const FIS_UNKNOWN             = 1 << 4;  // Unknown FIS Interrupt
+        const DESC_PROCESSED          = 1 << 5;  // Descriptor Processed
+        const PORT_CONNECT_CHANGE     = 1 << 6;  // Port Connect Change Status
+        const DEV_MECH_PRESENT        = 1 << 7;  // Device Mechanical Presence Status
         const PHY_RDY_CHANGE          = 1 << 22; // PhyRdy Change Status
         const INCORRECT_PMUX          = 1 << 23; // Incorrect Port Multiplier Status
         const OVERFLOW                = 1 << 24; // Overflow Status
@@ -240,11 +240,11 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaPortCmd: u32 {
-        const START                         = 1 << 0; // Start
-        const SPIN_UP                       = 1 << 1; // Spin-Up Device
-        const POWER_ON                      = 1 << 2; // Power On Device
-        const CMDLIST_OVERRIDE              = 1 << 3; // Command List Override
-        const RECEIVE_ENABLE                = 1 << 4; // FIS Receive Enable
+        const START                         = 1 << 0;  // Start
+        const SPIN_UP                       = 1 << 1;  // Spin-Up Device
+        const POWER_ON                      = 1 << 2;  // Power On Device
+        const CMDLIST_OVERRIDE              = 1 << 3;  // Command List Override
+        const RECEIVE_ENABLE                = 1 << 4;  // FIS Receive Enable
         const MECH_PRESENCE_SWITCH_STATE    = 1 << 13; // Mechanical Presence Switch State
         const FIS_RUNNING                   = 1 << 14; // FIS Receive Running
         const CMDLIST_RUNNING               = 1 << 15; // Command List Running
@@ -266,11 +266,11 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
     struct HbaCmdHeaderFlags: u16 {
-        const ATAPI        = 1 << 5; // ATAPI
-        const WRITE        = 1 << 6; // Write
-        const PREFETCHABLE = 1 << 7; // Prefetchable
-        const RESET        = 1 << 8; // Reset
-        const BIST         = 1 << 9; // Bist
+        const ATAPI        = 1 << 5;  // ATAPI
+        const WRITE        = 1 << 6;  // Write
+        const PREFETCHABLE = 1 << 7;  // Prefetchable
+        const RESET        = 1 << 8;  // Reset
+        const BIST         = 1 << 9;  // Bist
         const CLEAR_BUSY   = 1 << 10; // Clear Busy upon R_OK
     }
 }
@@ -352,7 +352,7 @@ impl DmaRequest {
         self.sector
     }
 
-    /// Copys the data from the DMA buffer into the given buffer.
+    /// Copies the data from the DMA buffer into the given buffer.
     pub fn copy_into(&self, into: &mut [u8]) {
         let mut offset = 0x00; // Keep track of the offset
         let mut remaning = into.len(); // Keep track of the remaining data
