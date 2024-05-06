@@ -145,7 +145,7 @@ bitflags::bitflags! {
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
-    struct HbaBohc: u32 {
+    struct HbaBiosOSHandoff: u32 {
         const SEMA_BIOS_OWNED             =  1 << 0; // BIOS Owned Semaphore
         const SEMA_OS_OWNED               =  1 << 1; // OS Owned Semaphore
         const SMI_OWNERSHIP_CHANGE_ENABLE =  1 << 2; // SMI on OS Ownership Change Enable
@@ -188,7 +188,7 @@ bitflags::bitflags! {
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
-    pub struct HbaPortIS: u32 {
+    pub struct HbaPortInterruptStatus: u32 {
         const REG_FIS_D2H             = 1 << 0; // Device to Host Register FIS Interrupt
         const PORT_IO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
         const DIRECT_MEM_ACCESS_SETUP = 1 << 2; // DMA Setup FIS Interrupt
@@ -209,14 +209,14 @@ bitflags::bitflags! {
     }
 }
 
-const INTERRUPT_STATUS_ERROR: u64 = HbaPortIS::HOST_BUS_DATA_ERR.bits() as u64
-    | HbaPortIS::HOST_BUS_FATAL_ERR.bits() as u64
-    | HbaPortIS::TASK_FILE_ERR.bits() as u64
-    | HbaPortIS::COLD_PORT_DETECT.bits() as u64;
+const INTERRUPT_STATUS_ERROR: u64 = HbaPortInterruptStatus::HOST_BUS_DATA_ERR.bits() as u64
+    | HbaPortInterruptStatus::HOST_BUS_FATAL_ERR.bits() as u64
+    | HbaPortInterruptStatus::TASK_FILE_ERR.bits() as u64
+    | HbaPortInterruptStatus::COLD_PORT_DETECT.bits() as u64;
 
 bitflags::bitflags! {
     #[derive(Clone, Copy)]
-    struct HbaPortIE: u32 {
+    struct HbaPortInterruptEnable: u32 {
         const REG_FIS_D2H             = 1 << 0; // Device to Host Register FIS Interrupt
         const PORT_IO_SETUP           = 1 << 1; // PIO Setup FIS Interrupt
         const DIRECT_MEM_ACCESS_SETUP = 1 << 2; // DMA Setup FIS Interrupt
@@ -469,13 +469,13 @@ pub(crate) struct HbaMemory {
     enclosure_management_location: VolatileCell<u32>,
     enclosure_management_control: VolatileCell<HbaEnclosureCtrl>,
     host_capabilities_extended: VolatileCell<HbaCapabilities2>,
-    bios_handoff_ctrl_sts: VolatileCell<HbaBohc>,
+    bios_handoff_ctrl_sts: VolatileCell<HbaBiosOSHandoff>,
     _reserved: [u8; 0xa0 - 0x2c],
     vendor: [u8; 0x100 - 0xa0],
 }
 
 #[repr(C)]
-struct FisRegH2D {
+struct FisRegHostToDevice {
     fis_type: VolatileCell<FisType>,
     flags: VolatileCell<u8>,
     command: VolatileCell<AtaCommand>,
@@ -500,7 +500,7 @@ struct FisRegH2D {
 
 #[repr(C)]
 #[allow(dead_code)] //future-proof
-struct FisRegD2H {
+struct FisRegDeviceToHost {
     fis_type: VolatileCell<FisType>,
     pmux: VolatileCell<u8>,
     pub status: VolatileCell<u8>,
@@ -518,7 +518,7 @@ struct FisRegD2H {
     pub _rsvd1: [VolatileCell<u8>; 6],
 }
 
-impl FisRegH2D {
+impl FisRegHostToDevice {
     fn set_lba(&mut self, lba: usize) {
         debug_assert!(lba < 1 << 48, "LBA is limited to 48 bits");
 
@@ -548,8 +548,8 @@ struct HbaCmdTbl {
 }
 
 impl HbaCmdTbl {
-    fn cfis_as_h2d_mut(&mut self) -> &mut FisRegH2D {
-        unsafe { &mut *(self.cmd_fis.as_mut_ptr() as *mut FisRegH2D) }
+    fn cfis_as_h2d_mut(&mut self) -> &mut FisRegHostToDevice {
+        unsafe { &mut *(self.cmd_fis.as_mut_ptr() as *mut FisRegHostToDevice) }
     }
 
     fn prdt_entry_mut(&mut self, i: usize) -> &mut HbaPrdtEntry {
@@ -647,8 +647,8 @@ impl HbaSataStatus {
 pub(crate) struct HbaPort {
     cmd_list_base: VolatileCell<PhysAddr>,
     fis_base: VolatileCell<PhysAddr>,
-    pub(crate) interrupt_status: VolatileCell<HbaPortIS>,
-    interrupt_enable: VolatileCell<HbaPortIE>,
+    pub(crate) interrupt_status: VolatileCell<HbaPortInterruptStatus>,
+    interrupt_enable: VolatileCell<HbaPortInterruptEnable>,
     command: VolatileCell<HbaPortCmd>,
     _reserved: u32,
     task_file_data: VolatileCell<u32>,
@@ -795,7 +795,7 @@ impl HbaPort {
         self.interrupt_status.set(is);
 
         // Enable interrupts
-        self.interrupt_enable.set(HbaPortIE::all());
+        self.interrupt_enable.set(HbaPortInterruptEnable::all());
 
         // Disable power management (for now)
         let sctl = self.sata_ctrl.get();
@@ -930,7 +930,7 @@ impl HbaPort {
         }
 
         flags.insert(HbaCmdHeaderFlags::PREFETCHABLE | HbaCmdHeaderFlags::CLEAR_BUSY);
-        flags.set_command_fis_size(core::mem::size_of::<FisRegH2D>() / 4);
+        flags.set_command_fis_size(core::mem::size_of::<FisRegHostToDevice>() / 4);
 
         header.flags.set(flags); // Update command header flags.
 
@@ -987,7 +987,7 @@ impl HbaPort {
             if self
                 .interrupt_status
                 .get()
-                .contains(HbaPortIS::TASK_FILE_ERR)
+                .contains(HbaPortInterruptStatus::TASK_FILE_ERR)
             {
                 warn!("AHCI: disk error (serr={:#x})", self.sata_error.get());
                 break;
@@ -1177,7 +1177,7 @@ impl AhciProtected {
 
         // Take back control from the firmware
         hba.bios_handoff_ctrl_sts
-            .set(HbaBohc::OS_OWNERSHIP_CHANGE | HbaBohc::SEMA_OS_OWNED);
+            .set(HbaBiosOSHandoff::OS_OWNERSHIP_CHANGE | HbaBiosOSHandoff::SEMA_OS_OWNED);
 
         // Enable interrupts
         let current_flags = hba.global_host_control.get();

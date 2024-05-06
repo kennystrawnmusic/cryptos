@@ -21,7 +21,7 @@ use x86_64::{
 };
 
 use crate::{
-    ahci::{get_ahci, get_hba, HbaPortIS},
+    ahci::{get_ahci, get_hba, HbaPortInterruptStatus},
     apic_impl::{get_active_lapic, get_lapic_ids},
     map_page,
     process::{signal::Signal, PTABLE, PTABLE_IDX},
@@ -500,13 +500,13 @@ pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
         let port_status = port.inner.write().hba_port().interrupt_status.get();
 
         // Check error bit and debug if set
-        if port_status.contains(HbaPortIS::HOST_BUS_DATA_ERR) {
+        if port_status.contains(HbaPortInterruptStatus::HOST_BUS_DATA_ERR) {
             warn!("AHCI: Host bus data error");
-        } else if port_status.contains(HbaPortIS::HOST_BUS_FATAL_ERR) {
+        } else if port_status.contains(HbaPortInterruptStatus::HOST_BUS_FATAL_ERR) {
             warn!("AHCI: Host bus file error");
-        } else if port_status.contains(HbaPortIS::TASK_FILE_ERR) {
+        } else if port_status.contains(HbaPortInterruptStatus::TASK_FILE_ERR) {
             warn!("AHCI: Task file error");
-        } else if port_status.contains(HbaPortIS::COLD_PORT_DETECT) {
+        } else if port_status.contains(HbaPortInterruptStatus::COLD_PORT_DETECT) {
             warn!("AHCI: Cold port detected");
         }
 
