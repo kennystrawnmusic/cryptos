@@ -36,7 +36,7 @@ impl BtrfsDriver {
         // Use already-existing AHCI driver to find superblock location at offset 0x10000
         let buffer = unsafe { core::slice::from_raw_parts_mut(Box::into_raw(Box::new(0u8)), 4096) };
 
-        if let Some(_sts) = get_ahci()
+        if let Some(_) = get_ahci()
             .write()
             .port_mut(disk)?
             .read(PRIMARY_SUPERBLOCK_ADDR as usize, buffer)
