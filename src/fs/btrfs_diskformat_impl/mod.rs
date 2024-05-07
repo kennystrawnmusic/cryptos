@@ -78,4 +78,16 @@ impl BtrfsDriver {
             Err("Failed to read superblock")
         }
     }
+
+    // code won't be dead for long
+    #[allow(dead_code)]
+    pub fn find_superblock_on_nvme_disk(&self, _disk: usize) -> Result<DevItem, &'static str> {
+        todo!()
+    }
+
+    // code won't be dead for long
+    #[allow(dead_code)]
+    pub fn find_superblock_on_usb_stick(&self, _disk: usize) -> Result<DevItem, &'static str> {
+        todo!()
+    }
 }
