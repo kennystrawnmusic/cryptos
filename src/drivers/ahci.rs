@@ -1,37 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Port of https://github.com/Andy-Python-Programmer/aero/raw/master/src/aero_kernel/src/drivers/block/ahci.rs
 
-#![allow(unused)]
-
 use core::sync::atomic::Ordering;
 
-use acpi::AcpiTables;
 use alloc::string::String;
-use bitflags::Flags;
 use conquer_once::spin::OnceCell;
-use embedded_graphics::primitives::Ellipse;
-use pcics::header::{HeaderType, InterruptPin};
+use pcics::header::HeaderType;
 use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-use x86_64::{
-    instructions::interrupts::without_interrupts, registers::control::Cr3,
-    structures::paging::FrameAllocator,
-};
+use x86_64::{instructions::interrupts::without_interrupts, structures::paging::FrameAllocator};
 
-use crate::{
-    acpi_impl::{aml_route, KernelAcpi},
-    arch::x86_64::interrupts::{self, IDT},
-    cralloc::frames::safe_active_pml4,
-    get_phys_offset, map_page, MAPPER,
-};
-
-use crate::common::sync::MutexGuard;
+use crate::{get_phys_offset, map_page};
 
 use {
     crate::{
-        common::{
-            sync::Mutex,
-            volatile_cell::{CeilDiv, VolatileCell},
-        },
+        common::volatile_cell::{CeilDiv, VolatileCell},
         pci_impl::*,
         FRAME_ALLOCATOR,
     },
@@ -40,10 +22,7 @@ use {
     log::*,
     spin::Once,
     x86_64::{
-        structures::paging::{
-            mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size2MiB,
-            Size4KiB,
-        },
+        structures::paging::{Page, PageTableFlags, Size2MiB, Size4KiB},
         PhysAddr, VirtAddr,
     },
 };
@@ -77,7 +56,7 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
         .expect("Out of memory");
 
     let phys = frame.start_address().as_u64();
-    let virt = unsafe { phys + get_phys_offset() };
+    let virt = phys + get_phys_offset();
 
     if let BuddyOrdering::Size4KiB = copied_order {
         map_page!(
@@ -289,6 +268,7 @@ impl HbaCmdHeaderFlags {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)] //future-proof
 enum DmaCommand {
     Read,
     Identify,
@@ -752,8 +732,8 @@ impl HbaPort {
 
     /// This function is responsible for allocating space for command lists,
     /// tables, etc.. for a given this instance of HBA port.
-    fn start(&mut self) {
-        self.stop_cmd(); // Stop the command engine before starting the port
+    fn start(&mut self) -> syscall::Result<()> {
+        self.stop_cmd()?; // Stop the command engine before starting the port
 
         /*
          * size = sizeof(CTB) * 32 == 4KiB * 2 (so we need to allocate
@@ -810,6 +790,7 @@ impl HbaPort {
 
         // Start the command engine
         self.start_cmd();
+        Ok(())
     }
 
     fn start_cmd(&mut self) {
@@ -908,7 +889,7 @@ impl HbaPort {
                 debug!("AHCI: enabling port {}", port);
             }
 
-            self.start();
+            self.start().expect("AHCI: failed to start port");
             true
         } else {
             // Else we can't enable the port.
@@ -945,7 +926,7 @@ impl HbaPort {
             VirtAddr::new(get_phys_offset() + header.cmd_table_base.get().as_u64());
         let command_table = unsafe { &mut *(command_table_addr).as_mut_ptr::<HbaCmdTbl>() };
 
-        for (pri, dma) in buffer.iter().enumerate().take(length) {
+        for (pri, _dma) in buffer.iter().enumerate().take(length) {
             let prdt = command_table.prdt_entry_mut(pri);
 
             prdt.data_base.set(buffer[pri].start);
@@ -1142,7 +1123,7 @@ impl AhciProtected {
         &'a mut self,
         port: usize,
     ) -> Result<&'a mut AhciPort, &'static str> {
-        let mut ret;
+        let ret;
         if port < 32 {
             if let Some(port) = self.ports.get_mut(port) {
                 if let Some(port_unwrapped) = port {
@@ -1163,11 +1144,12 @@ impl AhciProtected {
         ret
     }
 
+    #[allow(dead_code)] // future-proof
     pub(crate) fn wait_until_port_available<'a>(
         &'a mut self,
         port: usize,
     ) -> Result<&'a mut AhciPort, &'static str> {
-        let mut ret = self.port_mut(port);
+        let ret = self.port_mut(port);
 
         while ret.as_ref().is_err_and(|e| e == &"AHCI: port still in use") {
             core::hint::spin_loop();
