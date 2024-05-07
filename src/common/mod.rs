@@ -267,9 +267,13 @@ impl log::Log for Printk {
     fn flush(&self) {}
 
     fn log(&self, record: &log::Record) {
+        while self.is_locked() {
+            core::hint::spin_loop();
+        }
+
         if self.enabled(record.metadata()) {
             let mut fb = self.0.write();
-            writeln!(fb, "{:5}: {}", record.level(), record.args()).unwrap();
+            writeln!(fb, "{}", record.args()).unwrap();
         }
     }
 }
