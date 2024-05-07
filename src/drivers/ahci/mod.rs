@@ -26,15 +26,19 @@ use crate::{
 
 use crate::common::sync::MutexGuard;
 
-pub mod util;
-
 use {
-    crate::{common::sync::Mutex, pci_impl::*, FRAME_ALLOCATOR},
+    crate::{
+        common::{
+            sync::Mutex,
+            volatile_cell::{CeilDiv, VolatileCell},
+        },
+        pci_impl::*,
+        FRAME_ALLOCATOR,
+    },
     alloc::{sync::Arc, vec::Vec},
     bit_field::BitField,
     log::*,
     spin::Once,
-    util::{CeilDiv, VolatileCell},
     x86_64::{
         structures::paging::{
             mapper::MapToError, Mapper, OffsetPageTable, Page, PageTableFlags, PhysFrame, Size2MiB,

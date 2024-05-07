@@ -30,7 +30,7 @@ use crate::{
 };
 
 use {
-    crate::{ahci::util::VolatileCell, map_page},
+    crate::{common::volatile_cell::VolatileCell, map_page},
     alloc::{alloc::Global, sync::Arc, vec::Vec},
     bit_field::BitField,
     bitflags::bitflags,
