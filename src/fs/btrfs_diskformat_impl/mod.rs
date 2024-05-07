@@ -37,18 +37,39 @@ impl BtrfsDriver {
                 Ok(DevItem {
                     devid: U64::new(self.dev_id.fetch_add(1, Ordering::SeqCst)),
                     total_bytes: U64::new(port.identify().unwrap_or_else(|| 0u64)),
-                    bytes_used: U64::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    io_align: U32::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    io_width: U32::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    bytes_used: U64::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    io_align: U32::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    io_width: U32::new(0),
                     sector_size: U32::new((port.identify().unwrap_or_else(|| 0u64) % 512) as u32),
-                    r#type: U64::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    generation: U64::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    start_offset: U64::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    dev_group: U32::new(0), // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    seek_speed: 0, // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    bandwith: 0,   // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    uuid: [0; 16], // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
-                    fsid: [0; 16], // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    r#type: U64::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    generation: U64::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    start_offset: U64::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    dev_group: U32::new(0),
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    seek_speed: 0,
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    bandwith: 0,
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    uuid: [0; 16],
+
+                    // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
+                    fsid: [0; 16],
                 })
             } else {
                 Err("Failed to read superblock")
