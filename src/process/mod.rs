@@ -183,7 +183,7 @@ impl<'a> Process<'a> {
             match self.state {
                 State::Runnable => {
                     // Run the main loop
-                    let my_type_id = self.main_sig.clone();
+                    let my_type_id = self.main_sig;
                     let ptr_to_main = unsafe { (*me).main as *mut MainLoop };
 
                     if my_type_id == TypeId::of::<fn() -> ()>() {

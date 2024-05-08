@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // TODO: rewrite this entire driver because all the enums I'm defining are causing problems
-use alloc::{sync::Arc, vec::Vec};
+use alloc::sync::Arc;
 use bit_field::BitField;
 use conquer_once::spin::OnceCell;
 use core::{
@@ -461,74 +461,23 @@ impl<'a> CommandKind<'a> {
 
     pub fn cycle_bit(&self) -> bool {
         match self {
-            CommandKind::AddressDevice(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::ConfigureEndpoint(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::DisableSlot(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::EnableSlot(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::EvaluateContext(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::ForceEvent(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::ForceHeader(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::GetExtendedProperty(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::GetPortBandwidth(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::NegotiateBandwidth(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::CmdNoop(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::ResetDevice(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::ResetEndpoint(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::SetExtendedProperty(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::SetLatencyToleranceValue(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::SetTrDequeuePointer(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
-            CommandKind::StopEndpoint(cmd) => {
-                let cycle = cmd.cycle_bit();
-                cycle
-            }
+            CommandKind::AddressDevice(cmd) => cmd.cycle_bit(),
+            CommandKind::ConfigureEndpoint(cmd) => cmd.cycle_bit(),
+            CommandKind::DisableSlot(cmd) => cmd.cycle_bit(),
+            CommandKind::EnableSlot(cmd) => cmd.cycle_bit(),
+            CommandKind::EvaluateContext(cmd) => cmd.cycle_bit(),
+            CommandKind::ForceEvent(cmd) => cmd.cycle_bit(),
+            CommandKind::ForceHeader(cmd) => cmd.cycle_bit(),
+            CommandKind::GetExtendedProperty(cmd) => cmd.cycle_bit(),
+            CommandKind::GetPortBandwidth(cmd) => cmd.cycle_bit(),
+            CommandKind::NegotiateBandwidth(cmd) => cmd.cycle_bit(),
+            CommandKind::CmdNoop(cmd) => cmd.cycle_bit(),
+            CommandKind::ResetDevice(cmd) => cmd.cycle_bit(),
+            CommandKind::ResetEndpoint(cmd) => cmd.cycle_bit(),
+            CommandKind::SetExtendedProperty(cmd) => cmd.cycle_bit(),
+            CommandKind::SetLatencyToleranceValue(cmd) => cmd.cycle_bit(),
+            CommandKind::SetTrDequeuePointer(cmd) => cmd.cycle_bit(),
+            CommandKind::StopEndpoint(cmd) => cmd.cycle_bit(),
         }
     }
 }
@@ -560,38 +509,14 @@ impl<'a> EventKind<'a> {
 
     pub fn cycle_bit(&self) -> bool {
         match self {
-            EventKind::BandwidthRequest(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::CommandCompletion(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::DeviceNotification(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::Doorbell(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::HostController(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::MfindexWrap(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::PortStatusChange(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
-            EventKind::TransferEvent(evt) => {
-                let cycle = evt.cycle_bit();
-                cycle
-            }
+            EventKind::BandwidthRequest(evt) => evt.cycle_bit(),
+            EventKind::CommandCompletion(evt) => evt.cycle_bit(),
+            EventKind::DeviceNotification(evt) => evt.cycle_bit(),
+            EventKind::Doorbell(evt) => evt.cycle_bit(),
+            EventKind::HostController(evt) => evt.cycle_bit(),
+            EventKind::MfindexWrap(evt) => evt.cycle_bit(),
+            EventKind::PortStatusChange(evt) => evt.cycle_bit(),
+            EventKind::TransferEvent(evt) => evt.cycle_bit(),
         }
     }
 }
@@ -622,34 +547,13 @@ impl<'a> TransferKind<'a> {
 
     pub fn cycle_bit(&self) -> bool {
         match self {
-            TransferKind::DataStage(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::EventData(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::Isoch(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::TransferNoop(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::Normal(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::SetupStage(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
-            TransferKind::StatusStage(tr) => {
-                let cycle = tr.cycle_bit();
-                cycle
-            }
+            TransferKind::DataStage(tr) => tr.cycle_bit(),
+            TransferKind::EventData(tr) => tr.cycle_bit(),
+            TransferKind::Isoch(tr) => tr.cycle_bit(),
+            TransferKind::TransferNoop(tr) => tr.cycle_bit(),
+            TransferKind::Normal(tr) => tr.cycle_bit(),
+            TransferKind::SetupStage(tr) => tr.cycle_bit(),
+            TransferKind::StatusStage(tr) => tr.cycle_bit(),
         }
     }
 }
@@ -1336,13 +1240,7 @@ impl XhciImpl {
         let mut event_ring = self.event_ring_dequeue.iter().cloned().enumerate();
 
         event_ring
-            .find(|(_, evt)| {
-                if let EventKind::CommandCompletion(_) = evt {
-                    true
-                } else {
-                    false
-                }
-            })
+            .find(|(_, evt)| matches!(evt, EventKind::CommandCompletion(_)))
             .unwrap_or_else(|| {
                 let me = unsafe { &mut *me };
 
@@ -1355,8 +1253,7 @@ impl XhciImpl {
                         new_inner.set_cycle_bit();
                     }
 
-                    let new_evt = EventKind::from(new_inner as *mut _);
-                    new_evt
+                    EventKind::from(new_inner as *mut _)
                 };
 
                 me.event_ring_dequeue[EVENT_RING_IDX.load(Ordering::SeqCst)] = new_evt;
@@ -1476,8 +1373,8 @@ impl XhciImpl {
 
         if let EventKind::BandwidthRequest(br) = evt {
             if let Ok(cc) = br.completion_code() {
-                while cc == CompletionCode::Invalid {
-                    core::hint::spin_loop();
+                if cc == CompletionCode::Invalid {
+                    log::warn!("Invalid completion code received");
                 }
             }
             log::info!("Bandwidth request: {:#?}", br);
@@ -1500,16 +1397,14 @@ impl XhciImpl {
 
         if let Some(CompletionCode::Success) = evt_status {
             log::info!("Slot {} successfully enabled", slot);
+        } else if let Some(evt_status) = evt_status {
+            log::warn!(
+                "Error attempting to enable slot {}: {:#?}",
+                slot,
+                evt_status
+            );
         } else {
-            if let Some(evt_status) = evt_status {
-                log::warn!(
-                    "Error attempting to enable slot {}: {:#?}",
-                    slot,
-                    evt_status
-                );
-            } else {
-                log::warn!("Incorrect event type received");
-            }
+            log::warn!("Incorrect event type received");
         }
     }
 
@@ -1608,8 +1503,7 @@ impl XhciImpl {
             }
         });
 
-        let mut out = Vec::new();
-        out.push(evt);
+        let out = alloc::vec![evt];
         out.leak::<'static>()
     }
 

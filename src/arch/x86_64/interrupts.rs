@@ -817,7 +817,7 @@ pub(crate) unsafe fn enable_interrupts() {
 pub fn irqalloc() -> u8 {
     for i in 32..=255 {
         if IDT.read()[i] == Entry::missing() {
-            return i as u8;
+            return i;
         }
     }
     // we've exhausted all entries at this point
@@ -826,6 +826,6 @@ pub fn irqalloc() -> u8 {
 
 /// Indexes a new handler at a new IDT entry created by `irqalloc()` fn
 pub fn register_handler(irq: u8, handler: extern "x86-interrupt" fn(InterruptStackFrame)) {
-    IDT.write()[irq as u8].set_handler_fn(handler);
+    IDT.write()[irq].set_handler_fn(handler);
     init();
 }

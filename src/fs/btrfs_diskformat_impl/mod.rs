@@ -33,10 +33,13 @@ impl BtrfsDriver {
         let buffer = unsafe { core::slice::from_raw_parts_mut(Box::into_raw(Box::new(0u8)), 4096) };
 
         if let Ok(port) = get_ahci().write().port_mut(disk) {
-            if let Some(_) = port.read(PRIMARY_SUPERBLOCK_ADDR as usize, buffer) {
+            if port
+                .read(PRIMARY_SUPERBLOCK_ADDR as usize, buffer)
+                .is_some()
+            {
                 Ok(DevItem {
                     devid: U64::new(self.dev_id.fetch_add(1, Ordering::SeqCst)),
-                    total_bytes: U64::new(port.identify().unwrap_or_else(|| 0u64)),
+                    total_bytes: U64::new(port.identify().unwrap_or(0u64)),
                     // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
                     bytes_used: U64::new(0),
 
@@ -45,7 +48,7 @@ impl BtrfsDriver {
 
                     // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
                     io_width: U32::new(0),
-                    sector_size: U32::new((port.identify().unwrap_or_else(|| 0u64) % 512) as u32),
+                    sector_size: U32::new((port.identify().unwrap_or(0u64) % 512) as u32),
 
                     // TODO: use AHCI, XHCI, and planned NVMe drivers to detect this
                     r#type: U64::new(0),

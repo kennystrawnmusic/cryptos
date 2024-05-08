@@ -673,25 +673,25 @@ impl HbaPort {
         let mut firmware_info = String::new();
 
         if self.stop_cmd().is_ok() {
-            for word in 10..20 {
-                let buffer_idx = buffer[word];
-                let buffer_char = (buffer_idx as u8) as char;
+            for word in buffer.iter().take(20).skip(10) {
+                let buffer_idx = buffer[*word as usize];
+                let buffer_char = buffer_idx as char;
                 if buffer_char != '\0' {
                     serial_info.push(buffer_char);
                 }
             }
 
-            for word in 27..47 {
-                let buffer_idx = buffer[word];
-                let buffer_char = (buffer_idx as u8) as char;
+            for word in buffer.iter().take(47).skip(27) {
+                let buffer_idx = buffer[*word as usize];
+                let buffer_char = buffer_idx as char;
                 if buffer_char != '\0' {
                     model_info.push(buffer_char);
                 }
             }
 
-            for word in 23..26 {
-                let buffer_idx = buffer[word];
-                let buffer_char = (buffer_idx as u8) as char;
+            for word in buffer.iter().take(26).skip(23) {
+                let buffer_idx = buffer[*word as usize];
+                let buffer_char = buffer_idx as char;
                 if buffer_char != '\0' {
                     firmware_info.push(buffer_char);
                 }
@@ -1119,19 +1119,12 @@ impl AhciProtected {
         unsafe { &mut *(self.hba.as_u64() as *mut HbaMemory) }
     }
 
-    pub(crate) fn port_mut<'a>(
-        &'a mut self,
-        port: usize,
-    ) -> Result<&'a mut AhciPort, &'static str> {
+    pub(crate) fn port_mut(&mut self, port: usize) -> Result<&mut AhciPort, &'static str> {
         let ret;
         if port < 32 {
-            if let Some(port) = self.ports.get_mut(port) {
-                if let Some(port_unwrapped) = port {
-                    if let Some(port) = Arc::get_mut(port_unwrapped) {
-                        ret = Ok(port);
-                    } else {
-                        ret = Err("AHCI: port still in use")
-                    }
+            if let Ok(port) = self.ports.get_mut(port).ok_or("AHCI: port not found") {
+                if let Ok(port) = port.as_mut().ok_or("AHCI: port still in use") {
+                    ret = Ok(Arc::get_mut(port).unwrap());
                 } else {
                     ret = Err("AHCI: port not found")
                 }
@@ -1145,10 +1138,10 @@ impl AhciProtected {
     }
 
     #[allow(dead_code)] // future-proof
-    pub(crate) fn wait_until_port_available<'a>(
-        &'a mut self,
+    pub(crate) fn wait_until_port_available(
+        &mut self,
         port: usize,
-    ) -> Result<&'a mut AhciPort, &'static str> {
+    ) -> Result<&mut AhciPort, &'static str> {
         let ret = self.port_mut(port);
 
         while ret.as_ref().is_err_and(|e| e == &"AHCI: port still in use") {
@@ -1221,7 +1214,7 @@ impl AhciProtected {
             ABAR.get_or_init(move || abar);
 
             let abar_test_page =
-                Page::<Size4KiB>::containing_address(VirtAddr::new(ABAR.get().unwrap().clone()));
+                Page::<Size4KiB>::containing_address(VirtAddr::new(*ABAR.get().unwrap()));
             let abar_virt = abar_test_page.start_address().as_u64() + get_phys_offset();
 
             map_page!(

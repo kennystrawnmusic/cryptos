@@ -1,5 +1,7 @@
 // TODO: https://wiki.osdev.org/Porting_Rust_standard_library
 
+#![allow(clippy::legacy_numeric_constants)]
+
 extern crate alloc as inner_alloc;
 
 pub mod alloc {
