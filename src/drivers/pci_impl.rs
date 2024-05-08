@@ -1019,9 +1019,12 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
 
                     let bar_offset = table.offset as u64;
 
+                    let bir_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(bir));
+                    let bir_virt = bir_test_page.start_address().as_u64() + get_phys_offset();
+
                     map_page!(
                         bir,
-                        bir + bar_offset,
+                        bir_virt,
                         Size4KiB,
                         PageTableFlags::PRESENT
                             | PageTableFlags::WRITABLE
