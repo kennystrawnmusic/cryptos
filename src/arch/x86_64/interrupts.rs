@@ -321,6 +321,8 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
             Efer::write(flags);
             frame.iretq();
         }
+
+        // TODO: Re-enable this when it comes time to set up user mode
     } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl() {
         // kernel mode
         panic!(
