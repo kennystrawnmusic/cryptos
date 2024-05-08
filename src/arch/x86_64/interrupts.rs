@@ -309,6 +309,18 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
 
             unsafe { frame.iretq() }
         };
+    } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl()
+        && code.contains(PageFaultErrorCode::INSTRUCTION_FETCH)
+        && code.contains(PageFaultErrorCode::PROTECTION_VIOLATION)
+    {
+        // Use EFER to check if XD bit is enabled, then clear it and try again
+        let mut flags = Efer::read();
+        flags = flags ^ EferFlags::NO_EXECUTE_ENABLE;
+
+        unsafe {
+            Efer::write(flags);
+            frame.iretq();
+        }
     } else if let PrivilegeLevel::Ring0 = CS::get_reg().rpl() {
         // kernel mode
         panic!(
