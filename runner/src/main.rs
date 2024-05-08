@@ -586,13 +586,13 @@ fn debug_qemu(kdir: &Path, out_path: &Path) {
     uefi_cmd
         .arg("-drive")
         .arg(format!(
-            "id=disk,format=raw,file={},if=none",
+            "id=sda,format=raw,file={},if=none",
             &out_path.display()
         ))
         .arg("-device")
-        .arg("ahci,id=ahci")
+        .arg("ahci,id=sda")
         .arg("-device")
-        .arg("ide-hd,drive=disk,bus=ahci.0")
+        .arg("ide-hd,drive=sda,bus=ahci.0")
         .arg("-device")
         .arg("qemu-xhci")
         .arg("-drive")

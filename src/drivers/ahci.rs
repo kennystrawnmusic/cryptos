@@ -27,7 +27,7 @@ use {
     },
 };
 
-static DRIVER: Once<Arc<AhciDriver>> = Once::new();
+pub(crate) static DRIVER: Once<Arc<AhciDriver>> = Once::new();
 static BUDDY_SIZE: [u64; 3] = [
     Page::<Size4KiB>::SIZE,
     Page::<Size4KiB>::SIZE * 4,
@@ -170,7 +170,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     pub struct HbaPortInterruptStatus: u32 {
         const REG_FIS_D2H             = 1 << 0;  // Device to Host Register FIS Interrupt
         const PORT_IO_SETUP           = 1 << 1;  // PIO Setup FIS Interrupt
@@ -886,7 +886,7 @@ impl HbaPort {
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
             if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
-                debug!("AHCI: enabling port {}", port);
+                info!("AHCI: enabling port {}", port);
             }
 
             self.start().expect("AHCI: failed to start port");
@@ -1174,7 +1174,7 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        debug!(
+        info!(
             "AHCI: controller version {}.{}",
             major_version, minor_version
         );
@@ -1189,7 +1189,7 @@ impl AhciProtected {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
 
-                    debug!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
+                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
 
                     let port = Arc::new(AhciPort::new(address));
 
@@ -1217,9 +1217,11 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            debug!("ABAR: {:#x}", &abar);
+            info!("ABAR: {:#x}", &abar);
+            ABAR.get_or_init(move || abar);
 
-            let abar_test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(abar));
+            let abar_test_page =
+                Page::<Size4KiB>::containing_address(VirtAddr::new(ABAR.get().unwrap().clone()));
             let abar_virt = abar_test_page.start_address().as_u64() + get_phys_offset();
 
             map_page!(
@@ -1247,7 +1249,7 @@ impl AhciProtected {
             for port in self.ports.iter().filter(|p| p.is_some()) {
                 if let Some(port) = port {
                     let buffer = &mut [0u8; 512];
-                    let sector = 0;
+                    let sector = 16;
 
                     if port.read(sector, buffer).is_some() {
                         debug!("Read sector {:?}: {:?}", sector, buffer);
@@ -1287,7 +1289,7 @@ impl FOSSPciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header) {
         // keeps restarting endlessly if I don't put this check in here
         if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
-            debug!("AHCI: Initializing");
+            info!("AHCI: Initializing");
             get_ahci().write().start_driver(header);
         }
     }
@@ -1299,9 +1301,7 @@ pub(crate) fn get_hba<'a>() -> &'a mut HbaMemory {
 
 /// Returns a reference-counting pointer to the AHCI driver.
 pub(crate) fn get_ahci<'a>() -> &'a Arc<AhciDriver> {
-    DRIVER
-        .get()
-        .expect("Attempted to get the AHCI driver before it was initialized")
+    DRIVER.get().expect("AHCI: driver not initialized")
 }
 
 pub(crate) fn ahci_init() {

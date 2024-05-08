@@ -10,6 +10,7 @@ use core::cell::UnsafeCell;
 /// [`Cell`]: https://doc.rust-lang.org/std/cell/struct.Cell.html
 /// [volatile]: https://doc.rust-lang.org/std/ptr/fn.read_volatile.html
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct VolatileCell<T>(UnsafeCell<T>);
 
 impl<T: Copy> VolatileCell<T> {

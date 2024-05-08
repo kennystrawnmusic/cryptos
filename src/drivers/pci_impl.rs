@@ -8,8 +8,8 @@ use core::{ops::Range, sync::atomic::AtomicUsize};
 
 use acpi::AcpiTables;
 use pcics::{
-    capabilities::{msi_x::Bir, CapabilityKind},
-    header::HeaderType,
+    capabilities::CapabilityKind,
+    header::{BaseAddressType, HeaderType},
     Capabilities, Header, DDR_OFFSET, ECS_OFFSET,
 };
 use x86_64::{
@@ -377,6 +377,7 @@ pub unsafe fn inw(port: u16) -> u16 {
 
 /// Struct representing a single MSI-X message
 #[repr(C)]
+#[derive(Debug)]
 pub struct Message {
     addr_low: VolatileCell<u32>,
     addr_high: VolatileCell<u32>,
@@ -948,15 +949,70 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     let table_len = msg_control.table_size as u64;
 
                     let bir = if let HeaderType::Normal(ref header) = header.header_type {
-                        match msix.table.bir {
-                            Bir::Bar10h => header.base_addresses.orig()[0] as u64,
-                            Bir::Bar14h => header.base_addresses.orig()[1] as u64,
-                            Bir::Bar18h => header.base_addresses.orig()[2] as u64,
-                            Bir::Bar1Ch => header.base_addresses.orig()[3] as u64,
-                            Bir::Bar20h => header.base_addresses.orig()[4] as u64,
-                            Bir::Bar24h => header.base_addresses.orig()[5] as u64,
-                            Bir::Reserved(err) => panic!("Invalid BAR: {}", err),
+                        let mut ret = 0u64;
+                        for (i, address) in header.clone().base_addresses.enumerate() {
+                            match address.base_address_type {
+                                BaseAddressType::IoSpace { base_address } => {
+                                    info!("BAR {:#?}: I/O space {:#x?}", i, base_address);
+                                    ret = base_address as u64;
+                                }
+                                BaseAddressType::MemorySpace32 {
+                                    prefetchable,
+                                    base_address,
+                                } => {
+                                    info!(
+                                        r#"BAR {:#?}: Memory space 32: {:#x?}
+                                        Is prefetchable? {:#?}"#,
+                                        i, base_address, prefetchable
+                                    );
+                                    ret = base_address as u64;
+                                }
+                                BaseAddressType::MemorySpace64 {
+                                    prefetchable,
+                                    base_address,
+                                } => {
+                                    info!(
+                                        r#"BAR {:#?}: Memory space 64: {:#x?}
+                                        Is prefetchable? {:#?}"#,
+                                        i, base_address, prefetchable
+                                    );
+                                    ret = base_address;
+                                }
+                                BaseAddressType::MemorySpaceBelow1M {
+                                    prefetchable,
+                                    base_address,
+                                } => {
+                                    info!(
+                                        r#"BAR {:#?}: Memory space below 1M: {:#x?}
+                                        Is prefetchable? {:#?}"#,
+                                        i, base_address, prefetchable
+                                    );
+                                    ret = base_address as u64;
+                                }
+                                BaseAddressType::MemorySpaceReserved {
+                                    prefetchable,
+                                    base_address,
+                                } => {
+                                    warn!(
+                                        r#"BAR {:#?}: Memory space reserved: {:#x?}
+                                        Is prefetchable? {:#?}"#,
+                                        i, base_address, prefetchable
+                                    );
+                                    ret = base_address as u64;
+                                }
+                                BaseAddressType::MemorySpace64Broken { prefetchable } => {
+                                    warn!(
+                                        r#"BAR {:#?}: Memory space 64 broken
+                                        Is prefetchable? {:#x?}"#,
+                                        i, prefetchable
+                                    );
+                                    ret = 0u64;
+                                }
+                            }
+                            // double-space for readability
+                            info!("");
                         }
+                        ret
                     } else {
                         0
                     };
@@ -981,6 +1037,14 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     debug!("MSI-X: {:#?}", msix);
 
                     for entry in msg_table {
+                        info!(
+                            r#"New MSI-X message: addr_low={:#x?}; addr_high={:#x?}; data={:#x?}; mask={:#x?}"#,
+                            entry.addr_low.read_volatile(),
+                            entry.addr_high.read_volatile(),
+                            entry.data.read_volatile(),
+                            entry.mask.read_volatile()
+                        );
+
                         let irq = irqalloc();
                         entry.route_irq(irq, IrqMode::Fixed);
 

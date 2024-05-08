@@ -126,7 +126,7 @@ lazy_static! {
         idt[0x80].set_handler_fn(syscall);
         idt[0x82].set_handler_fn(pci);
         idt[0xff].set_handler_fn(spurious);
-        idt[151].set_handler_fn(ahci);
+        idt[151].set_handler_fn(pci);
         RwLock::new(idt)
     };
 }
@@ -482,22 +482,24 @@ pub extern "x86-interrupt" fn pin_intd(_frame: InterruptStackFrame) {
 }
 
 pub extern "x86-interrupt" fn pci(frame: InterruptStackFrame) {
-    info!("Received PCI interrupt: {:#?}", &frame);
+    debug!("Received PCI interrupt: {:#?}", &frame);
     unsafe { get_active_lapic().end_of_interrupt() };
 }
 
-pub extern "x86-interrupt" fn ahci(frame: InterruptStackFrame) {
-    info!("Received AHCI interrupt: {:#?}", &frame);
-
+pub extern "x86-interrupt" fn ahci(_: InterruptStackFrame) {
     // Source: https://wiki.osdev.org/AHCI#IRQ_handler
 
     // Read and write back global HBA interrupt status
     let status = get_hba().interrupt_status.get();
+    info!("AHCI: Global interrupt status: {:#?}", status);
+
     get_hba().interrupt_status.set(status);
 
     // Read and write back port interrupt status
     for port in get_ahci().write().ports.as_mut().iter_mut().flatten() {
         let port_status = port.inner.write().hba_port().interrupt_status.get();
+
+        info!("AHCI: Port interrupt status: {:#?}", port_status);
 
         // Check error bit and debug if set
         if port_status.contains(HbaPortInterruptStatus::HOST_BUS_DATA_ERR) {
