@@ -1003,7 +1003,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                                 BaseAddressType::MemorySpace64Broken { prefetchable } => {
                                     warn!(
                                         r#"BAR {:#?}: Memory space 64 broken
-                                        Is prefetchable? {:#x?}"#,
+                                        Is prefetchable? {:#?}"#,
                                         i, prefetchable
                                     );
                                     ret = 0u64;
