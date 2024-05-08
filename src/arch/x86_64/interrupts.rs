@@ -291,6 +291,11 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
     if code.is_empty() {
         // Create and map the nonexistent page and try again
         if let Ok(cr2) = Cr2::read() {
+            error!(
+                "Page fault: Attempt to access address {:#x} returned a {:#?} error",
+                cr2, code
+            );
+
             let virt = Page::<Size4KiB>::containing_address(cr2)
                 .start_address()
                 .as_u64();
