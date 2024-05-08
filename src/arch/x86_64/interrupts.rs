@@ -23,7 +23,7 @@ use x86_64::{
 use crate::{
     ahci::{get_ahci, get_hba, HbaPortInterruptStatus},
     apic_impl::{get_active_lapic, get_lapic_ids},
-    map_page,
+    get_phys_offset, map_page,
     process::{signal::Signal, PTABLE, PTABLE_IDX},
 };
 
@@ -293,7 +293,8 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
         if let Ok(cr2) = Cr2::read() {
             let virt = Page::<Size4KiB>::containing_address(cr2)
                 .start_address()
-                .as_u64();
+                .as_u64()
+                + get_phys_offset();
 
             let phys = cr2.as_u64();
 
