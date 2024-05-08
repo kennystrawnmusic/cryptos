@@ -709,7 +709,7 @@ impl HbaPort {
                 48u64
             };
 
-            info!(
+            debug!(
                 "AHCI Device Info: Serial: {}, Model: {}, Firmware: {}, LBA Size: {} bits",
                 serial_info, model_info, firmware_info, lba_bits
             );
@@ -886,7 +886,7 @@ impl HbaPort {
         // we can start the AHCI port.
         if let (HbaPortDd::PresentAndE, HbaPortIpm::Active) = (dd, ipm) {
             if PCI_DRIVER_COUNT.load(Ordering::SeqCst) == 1 {
-                info!("AHCI: enabling port {}", port);
+                debug!("AHCI: enabling port {}", port);
             }
 
             self.start().expect("AHCI: failed to start port");
@@ -1167,7 +1167,7 @@ impl AhciProtected {
         let major_version = version >> 16 & 0xffff;
         let minor_version = version & 0xffff;
 
-        info!(
+        debug!(
             "AHCI: controller version {}.{}",
             major_version, minor_version
         );
@@ -1182,7 +1182,7 @@ impl AhciProtected {
                     // Get the address of the HBA port.
                     let address = VirtAddr::new(port as *const _ as _);
 
-                    info!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
+                    debug!("AHCI: Port {:#?} address: {:#x}", i, address.as_u64());
 
                     let port = Arc::new(AhciPort::new(address));
 
@@ -1210,7 +1210,7 @@ impl AhciProtected {
         if let HeaderType::Normal(normal_header) = header.header_type.clone() {
             let abar = normal_header.base_addresses.orig()[5] as u64;
 
-            info!("ABAR: {:#x}", &abar);
+            debug!("ABAR: {:#x}", &abar);
             ABAR.get_or_init(move || abar);
 
             let abar_test_page =
@@ -1235,7 +1235,7 @@ impl AhciProtected {
             });
 
             // Test code: can confirm this actually works
-            // info!("Powering off");
+            // debug!("Powering off");
             // unsafe { super::acpi_impl::system_shutdown() };
 
             // Test code
@@ -1282,7 +1282,7 @@ impl FOSSPciDeviceHandle for AhciDriver {
     fn start(&self, header: &mut pcics::Header) {
         // keeps restarting endlessly if I don't put this check in here
         if PCI_DRIVER_COUNT.load(Ordering::Relaxed) == 1 {
-            info!("AHCI: Initializing");
+            debug!("AHCI: Initializing");
             get_ahci().write().start_driver(header);
         }
     }

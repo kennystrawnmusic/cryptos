@@ -1035,7 +1035,7 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     debug!("MSI-X: {:#?}", msix);
 
                     for entry in msg_table {
-                        info!(
+                        debug!(
                             r#"New MSI-X message: addr_low={:#x?}; addr_high={:#x?}; data={:#x?}; mask={:#x?}"#,
                             entry.addr_low.read_volatile(),
                             entry.addr_high.read_volatile(),
