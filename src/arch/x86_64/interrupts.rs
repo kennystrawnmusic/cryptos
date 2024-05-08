@@ -315,7 +315,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
     {
         // Use EFER to check if XD bit is enabled, then clear it and try again
         let mut flags = Efer::read();
-        flags = flags ^ EferFlags::NO_EXECUTE_ENABLE;
+        flags ^= EferFlags::NO_EXECUTE_ENABLE;
 
         unsafe {
             Efer::write(flags);
