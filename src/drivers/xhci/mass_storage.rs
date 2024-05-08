@@ -5,6 +5,7 @@ use xhci::context::{Device, DeviceHandler, EndpointHandler, SlotHandler};
 
 /// Wrapper for handling both 32 and 64-byte device cases
 #[allow(clippy::large_enum_variant)]
+#[derive(Debug)]
 pub enum UsbDeviceKind {
     Device8(Device<8>),
     Device16(Device<16>),

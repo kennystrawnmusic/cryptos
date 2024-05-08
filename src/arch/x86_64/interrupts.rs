@@ -293,10 +293,13 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
         if let Ok(cr2) = Cr2::read() {
             let virt = Page::<Size4KiB>::containing_address(cr2)
                 .start_address()
-                .as_u64()
-                + get_phys_offset();
+                .as_u64();
 
-            let phys = cr2.as_u64();
+            let phys = if cr2.as_u64() < get_phys_offset() {
+                cr2.as_u64()
+            } else {
+                cr2.as_u64() - get_phys_offset()
+            };
 
             map_page!(
                 phys,
@@ -316,7 +319,7 @@ extern "x86-interrupt" fn page_fault(frame: InterruptStackFrame, code: PageFault
     {
         // Use EFER to check if XD bit is enabled, then clear it and try again
         let mut flags = Efer::read();
-        flags ^= EferFlags::NO_EXECUTE_ENABLE;
+        flags &= !EferFlags::NO_EXECUTE_ENABLE;
 
         unsafe {
             Efer::write(flags);

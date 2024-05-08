@@ -401,7 +401,7 @@ fn install_ubuntu_deps() {
 }
 
 fn download_ovmf() {
-    let mut download_cmd = Command::new(env!("CARGO_BIN_FILE_OVMF_PREBUILT_ovmf-prebuilt"));
+    let mut download_cmd = Command::new(env!("CARGO_BIN_FILE_BUILD_EDK2_build-edk2"));
 
     let _ = download_cmd.output().unwrap_or_else(|e| {
         panic!(

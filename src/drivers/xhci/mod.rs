@@ -20,6 +20,7 @@ use crate::{
     pci_impl::{register_device_driver, DeviceKind, FOSSPciDeviceHandle, PCI_TABLE},
     xhci::mass_storage::UsbDeviceKind,
 };
+use log::info;
 use pcics::{header::HeaderType, Header};
 use spin::{Once, RwLock};
 use xhci::{
@@ -1176,7 +1177,7 @@ impl XhciImpl {
                 db.set_doorbell_target(0);
             });
 
-            log::info!("Successfully initialized XHCI controller");
+            info!("Successfully initialized XHCI controller");
 
             // Enable config info if config info capability is present
             if let Some(config_info) = config_info {
@@ -1200,8 +1201,11 @@ impl XhciImpl {
                         }
                     }
                 }
-                log::info!("XHCI: Ports successfully reset");
+                info!("XHCI: Ports successfully reset");
             });
+
+            //double-space
+            info!("");
 
             // Debug
             self.probe::<16>();
@@ -1215,7 +1219,7 @@ impl XhciImpl {
         if let Some(prs) = self.port_register_set() {
             for (i, port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
-                    log::debug!("Probing port {}", i);
+                    log::info!("Probing port {}", i);
                     unsafe { &mut *me }.negotiate_bandwidth(i as u8);
                     unsafe { &mut *me }.enable_port_slot(i as u8);
                     while !port.portsc.port_enabled_disabled() {
@@ -1455,16 +1459,19 @@ impl XhciImpl {
 
         let max_exit_latency = 0u16;
         let root_hub_port_num = (idx + 1) as u8;
-        let port_count = 0u8;
+        let port_count = self
+            .capabilities()
+            .map(|cap| cap.hcsparams1.read_volatile().number_of_ports())
+            .unwrap_or(0u8);
 
         slot_ctx.set_max_exit_latency(max_exit_latency);
         slot_ctx.set_root_hub_port_number(root_hub_port_num);
         slot_ctx.set_number_of_ports(port_count);
 
-        let parent_hub_slot_id = 0u8;
-        let parent_port_num = 0u8;
-        let ttt = 0u8;
-        let interrupter = 0u16;
+        let parent_hub_slot_id = slot_ctx.parent_hub_slot_id();
+        let parent_port_num = slot_ctx.parent_port_number();
+        let ttt = slot_ctx.tt_think_time();
+        let interrupter = slot_ctx.interrupter_target();
 
         slot_ctx.set_parent_hub_slot_id(parent_hub_slot_id);
         slot_ctx.set_parent_port_number(parent_port_num);
@@ -1483,12 +1490,12 @@ impl XhciImpl {
             _ => unreachable!(),
         };
 
-        let _host_init_disable = 0u8; // TODO
-        let max_burst_size = 0u8; // TODO
+        let _host_init_disable = endpoint_ctx.host_initiate_disable(); // TODO
+        let max_burst_size = endpoint_ctx.max_burst_size();
 
         assert_eq!(max_errors & 0b11, max_errors);
 
-        let tr = self.transfer_ring.iter().map(|tr| tr.as_inner());
+        let tr = self.transfer_ring.iter().map(|tr| tr.as_inner_mut());
 
         endpoint_ctx.set_tr_dequeue_pointer(addr_of!(tr) as u64);
         endpoint_ctx.set_max_packet_size(max_packet_size);

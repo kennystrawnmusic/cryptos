@@ -879,6 +879,8 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
             let test_page = Page::<Size4KiB>::containing_address(VirtAddr::new(dev));
             let virt = test_page.start_address().as_u64() + get_phys_offset();
 
+            // Some devices require huge pages, so need to map them
+
             map_page!(
                 dev,
                 virt,
@@ -1016,6 +1018,16 @@ pub fn init(tables: &AcpiTables<KernelAcpi>) {
                     };
 
                     let bar_offset = table.offset as u64;
+
+                    map_page!(
+                        bir,
+                        bir + bar_offset,
+                        Size4KiB,
+                        PageTableFlags::PRESENT
+                            | PageTableFlags::WRITABLE
+                            | PageTableFlags::NO_CACHE
+                            | PageTableFlags::WRITE_THROUGH
+                    );
 
                     let msg_table = unsafe {
                         core::slice::from_raw_parts_mut::<'static>(
