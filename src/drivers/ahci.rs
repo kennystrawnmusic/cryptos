@@ -80,8 +80,8 @@ pub fn pmm_alloc(order: BuddyOrdering) -> PhysAddr {
                 | PageTableFlags::WRITE_THROUGH
         );
         map_page!(
-            phys + 4096,
-            virt + 4096,
+            phys + Page::<Size4KiB>::SIZE,
+            virt + Page::<Size4KiB>::SIZE,
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -742,10 +742,10 @@ impl HbaPort {
         let frame_addr = pmm_alloc(BuddyOrdering::Size8KiB);
         let page_addr = get_phys_offset() + frame_addr.as_u64();
 
-        for size in (0..0x2000u64).step_by(0x1000) {
+        for size in (0..0x2000u64).step_by(Page::<Size4KiB>::SIZE as usize) {
             map_page!(
-                VirtAddr::new(page_addr + size).as_u64(),
                 (frame_addr + size).as_u64(),
+                VirtAddr::new(page_addr + size).as_u64(),
                 Size4KiB,
                 PageTableFlags::PRESENT
                     | PageTableFlags::WRITABLE

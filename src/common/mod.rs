@@ -289,12 +289,13 @@ impl Write for Printk {
 pub struct XhciMapper;
 
 impl xhci::accessor::Mapper for XhciMapper {
-    unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> core::num::NonZeroUsize {
+    unsafe fn map(&mut self, phys_start: usize, bytes: usize) -> NonZeroUsize {
         let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys_start as u64));
+        let virt_start = test.start_address().as_u64() + get_phys_offset();
 
         map_page!(
             phys_start,
-            test.start_address().as_u64(),
+            virt_start,
             Size4KiB,
             PageTableFlags::PRESENT
                 | PageTableFlags::WRITABLE
@@ -309,7 +310,7 @@ impl xhci::accessor::Mapper for XhciMapper {
                 let phys = phys_start + i;
                 let test = Page::<Size4KiB>::containing_address(VirtAddr::new(phys as u64));
 
-                let virt = test.start_address().as_u64();
+                let virt = test.start_address().as_u64() + get_phys_offset();
 
                 map_page!(
                     phys,
@@ -325,7 +326,7 @@ impl xhci::accessor::Mapper for XhciMapper {
             }
         }
 
-        NonZeroUsize::new(phys_start).unwrap()
+        NonZeroUsize::new(virt_start as usize).unwrap()
     }
 
     fn unmap(&mut self, virt_start: usize, bytes: usize) {

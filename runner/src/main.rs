@@ -586,13 +586,13 @@ fn debug_qemu(kdir: &Path, out_path: &Path) {
     uefi_cmd
         .arg("-drive")
         .arg(format!(
-            "id=sda,format=raw,file={},if=none",
+            "id=disk,format=raw,file={},if=none",
             &out_path.display()
         ))
         .arg("-device")
-        .arg("ahci,id=sda")
+        .arg("ahci,id=ahci")
         .arg("-device")
-        .arg("ide-hd,drive=sda,bus=ahci.0")
+        .arg("ide-hd,drive=disk,bus=ahci.0")
         .arg("-device")
         .arg("qemu-xhci")
         .arg("-drive")
@@ -611,15 +611,21 @@ fn debug_qemu(kdir: &Path, out_path: &Path) {
         .arg("int")
         .arg("-nic")
         .arg("none")
-        .arg("-d")
-        .arg("int");
+        .arg("-s")
+        .arg("-S");
 
     uefi_cmd.current_dir(kdir);
 
-    let uefi_status = uefi_cmd.status().unwrap();
+    // run QEMU in the background while setting up GDB to connect to it from the foreground
+    let mut uefi_spawn = uefi_cmd.spawn().unwrap();
 
-    if !uefi_status.success() {
-        println!("Failed to run QEMU: {:#?}", &uefi_status.code().unwrap());
-        exit(uefi_status.code().unwrap());
+    let mut gdb_cmd = Command::new("gdb");
+    gdb_cmd.arg("-ex").arg("target remote :1234");
+
+    let gdb_status = gdb_cmd.status().unwrap();
+
+    if !(gdb_status.success() && uefi_spawn.wait().unwrap().success()) {
+        println!("Failed to run QEMU: {:#?}", &gdb_status.code().unwrap());
+        exit(gdb_status.code().unwrap());
     }
 }

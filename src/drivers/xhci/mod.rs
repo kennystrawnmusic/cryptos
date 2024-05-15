@@ -1217,8 +1217,21 @@ impl XhciImpl {
         let me = self as *mut Self;
 
         if let Some(prs) = self.port_register_set() {
-            for (i, port) in prs.into_iter().enumerate() {
+            for (i, mut port) in prs.into_iter().enumerate() {
                 if port.portsc.port_power() {
+                    log::info!("Probing port {}", i);
+                    unsafe { &mut *me }.negotiate_bandwidth(i as u8);
+                    unsafe { &mut *me }.enable_port_slot(i as u8);
+                    while !port.portsc.port_enabled_disabled() {
+                        core::hint::spin_loop();
+                    }
+                    if port.portsc.current_connect_status() {
+                        log::info!("Device connected to port {}", i);
+                        return Some(UsbDeviceKind::from(N));
+                    }
+                } else {
+                    port.portsc.set_port_power();
+
                     log::info!("Probing port {}", i);
                     unsafe { &mut *me }.negotiate_bandwidth(i as u8);
                     unsafe { &mut *me }.enable_port_slot(i as u8);
